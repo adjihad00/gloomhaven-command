@@ -47,6 +47,19 @@ landscape provides enough width for content-rich panels without horizontal scrol
 **Rationale:** Established in the existing controller/phone apps. Fits the
 Gloomhaven aesthetic. Shared via clients/shared/styles/ across all three clients.
 
+### 2026-03-25 — Synchronous SQLite via better-sqlite3
+**Decision:** Use better-sqlite3 (synchronous API) instead of async sqlite3.
+**Rationale:** Game state saves happen on every command (low frequency, ~1/sec max).
+Synchronous writes are simpler, faster for single-writer scenarios, and avoid
+callback/promise complexity. The server is single-threaded by design.
+
+### 2026-03-25 — Heartbeat at 15s with 20s stale threshold
+**Decision:** Server pings every 15s, marks clients stale after 20s without pong.
+**Rationale:** Mobile devices (phones at the table) aggressively kill background
+WebSocket connections. 15s keeps NAT mappings alive on most consumer routers.
+20s threshold gives one missed cycle before disconnect — avoids false positives
+from momentary network hiccups while still catching dead connections quickly.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are

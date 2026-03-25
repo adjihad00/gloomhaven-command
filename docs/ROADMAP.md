@@ -11,10 +11,10 @@
 - [x] Implement elements utility — element board decay per round
 - [x] Implement ghsCompat — import/export GHS JSON saves
 - [x] Implement diffStates — entity-level diff generation + client-side applyDiff
-- [ ] Build Express static server (staticServer.ts)
-- [ ] Build WebSocket hub (wsHub.ts) — connect, broadcast, heartbeat
-- [ ] Build session manager — tokens, revision tracking, replay buffer
-- [ ] Build game store — SQLite persistence, load/save
+- [x] Build Express static server (staticServer.ts)
+- [x] Build WebSocket hub (wsHub.ts) — connect, broadcast, heartbeat
+- [x] Build session manager — tokens, revision tracking, replay buffer
+- [x] Build game store — SQLite persistence, load/save
 - [ ] Build command handler — validate → apply → persist → broadcast
 - [ ] Integration test: connect two clients, send commands, verify sync
 - [ ] GHS JSON import endpoint — POST /api/import
