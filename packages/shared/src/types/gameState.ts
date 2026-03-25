@@ -155,6 +155,7 @@ export interface Summon {
   action?: string;
   additionalAction?: string;
   active: boolean;
+  off: boolean;
   dormant: boolean;
   passive: boolean;
   thumbnail?: string;
@@ -305,6 +306,7 @@ export interface Monster {
   name: string;
   edition: string;
   level: number;
+  initiative: number;
   off: boolean;
   active: boolean;
   drawExtra: boolean;

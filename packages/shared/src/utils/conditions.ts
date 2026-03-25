@@ -1,5 +1,5 @@
 // Condition constants and helpers — fully implemented from GHS Condition.ts source
-import type { ConditionName } from '../types/gameState.js';
+import type { ConditionName, EntityCondition } from '../types/gameState.js';
 
 /** All condition names from GHS ConditionName enum */
 export const ALL_CONDITIONS: readonly ConditionName[] = [
@@ -84,4 +84,79 @@ export function isClearHealCondition(name: ConditionName): boolean {
 
 export function isStackableCondition(name: ConditionName): boolean {
   return (STACKABLE_CONDITIONS as readonly string[]).includes(name);
+}
+
+// ── End-of-round / end-of-turn condition processing ────────────────────────
+
+/**
+ * Process conditions at end of round. Returns a new array (no mutation).
+ * - state 'new' → 'normal' (survives first round)
+ * - expired === true → removed from array
+ * - state 'expire' → removed from array
+ */
+export function processConditionEndOfRound(conditions: EntityCondition[]): EntityCondition[] {
+  return conditions
+    .filter((c) => !c.expired && c.state !== 'expire')
+    .map((c) => {
+      if (c.state === 'new') {
+        return { ...c, state: 'normal' as const };
+      }
+      return { ...c };
+    });
+}
+
+/**
+ * Process conditions at end of a figure's turn.
+ * - state 'turn' → 'normal'
+ * - Wound damage is counted and returned as a flag.
+ * Returns { conditions, woundDamage } so the caller can apply HP loss.
+ */
+export function processConditionEndOfTurn(
+  conditions: EntityCondition[],
+): { conditions: EntityCondition[]; woundDamage: number } {
+  let woundDamage = 0;
+
+  const updated = conditions.map((c) => {
+    if (c.name === 'wound' || c.name === 'wound_x') {
+      woundDamage += c.value;
+    }
+    if (c.state === 'turn') {
+      return { ...c, state: 'normal' as const };
+    }
+    return { ...c };
+  });
+
+  return { conditions: updated, woundDamage };
+}
+
+/**
+ * Toggle a condition on an entity. Returns a new array (no mutation).
+ * If condition exists (active, not expired): remove it.
+ * If condition does not exist: add with state 'new' so it survives first round.
+ */
+export function toggleCondition(
+  conditions: EntityCondition[],
+  conditionName: ConditionName,
+  value?: number,
+): EntityCondition[] {
+  const existing = conditions.find(
+    (c) => c.name === conditionName && !c.expired && c.state !== 'removed',
+  );
+
+  if (existing) {
+    return conditions.filter((c) => c !== existing);
+  }
+
+  return [
+    ...conditions,
+    {
+      name: conditionName,
+      value: value ?? 1,
+      state: 'new',
+      lastState: 'new',
+      permanent: false,
+      expired: false,
+      highlight: false,
+    },
+  ];
 }

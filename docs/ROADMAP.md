@@ -6,9 +6,9 @@
 - [ ] Define Protocol types (protocol.ts) — WS message envelopes
 - [ ] Implement applyCommand engine — pure state mutations
 - [ ] Implement validateCommand — guard invalid mutations
-- [ ] Implement turnOrder — initiative sort, phase transitions
-- [ ] Implement conditions utility — lists, toggle logic, expiry
-- [ ] Implement elements utility — element board decay per round
+- [x] Implement turnOrder — initiative sort, phase transitions
+- [x] Implement conditions utility — lists, toggle logic, expiry
+- [x] Implement elements utility — element board decay per round
 - [ ] Implement ghsCompat — import/export GHS JSON saves
 - [ ] Build Express static server (staticServer.ts)
 - [ ] Build WebSocket hub (wsHub.ts) — connect, broadcast, heartbeat

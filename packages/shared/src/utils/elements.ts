@@ -1,7 +1,8 @@
-// Element board utilities — types from GHS Element.ts source
+// Element board utilities — pure functions, no mutation
 import type { ElementModel, ElementType, ElementState } from '../types/gameState.js';
 
-const ELEMENT_TYPES: readonly ElementType[] = [
+/** All six element types on the board */
+export const ELEMENT_TYPES: readonly ElementType[] = [
   'fire', 'ice', 'air', 'earth', 'light', 'dark',
 ] as const;
 
@@ -10,15 +11,37 @@ export function createDefaultElementBoard(): ElementModel[] {
   return ELEMENT_TYPES.map((type) => ({ type, state: 'inert' as ElementState }));
 }
 
-/** Decay a single element state: strong→waning, waning→inert, else unchanged */
-export function decayElement(state: ElementState): ElementState {
-  if (state === 'strong') return 'waning';
-  if (state === 'waning') return 'inert';
-  if (state === 'new') return 'strong';
-  return state;
+/**
+ * Decay all elements on the board (called at end of round).
+ * GHS rules: new → waning, strong → waning, waning → inert.
+ * Returns a new array — does NOT mutate input.
+ */
+export function decayElements(board: ElementModel[]): ElementModel[] {
+  return board.map((el) => {
+    let newState: ElementState = el.state;
+    if (el.state === 'new' || el.state === 'strong') {
+      newState = 'waning';
+    } else if (el.state === 'waning') {
+      newState = 'inert';
+    }
+    return { type: el.type, state: newState };
+  });
 }
 
-/** Decay all elements on the board (called at end of round) */
-export function decayElements(board: ElementModel[]): ElementModel[] {
-  return board.map((el) => ({ type: el.type, state: decayElement(el.state) }));
+/** Look up an element's current state. Returns 'inert' if not found. */
+export function inferElement(board: ElementModel[], elementType: ElementType): ElementState {
+  const el = board.find((e) => e.type === elementType);
+  return el ? el.state : 'inert';
+}
+
+/**
+ * Toggle an element: inert → new → inert.
+ * Returns a new board array — does NOT mutate input.
+ */
+export function cycleElement(board: ElementModel[], elementType: ElementType): ElementModel[] {
+  return board.map((el) => {
+    if (el.type !== elementType) return { type: el.type, state: el.state };
+    const newState: ElementState = el.state === 'inert' ? 'new' : 'inert';
+    return { type: el.type, state: newState };
+  });
 }
