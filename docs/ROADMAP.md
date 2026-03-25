@@ -20,8 +20,8 @@
 - [x] GHS JSON import endpoint — POST /api/import
 
 ## Phase 2: Controller Client
-- [ ] Scaffold controller HTML + TypeScript entry
-- [ ] Implement connection UI (setup screen)
+- [x] Scaffold controller HTML + TypeScript entry
+- [x] Implement connection UI (setup screen)
 - [x] Implement shared WebSocket client (clients/shared/lib/connection.ts)
 - [x] Implement client-side state store with diff application
 - [ ] Build Active Play tab — initiative timeline, health, conditions, turns

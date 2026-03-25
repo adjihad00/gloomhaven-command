@@ -2,9 +2,11 @@
   "name": "@gloomhaven-command/controller",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --outfile=dist/main.js --format=esm",
-    "watch": "esbuild src/main.ts --bundle --outfile=dist/main.js --format=esm --watch"
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "dev": "node build.mjs --watch"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",

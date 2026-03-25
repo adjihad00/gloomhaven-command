@@ -60,6 +60,21 @@ WebSocket connections. 15s keeps NAT mappings alive on most consumer routers.
 20s threshold gives one missed cycle before disconnect — avoids false positives
 from momentary network hiccups while still catching dead connections quickly.
 
+### 2026-03-25 — Controller setup flow: Import + Manual
+**Decision:** After connecting, controller shows "New Game" and "Import GHS Save"
+options. No auto-detection of local GHS installations.
+**Rationale:** Import provides migration path from existing GHS campaigns. Manual
+new game is the clean-start path. Auto-detection adds complexity (needs server-side
+filesystem access) with minimal benefit since import covers the use case.
+
+### 2026-03-25 — Vanilla TypeScript with esbuild, no framework
+**Decision:** Controller uses vanilla TypeScript with DOM manipulation, bundled
+by esbuild. No React, Vue, or other framework.
+**Rationale:** The controller is a single-page app with five tabs. State management
+is handled by our own StateStore + Connection classes. A framework adds bundle size
+and learning curve without proportional benefit for this use case. esbuild produces
+a single JS file from TypeScript + workspace imports in <100ms.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are
