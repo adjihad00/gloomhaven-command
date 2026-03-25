@@ -26,10 +26,10 @@
 - [x] Implement client-side state store with diff application
 - [x] Build Active Play tab — initiative timeline, health, conditions, turns
 - [x] Build Monster Management tab — ability cards, standees, modifier deck
-- [ ] Build Scenario tab — room reveals, element board, round counter
-- [ ] Build Loot & Decks tab — loot draw/assign, modifier deck state
-- [ ] Build Campaign tab — party sheet, unlocks, scenario tracking
-- [ ] Responsive iPad landscape layout, tab navigation
+- [x] Build Scenario tab — room reveals, element board, round counter
+- [x] Build Loot & Decks tab — loot draw/assign, modifier deck state
+- [x] Build Campaign tab — party sheet, unlocks, scenario tracking
+- [x] Responsive iPad landscape layout, tab navigation
 
 ## Phase 3: Phone Client
 - [ ] Scaffold phone HTML + TypeScript entry

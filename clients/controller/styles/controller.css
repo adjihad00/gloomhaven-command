@@ -1585,3 +1585,592 @@
         grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCENARIO TAB
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.scenario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-copper);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.scenario-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scenario-header-name {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+}
+
+.scenario-edition-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(211, 166, 99, 0.2);
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.scenario-header-level {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ── Scenario Sections ── */
+
+.scenario-section {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.scenario-section .section-title {
+    margin-bottom: 12px;
+}
+
+.scenario-setup-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ── Character Management ── */
+
+.scenario-add-char-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.scenario-char-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.scenario-char-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-gold-dim);
+}
+
+.scenario-char-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.scenario-char-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    color: var(--accent-gold);
+    font-size: 0.95rem;
+}
+
+.scenario-char-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.scenario-char-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Status badges */
+.status-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-absent {
+    background: rgba(128, 128, 128, 0.3);
+    color: #999;
+}
+
+.badge-exhausted {
+    background: rgba(197, 48, 48, 0.2);
+    color: var(--negative-red);
+}
+
+.badge-longrest {
+    background: rgba(74, 122, 173, 0.2);
+    color: var(--shield-blue);
+}
+
+/* Active toggle buttons */
+.btn-icon.small.active {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    background: rgba(211, 166, 99, 0.15);
+}
+
+/* ── Level Selector ── */
+
+.scenario-settings-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.scenario-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.scenario-setting-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.level-selector {
+    display: flex;
+    gap: 4px;
+}
+
+.level-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-gold-dim);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.level-btn:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+}
+
+.level-btn.active {
+    background: rgba(211, 166, 99, 0.2);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    box-shadow: 0 0 8px rgba(211, 166, 99, 0.3);
+}
+
+/* ── Round Display ── */
+
+.round-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.round-value {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 28px;
+    text-align: center;
+}
+
+/* ── Element Board (Scenario — larger) ── */
+
+.scenario-element-board {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.scenario-element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.element-btn-lg {
+    width: 56px;
+    height: 56px;
+}
+
+.scenario-element-label {
+    font-size: 0.65rem;
+    text-transform: capitalize;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+.scenario-element-state {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+}
+
+/* ── Rooms ── */
+
+.scenario-room-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.scenario-room-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.scenario-room-tag {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    background: rgba(211, 166, 99, 0.1);
+    border: 1px solid var(--accent-gold-dim);
+    color: var(--text-secondary);
+}
+
+/* ── Empty state (shared) ── */
+
+.empty-state {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 12px 0;
+    text-align: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LOOT & DECKS TAB
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.loot-section {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.loot-section .section-title {
+    margin-bottom: 12px;
+}
+
+/* ── Loot Deck Status ── */
+
+.loot-deck-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.loot-deck-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ── Drawn Cards ── */
+
+.loot-drawn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.loot-drawn-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-gold-dim);
+    background: var(--bg-secondary);
+}
+
+.loot-card-type {
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 80px;
+}
+
+.loot-card-value {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    min-width: 24px;
+}
+
+.loot-type-money .loot-card-type { color: var(--accent-gold); }
+.loot-type-lumber .loot-card-type { color: #8B6914; }
+.loot-type-metal .loot-card-type { color: #A0A0B0; }
+.loot-type-hide .loot-card-type { color: #C4A882; }
+.loot-type-arrowvine .loot-card-type,
+.loot-type-axenut .loot-card-type,
+.loot-type-corpsecap .loot-card-type,
+.loot-type-flamefruit .loot-card-type,
+.loot-type-rockroot .loot-card-type,
+.loot-type-snowthistle .loot-card-type { color: var(--health-green); }
+
+.loot-assign-select {
+    min-width: 100px;
+}
+
+/* ── AMD Grid ── */
+
+.amd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.amd-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+}
+
+.amd-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.amd-card-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent-gold);
+}
+
+.amd-card-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.amd-card-actions {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.amd-card-modifiers {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CAMPAIGN TAB
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.campaign-section {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.campaign-section .section-title {
+    margin-bottom: 12px;
+}
+
+/* ── Key-Value Grid ── */
+
+.campaign-kv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+}
+
+.campaign-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.campaign-kv-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.campaign-kv-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ── Character Roster ── */
+
+.campaign-roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+}
+
+.campaign-char-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+}
+
+.campaign-char-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.campaign-char-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent-gold);
+}
+
+.campaign-char-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.campaign-char-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.campaign-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.campaign-stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.campaign-stat-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.campaign-stat-value {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text-primary);
+    min-width: 28px;
+    text-align: center;
+}
+
+/* ── Scenario History ── */
+
+.campaign-scenario-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.campaign-scenario-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.campaign-scenario-tag {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(211, 166, 99, 0.1);
+    border: 1px solid var(--accent-gold-dim);
+    color: var(--text-secondary);
+}
+
+/* ── Unlocked Characters ── */
+
+.campaign-unlocked-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.campaign-unlocked-tag {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    background: rgba(74, 124, 89, 0.15);
+    border: 1px solid var(--health-green);
+    color: var(--health-green);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — New Tabs
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 768px) {
+    .scenario-element-board {
+        gap: 20px;
+    }
+
+    .element-btn-lg {
+        width: 64px;
+        height: 64px;
+    }
+
+    .amd-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+
+    .campaign-roster-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+}

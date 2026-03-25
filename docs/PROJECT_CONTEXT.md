@@ -82,7 +82,7 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Persistence: SQLite via better-sqlite3
 
 ## Current Phase
-Phase 1 COMPLETE. Phase 2 — Controller Client (see ROADMAP.md)
+Phase 2 COMPLETE. Phase 3 — Phone Client (see ROADMAP.md)
 
 ## GHS Compatibility
 The shared engine can import/export GHS JSON game saves via
