@@ -104,6 +104,12 @@ export function applyCommand(state: GameState, command: Command): ApplyResult {
     case 'drawModifierCard':
       handleDrawModifierCard(after, command.payload);
       break;
+    case 'addModifierCard':
+      handleAddModifierCard(after, command.payload);
+      break;
+    case 'removeModifierCard':
+      handleRemoveModifierCard(after, command.payload);
+      break;
     case 'setScenario':
       handleSetScenario(after, command.payload);
       break;
@@ -860,6 +866,32 @@ function handleUpdateCampaign(
   // Update a field on the party object
   if (payload.field in state.party) {
     (state.party as unknown as Record<string, unknown>)[payload.field] = payload.value;
+  }
+}
+
+function handleAddModifierCard(
+  state: GameState,
+  payload: { deck: 'monster' | 'ally' | { character: string; edition: string }; cardType: 'bless' | 'curse' },
+): void {
+  const deck = resolveModifierDeck(state, payload.deck);
+  if (!deck) return;
+  // Insert the bless/curse card at a random position in the undrawn portion
+  const insertPos = deck.current + Math.floor(Math.random() * (deck.cards.length - deck.current + 1));
+  deck.cards.splice(insertPos, 0, payload.cardType);
+}
+
+function handleRemoveModifierCard(
+  state: GameState,
+  payload: { deck: 'monster' | 'ally' | { character: string; edition: string }; cardType: 'bless' | 'curse' },
+): void {
+  const deck = resolveModifierDeck(state, payload.deck);
+  if (!deck) return;
+  // Remove one instance of the card type from the undrawn portion (after current)
+  for (let i = deck.current; i < deck.cards.length; i++) {
+    if (deck.cards[i] === payload.cardType) {
+      deck.cards.splice(i, 1);
+      return;
+    }
   }
 }
 

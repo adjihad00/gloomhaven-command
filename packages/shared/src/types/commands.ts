@@ -50,6 +50,8 @@ export type CommandAction =
   | 'toggleExhausted'
   | 'toggleAbsent'
   | 'setRound'
+  | 'addModifierCard'
+  | 'removeModifierCard'
   | 'importGhsState'
   | 'updateCampaign';
 
@@ -232,6 +234,22 @@ export interface ImportGhsStateCommand {
   payload: { ghsJson: string };
 }
 
+export interface AddModifierCardCommand {
+  action: 'addModifierCard';
+  payload: {
+    deck: 'monster' | 'ally' | { character: string; edition: string };
+    cardType: 'bless' | 'curse';
+  };
+}
+
+export interface RemoveModifierCardCommand {
+  action: 'removeModifierCard';
+  payload: {
+    deck: 'monster' | 'ally' | { character: string; edition: string };
+    cardType: 'bless' | 'curse';
+  };
+}
+
 export interface UpdateCampaignCommand {
   action: 'updateCampaign';
   payload: { field: string; value: string | number | boolean };
@@ -271,6 +289,8 @@ export type Command =
   | ToggleExhaustedCommand
   | ToggleAbsentCommand
   | SetRoundCommand
+  | AddModifierCardCommand
+  | RemoveModifierCardCommand
   | ImportGhsStateCommand
   | UpdateCampaignCommand;
 

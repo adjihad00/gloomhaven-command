@@ -89,6 +89,14 @@ export class CommandSender {
     this.send({ action: 'drawModifierCard', payload: { deck } });
   }
 
+  addModifierCard(deck: ModifierDeck, cardType: 'bless' | 'curse'): void {
+    this.send({ action: 'addModifierCard', payload: { deck, cardType } });
+  }
+
+  removeModifierCard(deck: ModifierDeck, cardType: 'bless' | 'curse'): void {
+    this.send({ action: 'removeModifierCard', payload: { deck, cardType } });
+  }
+
   // ── Scenario ──
 
   revealRoom(roomId: number): void {

@@ -1,11 +1,13 @@
 // Active Play tab — initiative timeline, character cards, monster standees,
 // element board, FABs, and event delegation
 import { getStore, getCommands } from '../main.js';
+import { formatName } from '../utils.js';
 import type { StateStore, CommandSender } from '@gloomhaven-command/client-lib';
 import type {
   GameState, Character, Monster, MonsterEntity, Summon,
   ElementModel, ElementType, ElementState, ConditionName,
   CommandTarget, FigureIdentifier, OrderedFigure,
+  AttackModifierDeckModel,
 } from '@gloomhaven-command/shared';
 import {
   NEGATIVE_CONDITIONS, POSITIVE_CONDITIONS,
@@ -72,6 +74,7 @@ function render(state: GameState): void {
     renderTimeline(state) +
     renderCharacters(state) +
     renderMonsters(state) +
+    renderModifierDeck(state) +
     renderElements(state);
 
   requestAnimationFrame(() => scrollTimelineToActive());
@@ -266,6 +269,45 @@ function renderMonsters(state: GameState): string {
   return html;
 }
 
+// ── Monster Modifier Deck ────────────────────────────────────────────────────
+
+function renderModifierDeck(state: GameState): string {
+  const deck = state.monsterAttackModifierDeck;
+  if (!deck) return '';
+
+  const totalCards = deck.cards.length;
+  const remaining = Math.max(0, totalCards - deck.current);
+  const undrawn = deck.cards.slice(deck.current);
+  const blessCount = undrawn.filter(c => c === 'bless').length;
+  const curseCount = undrawn.filter(c => c === 'curse').length;
+
+  return `<div class="play-section">
+    <div class="play-section-header" data-collapse="modifierDeck">
+      <span class="play-section-title">Monster Modifier Deck</span>
+      <span class="play-section-toggle">▼</span>
+    </div>
+    <div class="play-section-content" id="playModifierContent">
+      <div class="modifier-deck-row">
+        <span class="modifier-deck-count">${remaining}/${totalCards}</span>
+        <button class="btn btn-secondary btn-sm" data-action="drawModifier">Draw</button>
+        <button class="btn btn-secondary btn-sm" data-action="shuffleModifier">Shuffle</button>
+        <span class="modifier-bc-group">
+          <span class="modifier-bc-label">B:${blessCount}</span>
+          <button class="btn-icon small" data-action="removeModifierCard" data-card-type="bless"
+                  ${blessCount === 0 ? 'disabled' : ''}>−</button>
+          <button class="btn-icon small" data-action="addModifierCard" data-card-type="bless">+</button>
+        </span>
+        <span class="modifier-bc-group">
+          <span class="modifier-bc-label">C:${curseCount}</span>
+          <button class="btn-icon small" data-action="removeModifierCard" data-card-type="curse"
+                  ${curseCount === 0 ? 'disabled' : ''}>−</button>
+          <button class="btn-icon small" data-action="addModifierCard" data-card-type="curse">+</button>
+        </span>
+      </div>
+    </div>
+  </div>`;
+}
+
 // ── Element Board ────────────────────────────────────────────────────────────
 
 function renderElements(state: GameState): string {
@@ -451,6 +493,24 @@ function attachEventListeners(): void {
         commands.removeSummon(charName, charEdition, uuid);
         break;
       }
+      case 'drawModifier': {
+        commands.drawModifierCard('monster');
+        break;
+      }
+      case 'shuffleModifier': {
+        commands.shuffleModifierDeck('monster');
+        break;
+      }
+      case 'addModifierCard': {
+        const cardType = target.dataset.cardType as 'bless' | 'curse';
+        commands.addModifierCard('monster', cardType);
+        break;
+      }
+      case 'removeModifierCard': {
+        const cardType = target.dataset.cardType as 'bless' | 'curse';
+        commands.removeModifierCard('monster', cardType);
+        break;
+      }
       case 'toggleDead': {
         const name = target.dataset.targetName!;
         const edition = target.dataset.targetEdition!;
@@ -508,7 +568,4 @@ function buildTarget(el: HTMLElement): CommandTarget | null {
 }
 
 // ── Utilities ────────────────────────────────────────────────────────────────
-
-function formatName(name: string): string {
-  return name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
+// formatName imported from ../utils.js

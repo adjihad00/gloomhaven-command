@@ -3,6 +3,7 @@ import { Connection, StateStore, CommandSender } from '@gloomhaven-command/clien
 import type { ConnectionStatus } from '@gloomhaven-command/client-lib';
 import type { GameState } from '@gloomhaven-command/shared';
 import { initActivePlayTab } from './tabs/activePlay.js';
+import { initMonsterTab } from './tabs/monsterMgmt.js';
 
 // ── Module state ──
 
@@ -301,6 +302,7 @@ function enterGameScreen(): void {
 
   initTabNavigation();
   initActivePlayTab();
+  initMonsterTab();
 
   // Update header with current state
   const state = store?.getState();

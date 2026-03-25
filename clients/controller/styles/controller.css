@@ -1250,3 +1250,338 @@
         height: 52px;
     }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MONSTER MANAGEMENT TAB
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shared button/input variants ── */
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-icon:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.btn-icon:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.btn-icon.danger {
+    border-color: #a44;
+    color: #a44;
+}
+
+.btn-icon.danger:hover {
+    border-color: #e55;
+    color: #e55;
+}
+
+.btn-icon.small {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b8a47a'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+}
+
+.form-input-sm {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    height: 30px;
+}
+
+.mgmt-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.flex-grow {
+    flex: 1;
+}
+
+/* ── Add Monster Section ── */
+
+.mgmt-add-section {
+    padding: 12px;
+    margin-bottom: 8px;
+}
+
+.mgmt-add-section .section-title {
+    margin-bottom: 8px;
+}
+
+.add-monster-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* ── Monster Groups Container ── */
+
+.mgmt-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px;
+}
+
+/* ── Monster Group Card ── */
+
+.mgmt-monster-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.mgmt-monster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.mgmt-monster-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mgmt-monster-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.mgmt-monster-name {
+    font-weight: 600;
+    color: var(--gold);
+    font-size: 1rem;
+}
+
+.mgmt-monster-level {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+.mgmt-monster-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mgmt-entity-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ── Add Standee Row ── */
+
+.mgmt-add-standee {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+
+/* ── Standee List ── */
+
+.mgmt-standee-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mgmt-standee-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.mgmt-standee-row.elite {
+    background: rgba(218, 165, 32, 0.08);
+}
+
+.mgmt-standee-row.boss {
+    background: rgba(180, 50, 50, 0.08);
+}
+
+.mgmt-standee-row.dead {
+    opacity: 0.35;
+}
+
+.mgmt-standee-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.mgmt-standee-type {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+.mgmt-standee-type.normal {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+
+.mgmt-standee-type.elite {
+    background: rgba(218, 165, 32, 0.25);
+    color: var(--gold);
+}
+
+.mgmt-standee-type.boss {
+    background: rgba(180, 50, 50, 0.25);
+    color: #e55;
+}
+
+.mgmt-standee-hp {
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-left: auto;
+    margin-right: 4px;
+}
+
+/* ── Dead Standees (collapsed) ── */
+
+.mgmt-dead-section {
+    margin-top: 6px;
+}
+
+.mgmt-dead-summary {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.mgmt-dead-summary:hover {
+    color: var(--text);
+}
+
+.dead-list {
+    opacity: 0.5;
+}
+
+/* ── Ability Section ── */
+
+.mgmt-ability-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.mgmt-ability-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mgmt-ability-value {
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.mgmt-ability-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* ── Monster Modifier Deck (Active Play) ── */
+
+.modifier-deck-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.modifier-deck-count {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 40px;
+}
+
+.modifier-bc-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.modifier-bc-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* ── Empty state ── */
+
+.mgmt-empty {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 8px 0;
+    text-align: center;
+}
+
+/* ── Monster Management Responsive ── */
+
+@media (min-width: 768px) {
+    .mgmt-groups {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    }
+}

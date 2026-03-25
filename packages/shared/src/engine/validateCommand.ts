@@ -248,6 +248,19 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'addModifierCard':
+      return validateModifierDeck(state, command.payload.deck);
+
+    case 'removeModifierCard': {
+      const valid = validateModifierDeck(state, command.payload.deck);
+      if (!valid.valid) return valid;
+      const d = resolveModifierDeck(state, command.payload.deck);
+      if (!d) return fail('Deck not found');
+      const hasCard = d.cards.slice(d.current).some(c => c === command.payload.cardType);
+      if (!hasCard) return fail(`No ${command.payload.cardType} card to remove`);
+      return OK;
+    }
+
     // ── Scenario/campaign ─────────────────────────────────────────────────
     case 'setScenario':
       return OK;
