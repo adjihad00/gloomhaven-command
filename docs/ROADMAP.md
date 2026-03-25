@@ -15,9 +15,9 @@
 - [x] Build WebSocket hub (wsHub.ts) — connect, broadcast, heartbeat
 - [x] Build session manager — tokens, revision tracking, replay buffer
 - [x] Build game store — SQLite persistence, load/save
-- [ ] Build command handler — validate → apply → persist → broadcast
-- [ ] Integration test: connect two clients, send commands, verify sync
-- [ ] GHS JSON import endpoint — POST /api/import
+- [x] Build command handler — validate → apply → persist → broadcast
+- [x] Integration test: connect two clients, send commands, verify sync
+- [x] GHS JSON import endpoint — POST /api/import
 
 ## Phase 2: Controller Client
 - [ ] Scaffold controller HTML + TypeScript entry

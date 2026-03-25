@@ -6,6 +6,8 @@ import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
 import { WsHub } from './wsHub.js';
 import { configureStaticRoutes } from './staticServer.js';
+import { CommandHandler } from './commandHandler.js';
+import { importGhsState, exportGhsState } from '@gloomhaven-command/shared';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const rootDir = resolve(import.meta.dirname, '../../');
@@ -23,8 +25,49 @@ app.get('/api/games', (_req, res) => {
   res.json(gameStore.listGames());
 });
 
-app.post('/api/import', (_req, res) => {
-  res.status(501).json({ error: 'Not implemented — coming in Phase 1E' });
+app.post('/api/import', (req, res) => {
+  try {
+    const { gameCode, ghsState } = req.body;
+
+    if (!gameCode || typeof gameCode !== 'string') {
+      res.status(400).json({ error: 'gameCode is required' });
+      return;
+    }
+
+    if (!ghsState || typeof ghsState !== 'object') {
+      res.status(400).json({ error: 'ghsState object is required' });
+      return;
+    }
+
+    const state = importGhsState(ghsState);
+    state.gameCode = gameCode;
+    gameStore.save(gameCode, state);
+
+    console.log(`[${gameCode}] Imported GHS state (rev ${state.revision})`);
+
+    res.json({
+      success: true,
+      gameCode,
+      revision: state.revision,
+      characters: state.characters.length,
+      monsters: state.monsters.length,
+      round: state.round,
+    });
+  } catch (err) {
+    console.error('Import error:', err);
+    res.status(500).json({ error: 'Failed to import GHS state', details: String(err) });
+  }
+});
+
+app.get('/api/export/:gameCode', (req, res) => {
+  const { gameCode } = req.params;
+  const state = gameStore.load(gameCode);
+  if (!state) {
+    res.status(404).json({ error: 'Game not found' });
+    return;
+  }
+  const ghsState = exportGhsState(state);
+  res.json(ghsState);
 });
 
 // HTTP server
@@ -35,6 +78,15 @@ const gameStore = new GameStore(resolve(rootDir, 'data/ghs.sqlite'));
 const sessionManager = new SessionManager();
 const wsHub = new WsHub(httpServer, gameStore, sessionManager);
 wsHub.init();
+
+// Command handler pipeline
+const commandHandler = new CommandHandler(gameStore, sessionManager);
+commandHandler.broadcastFn = (gameCode, diff) => {
+  wsHub.broadcast(gameCode, diff);
+};
+wsHub.onCommand = (ws, gameCode, command) => {
+  commandHandler.handleCommand(ws, gameCode, command);
+};
 
 // Start listening
 httpServer.listen(PORT, () => {
