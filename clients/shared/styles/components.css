@@ -1,0 +1,118 @@
+.btn {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+
+.btn:hover {
+    background: var(--bg-elevated);
+    border-color: var(--accent-gold);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-copper), var(--accent-gold));
+    color: var(--bg-primary);
+    border-color: var(--accent-gold);
+    font-weight: 700;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    box-shadow: var(--shadow-medium);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.connected {
+    background: var(--health-green);
+    box-shadow: 0 0 6px var(--health-green);
+}
+
+.status-dot.disconnected {
+    background: var(--negative-red);
+    box-shadow: 0 0 6px var(--negative-red);
+}
+
+.health-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-gold-dim);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.health-btn:hover {
+    border-color: var(--accent-gold);
+    background: var(--bg-elevated);
+}
+
+.health-btn.damage {
+    border-color: rgba(197, 48, 48, 0.5);
+}
+
+.health-btn.damage:hover {
+    border-color: var(--negative-red);
+    background: rgba(197, 48, 48, 0.15);
+}
+
+.health-btn.heal {
+    border-color: rgba(74, 124, 89, 0.5);
+}
+
+.health-btn.heal:hover {
+    border-color: var(--health-green);
+    background: rgba(74, 124, 89, 0.15);
+}
+
+.form-input {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.form-input:focus {
+    border-color: var(--accent-gold);
+}
+
+.form-input::placeholder {
+    color: var(--text-muted);
+}

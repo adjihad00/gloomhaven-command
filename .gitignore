@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.staging/
+assets/ghs/
+assets/worldhaven/
+assets/creator-pack/
+assets/nerdhaven/
+*.db
+*.sqlite
+*.jar
+.env
+.DS_Store
+Thumbs.db

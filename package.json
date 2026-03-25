@@ -1,0 +1,25 @@
+{
+  "name": "gloomhaven-command",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "server",
+    "clients/display",
+    "clients/controller",
+    "clients/phone"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=server",
+    "build": "npm run build --workspaces",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:server": "npm run build --workspace=server",
+    "build:clients": "npm run build --workspace=clients/display --workspace=clients/controller --workspace=clients/phone"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
