@@ -1,15 +1,16 @@
 # Gloomhaven Command — Roadmap
 
 ## Phase 1: Server + Shared Library
-- [ ] Define GameState types (gameState.ts) by mapping GHS JSON structure
-- [ ] Define Command types (commands.ts) — all 17 command payloads
-- [ ] Define Protocol types (protocol.ts) — WS message envelopes
-- [ ] Implement applyCommand engine — pure state mutations
-- [ ] Implement validateCommand — guard invalid mutations
+- [x] Define GameState types (gameState.ts) by mapping GHS JSON structure
+- [x] Define Command types (commands.ts) — all 33 command payloads
+- [x] Define Protocol types (protocol.ts) — WS message envelopes
+- [x] Implement applyCommand engine — pure state mutations
+- [x] Implement validateCommand — guard invalid mutations
 - [x] Implement turnOrder — initiative sort, phase transitions
 - [x] Implement conditions utility — lists, toggle logic, expiry
 - [x] Implement elements utility — element board decay per round
-- [ ] Implement ghsCompat — import/export GHS JSON saves
+- [x] Implement ghsCompat — import/export GHS JSON saves
+- [x] Implement diffStates — entity-level diff generation + client-side applyDiff
 - [ ] Build Express static server (staticServer.ts)
 - [ ] Build WebSocket hub (wsHub.ts) — connect, broadcast, heartbeat
 - [ ] Build session manager — tokens, revision tracking, replay buffer

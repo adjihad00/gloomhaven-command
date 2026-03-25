@@ -9,6 +9,7 @@ export * from './types/protocol.js';
 export * from './engine/applyCommand.js';
 export * from './engine/validateCommand.js';
 export * from './engine/turnOrder.js';
+export * from './engine/diffStates.js';
 
 // Utilities
 export * from './utils/conditions.js';
