@@ -1,92 +1,279 @@
-// TODO: All 17 command payloads
+// Command types — discriminated union covering all gameplay mutations
+import type {
+  ConditionName,
+  ElementType,
+  ElementState,
+  MonsterType,
+  SummonColor,
+  FigureIdentifier,
+} from './gameState.js';
 
-export interface ChangeHealthPayload {
-  target: { type: 'character' | 'monster'; name: string; entityNumber?: number };
-  delta: number;
+// ── Command target ──────────────────────────────────────────────────────────
+
+export type CommandTarget =
+  | { type: 'character'; name: string; edition: string }
+  | { type: 'monster'; name: string; edition: string; entityNumber: number }
+  | { type: 'summon'; characterName: string; characterEdition: string; summonUuid: string }
+  | { type: 'objective'; uuid: string; entityNumber: number };
+
+// ── Command action string literals ──────────────────────────────────────────
+
+export type CommandAction =
+  | 'changeHealth'
+  | 'changeMaxHealth'
+  | 'toggleCondition'
+  | 'setInitiative'
+  | 'advancePhase'
+  | 'toggleTurn'
+  | 'addEntity'
+  | 'removeEntity'
+  | 'moveElement'
+  | 'drawLootCard'
+  | 'assignLoot'
+  | 'drawMonsterAbility'
+  | 'shuffleMonsterAbilities'
+  | 'shuffleModifierDeck'
+  | 'drawModifierCard'
+  | 'revealRoom'
+  | 'undoAction'
+  | 'setScenario'
+  | 'addCharacter'
+  | 'removeCharacter'
+  | 'setLevel'
+  | 'setExperience'
+  | 'setLoot'
+  | 'addSummon'
+  | 'removeSummon'
+  | 'addMonsterGroup'
+  | 'removeMonsterGroup'
+  | 'setMonsterLevel'
+  | 'toggleExhausted'
+  | 'toggleAbsent'
+  | 'setRound'
+  | 'importGhsState'
+  | 'updateCampaign';
+
+// ── Individual command payloads ─────────────────────────────────────────────
+
+export interface ChangeHealthCommand {
+  action: 'changeHealth';
+  payload: { target: CommandTarget; delta: number };
 }
 
-export interface ToggleConditionPayload {
-  target: { type: 'character' | 'monster'; name: string; entityNumber?: number };
-  condition: string;
+export interface ChangeMaxHealthCommand {
+  action: 'changeMaxHealth';
+  payload: { target: CommandTarget; delta: number };
 }
 
-export interface SetInitiativePayload {
-  characterName: string;
-  value: number;
+export interface ToggleConditionCommand {
+  action: 'toggleCondition';
+  payload: { target: CommandTarget; condition: ConditionName; value?: number };
 }
 
-export interface AdvancePhasePayload {}
-
-export interface ToggleTurnPayload {
-  figureName: string;
+export interface SetInitiativeCommand {
+  action: 'setInitiative';
+  payload: { characterName: string; edition: string; value: number };
 }
 
-export interface AddEntityPayload {
-  monsterName: string;
-  entityData: { number: number; elite: boolean };
+export interface AdvancePhaseCommand {
+  action: 'advancePhase';
+  payload: Record<string, never>;
 }
 
-export interface RemoveEntityPayload {
-  monsterName: string;
-  entityNumber: number;
+export interface ToggleTurnCommand {
+  action: 'toggleTurn';
+  payload: { figure: FigureIdentifier };
 }
 
-export interface MoveElementPayload {
-  element: string;
-  newState: string;
+export interface AddEntityCommand {
+  action: 'addEntity';
+  payload: {
+    monsterName: string;
+    edition: string;
+    entityNumber: number;
+    type: MonsterType;
+  };
 }
 
-export interface DrawLootCardPayload {}
-
-export interface AssignLootPayload {
-  cardIndex: number;
-  characterName: string;
+export interface RemoveEntityCommand {
+  action: 'removeEntity';
+  payload: {
+    monsterName: string;
+    edition: string;
+    entityNumber: number;
+    type: MonsterType;
+  };
 }
 
-export interface DrawMonsterAbilityPayload {
-  monsterName: string;
+export interface MoveElementCommand {
+  action: 'moveElement';
+  payload: { element: ElementType; newState: ElementState };
 }
 
-export interface ShuffleModifierDeckPayload {
-  deck: string;
+export interface DrawLootCardCommand {
+  action: 'drawLootCard';
+  payload: Record<string, never>;
 }
 
-export interface RevealRoomPayload {
-  roomId: string;
+export interface AssignLootCommand {
+  action: 'assignLoot';
+  payload: { cardIndex: number; characterName: string; edition: string };
 }
 
-export interface UndoActionPayload {}
-
-export interface SetScenarioPayload {
-  scenarioNumber: number;
-  edition: string;
+export interface DrawMonsterAbilityCommand {
+  action: 'drawMonsterAbility';
+  payload: { monsterName: string; edition: string };
 }
 
-export interface AddCharacterPayload {
-  name: string;
-  edition: string;
-  player?: string;
+export interface ShuffleMonsterAbilitiesCommand {
+  action: 'shuffleMonsterAbilities';
+  payload: { monsterName: string; edition: string };
 }
 
-export interface RemoveCharacterPayload {
-  name: string;
+export interface ShuffleModifierDeckCommand {
+  action: 'shuffleModifierDeck';
+  payload: { deck: 'monster' | 'ally' | { character: string; edition: string } };
 }
 
-export type CommandPayload =
-  | { action: 'changeHealth'; payload: ChangeHealthPayload }
-  | { action: 'toggleCondition'; payload: ToggleConditionPayload }
-  | { action: 'setInitiative'; payload: SetInitiativePayload }
-  | { action: 'advancePhase'; payload: AdvancePhasePayload }
-  | { action: 'toggleTurn'; payload: ToggleTurnPayload }
-  | { action: 'addEntity'; payload: AddEntityPayload }
-  | { action: 'removeEntity'; payload: RemoveEntityPayload }
-  | { action: 'moveElement'; payload: MoveElementPayload }
-  | { action: 'drawLootCard'; payload: DrawLootCardPayload }
-  | { action: 'assignLoot'; payload: AssignLootPayload }
-  | { action: 'drawMonsterAbility'; payload: DrawMonsterAbilityPayload }
-  | { action: 'shuffleModifierDeck'; payload: ShuffleModifierDeckPayload }
-  | { action: 'revealRoom'; payload: RevealRoomPayload }
-  | { action: 'undoAction'; payload: UndoActionPayload }
-  | { action: 'setScenario'; payload: SetScenarioPayload }
-  | { action: 'addCharacter'; payload: AddCharacterPayload }
-  | { action: 'removeCharacter'; payload: RemoveCharacterPayload };
+export interface DrawModifierCardCommand {
+  action: 'drawModifierCard';
+  payload: { deck: 'monster' | 'ally' | { character: string; edition: string } };
+}
+
+export interface RevealRoomCommand {
+  action: 'revealRoom';
+  payload: { roomId: number };
+}
+
+export interface UndoActionCommand {
+  action: 'undoAction';
+  payload: Record<string, never>;
+}
+
+export interface SetScenarioCommand {
+  action: 'setScenario';
+  payload: { scenarioIndex: string; edition: string; group?: string };
+}
+
+export interface AddCharacterCommand {
+  action: 'addCharacter';
+  payload: { name: string; edition: string; level: number; player?: string };
+}
+
+export interface RemoveCharacterCommand {
+  action: 'removeCharacter';
+  payload: { name: string; edition: string };
+}
+
+export interface SetLevelCommand {
+  action: 'setLevel';
+  payload: { level: number };
+}
+
+export interface SetExperienceCommand {
+  action: 'setExperience';
+  payload: { characterName: string; edition: string; value: number };
+}
+
+export interface SetLootCommand {
+  action: 'setLoot';
+  payload: { characterName: string; edition: string; value: number };
+}
+
+export interface AddSummonCommand {
+  action: 'addSummon';
+  payload: {
+    characterName: string;
+    edition: string;
+    summonName: string;
+    cardId: string;
+    number: number;
+    color: SummonColor;
+  };
+}
+
+export interface RemoveSummonCommand {
+  action: 'removeSummon';
+  payload: { characterName: string; edition: string; summonUuid: string };
+}
+
+export interface AddMonsterGroupCommand {
+  action: 'addMonsterGroup';
+  payload: { name: string; edition: string };
+}
+
+export interface RemoveMonsterGroupCommand {
+  action: 'removeMonsterGroup';
+  payload: { name: string; edition: string };
+}
+
+export interface SetMonsterLevelCommand {
+  action: 'setMonsterLevel';
+  payload: { name: string; edition: string; level: number };
+}
+
+export interface ToggleExhaustedCommand {
+  action: 'toggleExhausted';
+  payload: { characterName: string; edition: string };
+}
+
+export interface ToggleAbsentCommand {
+  action: 'toggleAbsent';
+  payload: { characterName: string; edition: string };
+}
+
+export interface SetRoundCommand {
+  action: 'setRound';
+  payload: { round: number };
+}
+
+export interface ImportGhsStateCommand {
+  action: 'importGhsState';
+  payload: { ghsJson: string };
+}
+
+export interface UpdateCampaignCommand {
+  action: 'updateCampaign';
+  payload: { field: string; value: string | number | boolean };
+}
+
+// ── Discriminated command union ─────────────────────────────────────────────
+
+export type Command =
+  | ChangeHealthCommand
+  | ChangeMaxHealthCommand
+  | ToggleConditionCommand
+  | SetInitiativeCommand
+  | AdvancePhaseCommand
+  | ToggleTurnCommand
+  | AddEntityCommand
+  | RemoveEntityCommand
+  | MoveElementCommand
+  | DrawLootCardCommand
+  | AssignLootCommand
+  | DrawMonsterAbilityCommand
+  | ShuffleMonsterAbilitiesCommand
+  | ShuffleModifierDeckCommand
+  | DrawModifierCardCommand
+  | RevealRoomCommand
+  | UndoActionCommand
+  | SetScenarioCommand
+  | AddCharacterCommand
+  | RemoveCharacterCommand
+  | SetLevelCommand
+  | SetExperienceCommand
+  | SetLootCommand
+  | AddSummonCommand
+  | RemoveSummonCommand
+  | AddMonsterGroupCommand
+  | RemoveMonsterGroupCommand
+  | SetMonsterLevelCommand
+  | ToggleExhaustedCommand
+  | ToggleAbsentCommand
+  | SetRoundCommand
+  | ImportGhsStateCommand
+  | UpdateCampaignCommand;
+
+// ── Helper type to extract payload by action ────────────────────────────────
+
+export type CommandPayload<A extends CommandAction> = Extract<Command, { action: A }>['payload'];

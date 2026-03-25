@@ -1,16 +1,12 @@
-// TODO: Initiative sorting and phase transition logic
-import type { GameState } from '../types/gameState.js';
+// Turn order and initiative — stub until Phase 1B
+import type { GameState, FigureIdentifier } from '../types/gameState.js';
 
-export interface TurnOrderEntry {
-  name: string;
-  initiative: number;
-  type: 'character' | 'monster';
+/** Get all figures sorted by initiative for the current round */
+export function getInitiativeOrder(_state: GameState): FigureIdentifier[] {
+  throw new Error('Not implemented — Phase 1B');
 }
 
-export function calculateTurnOrder(_state: GameState): TurnOrderEntry[] {
-  throw new Error('calculateTurnOrder not implemented');
-}
-
-export function getNextPhase(_state: GameState): GameState['phase'] {
-  throw new Error('getNextPhase not implemented');
+/** Get the next figure that should take its turn */
+export function getNextFigure(_state: GameState): FigureIdentifier | null {
+  throw new Error('Not implemented — Phase 1B');
 }

@@ -1,10 +1,12 @@
-// TODO: Import/export GHS JSON saves
+// GHS import/export compatibility — stubs until Phase 1C
 import type { GameState } from '../types/gameState.js';
 
-export function importGhsSave(_json: unknown): GameState {
-  throw new Error('importGhsSave not implemented');
+/** Import a GHS JSON save into our GameState format */
+export function importGhsState(_ghsJson: string): GameState {
+  throw new Error('Not implemented — Phase 1C');
 }
 
-export function exportGhsSave(_state: GameState): unknown {
-  throw new Error('exportGhsSave not implemented');
+/** Export our GameState to GHS-compatible JSON format */
+export function exportGhsState(_state: GameState): string {
+  throw new Error('Not implemented — Phase 1C');
 }

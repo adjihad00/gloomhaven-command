@@ -1,63 +1,537 @@
-// TODO: Map from GHS JSON structure — character stats, monster data, scenario state
+// Game state types — derived from GHS TypeScript source and real SQLite dump
 
-export interface EntityCondition {
+// ── Enums as string literal unions ──────────────────────────────────────────
+
+/** GHS has only two phases: "draw" (card selection) and "next" (playing turns) */
+export type GamePhase = 'draw' | 'next';
+
+export type ConditionName =
+  | 'stun' | 'immobilize' | 'disarm' | 'wound' | 'muddle'
+  | 'poison' | 'strengthen' | 'invisible' | 'curse' | 'bless'
+  | 'regenerate' | 'ward' | 'bane' | 'brittle' | 'impair'
+  | 'chill' | 'infect' | 'rupture' | 'dodge' | 'empower'
+  | 'enfeeble' | 'poison_x' | 'wound_x' | 'heal' | 'shield'
+  | 'retaliate' | 'safeguard' | 'plague' | 'invalid';
+
+export type EntityConditionState =
+  | 'new' | 'normal' | 'expire' | 'roundExpire' | 'removed' | 'turn';
+
+export type ElementType = 'fire' | 'ice' | 'air' | 'earth' | 'light' | 'dark';
+
+/** Wild only used in consume/infuse actions, not on the board */
+export type ElementTypeWithWild = ElementType | 'wild';
+
+export type ElementState =
+  | 'strong' | 'waning' | 'inert' | 'new' | 'consumed' | 'partlyConsumed' | 'always';
+
+export type SummonState = 'new' | 'true' | 'false';
+
+export type SummonColor =
+  | 'blue' | 'green' | 'yellow' | 'orange' | 'white'
+  | 'purple' | 'pink' | 'red' | 'custom' | 'fh';
+
+export type MonsterType = 'normal' | 'elite' | 'boss' | 'bb';
+
+export type AttackModifierType =
+  | 'plus' | 'plus0' | 'plus1' | 'plus2' | 'plus3' | 'plus4' | 'plusX'
+  | 'minus' | 'minus1' | 'minus2'
+  | 'null' | 'double' | 'bless' | 'curse' | 'minus1extra'
+  | 'empower' | 'enfeeble' | 'invalid'
+  | 'townguard' | 'wreck' | 'success' | 'imbue' | 'advancedImbue';
+
+export type AttackModifierValueType = 'default' | 'plus' | 'minus' | 'multiply';
+
+export type LootType =
+  | 'money' | 'lumber' | 'metal' | 'hide'
+  | 'arrowvine' | 'axenut' | 'corpsecap' | 'flamefruit' | 'rockroot' | 'snowthistle'
+  | 'random_item' | 'special1' | 'special2';
+
+// ── Small shared types ──────────────────────────────────────────────────────
+
+export interface Identifier {
   name: string;
-  value: number;
+  edition: string;
 }
 
-export interface Figure {
+export interface CountIdentifier extends Identifier {
+  count: number;
+}
+
+export interface EntityCounter {
+  identifier: Identifier & { type?: string; number?: number };
+  total: number;
+  killed: number;
+}
+
+// ── Entity condition ────────────────────────────────────────────────────────
+
+export interface EntityCondition {
+  name: ConditionName;
+  value: number;
+  state: EntityConditionState;
+  lastState: EntityConditionState;
+  permanent: boolean;
+  expired: boolean;
+  highlight: boolean;
+}
+
+// ── Elements ────────────────────────────────────────────────────────────────
+
+export interface ElementModel {
+  type: ElementType;
+  state: ElementState;
+}
+
+// ── Attack modifier deck (serialized model) ─────────────────────────────────
+
+export interface AttackModifierDeckModel {
+  current: number;
+  cards: string[];
+  discarded: number[];
+  active: boolean;
+  lastVisible: number;
+  state?: 'advantage' | 'disadvantage';
+  bb: boolean;
+  /** Migration field — GHS typo preserved for compat */
+  disgarded?: number[];
+}
+
+// ── Loot ────────────────────────────────────────────────────────────────────
+
+export interface LootCard {
+  type: LootType;
+  cardId: number;
+  value4P: number;
+  value3P: number;
+  value2P: number;
+  enhancements: number;
+  /** Deprecated migration field */
+  value?: string;
+}
+
+export interface LootDeck {
+  current: number;
+  cards: LootCard[];
+  active: boolean;
+}
+
+// ── Challenge deck ──────────────────────────────────────────────────────────
+
+export interface ChallengeCard {
   name: string;
+  edition: string;
+}
+
+export interface ChallengeDeck {
+  current: number;
+  finished: number;
+  keep: ChallengeCard[];
+  cards: ChallengeCard[];
+  active: boolean;
+}
+
+// ── Summon ──────────────────────────────────────────────────────────────────
+
+export interface Summon {
+  uuid: string;
+  name: string;
+  title: string;
+  cardId: string;
+  number: number;
+  color: SummonColor;
+  attack: string;
+  movement: number;
+  range: number;
+  flying: boolean;
+  dead: boolean;
+  state: SummonState;
+  level: number;
   health: number;
   maxHealth: number;
   entityConditions: EntityCondition[];
-  turnState: 'waiting' | 'active' | 'done';
+  immunities: ConditionName[];
+  markers: string[];
+  tags: string[];
+  action?: string;
+  additionalAction?: string;
+  active: boolean;
+  dormant: boolean;
+  passive: boolean;
+  thumbnail?: string;
+  thumbnailUrl?: string;
+  noThumbnail: boolean;
+  shield: string;
+  shieldPersistent: string;
+  retaliate: string[];
+  retaliatePersistent: string[];
 }
 
-export interface Character extends Figure {
-  edition: string;
-  initiative: number | null;
-  experience: number;
+// ── Scenario stats (per-scenario performance) ───────────────────────────────
+
+export interface ScenarioStats {
+  success: boolean;
+  level: number;
   gold: number;
-  loot: number[];
-  player?: string;
+  xp: number;
+  treasures: number;
+  summons: SummonScenarioStats;
+  dealtDamage: number;
+  monsterDamage: number;
+  otherDamage: number;
+  healedDamage: number;
+  heals: number;
+  normalKills: number;
+  eliteKills: number;
+  bossKills: number;
+  exhausts: number;
+  maxDealtDamage: number;
+  maxDamage: number;
 }
 
-export interface MonsterEntity extends Figure {
-  number: number;
-  elite: boolean;
+export interface SummonScenarioStats {
+  dealtDamage: number;
+  monsterDamage: number;
+  otherDamage: number;
+  healedDamage: number;
+  heals: number;
+  normalKills: number;
+  eliteKills: number;
+  bossKills: number;
+  exhausts: number;
+  maxDealtDamage: number;
+  maxDamage: number;
 }
 
-export interface MonsterGroup {
+// ── Character progress (campaign persistence) ───────────────────────────────
+
+export interface CharacterItemModel {
   name: string;
   edition: string;
+  id?: number;
+}
+
+export interface CharacterProgress {
+  experience: number;
+  gold: number;
+  loot: Partial<Record<LootType, number>>;
+  itemNotes: string;
+  items: CharacterItemModel[];
+  equippedItems: CharacterItemModel[];
+  personalQuest: string;
+  personalQuestProgress: number[];
+  battleGoals: number;
+  notes: string;
+  retired: boolean;
+  retirements: number;
+  extraPerks: number;
+  perks: number[];
+  masteries: number[];
+  donations: number;
+  scenarioStats: ScenarioStats[];
+  deck: string[];
+  enhancements: unknown[];
+}
+
+// ── Character ───────────────────────────────────────────────────────────────
+
+export interface Character {
+  name: string;
+  edition: string;
+  marker: boolean;
+  title: string;
+  initiative: number;
+  experience: number;
+  loot: number;
+  lootCards: number[];
+  treasures: string[];
+  exhausted: boolean;
+  level: number;
+  off: boolean;
+  active: boolean;
+  health: number;
+  maxHealth: number;
+  entityConditions: EntityCondition[];
+  immunities: ConditionName[];
+  markers: string[];
+  tags: string[];
+  identity: number;
+  summons: Summon[];
+  progress: CharacterProgress;
+  scenarioStats: ScenarioStats;
+  number: number;
+  attackModifierDeck: AttackModifierDeckModel;
+  donations: number;
+  token: number;
+  tokenValues: number[];
+  absent: boolean;
+  longRest: boolean;
+  battleGoals: Identifier[];
+  battleGoal: boolean;
+  /** Serialized Action JSON */
+  shield: string;
+  /** Serialized Action JSON */
+  shieldPersistent: string;
+  retaliate: string[];
+  retaliatePersistent: string[];
+}
+
+// ── Monster entity (individual standee) ─────────────────────────────────────
+
+export interface MonsterEntity {
+  number: number;
+  marker: string;
+  type: MonsterType;
+  dead: boolean;
+  summon: SummonState;
+  active: boolean;
+  off: boolean;
+  revealed: boolean;
+  dormant: boolean;
+  health: number;
+  maxHealth: number;
+  entityConditions: EntityCondition[];
+  immunities: ConditionName[];
+  markers: string[];
+  tags: string[];
+  shield: string;
+  shieldPersistent: string;
+  retaliate: string[];
+  retaliatePersistent: string[];
+}
+
+// ── Monster group ───────────────────────────────────────────────────────────
+
+export interface Monster {
+  name: string;
+  edition: string;
+  level: number;
+  off: boolean;
+  active: boolean;
+  drawExtra: boolean;
+  lastDraw: number;
+  ability: number;
+  abilities: number[];
   entities: MonsterEntity[];
-  abilityCardIndex: number | null;
+  isAlly: boolean;
+  isAllied: boolean;
+  tags: string[];
 }
 
-export type ElementState = 'inert' | 'strong' | 'waning';
+// ── Objective container ─────────────────────────────────────────────────────
 
-export interface ElementBoard {
-  fire: ElementState;
-  ice: ElementState;
-  air: ElementState;
-  earth: ElementState;
-  light: ElementState;
-  dark: ElementState;
+export interface ObjectiveEntity {
+  number: number;
+  health: number;
+  maxHealth: number;
+  entityConditions: EntityCondition[];
+  immunities: ConditionName[];
+  markers: string[];
+  tags: string[];
+  active: boolean;
+  dead: boolean;
 }
 
-export type GamePhase = 'setup' | 'cardSelection' | 'initiative' | 'turns' | 'roundEnd';
+export interface ObjectiveContainer {
+  uuid: string;
+  name: string;
+  edition: string;
+  objectiveId: number;
+  additionalObjectiveId?: number;
+  level: number;
+  off: boolean;
+  active: boolean;
+  entities: ObjectiveEntity[];
+  marker: boolean;
+  title: string;
+  escort: boolean;
+  initiative: number;
+  tags: string[];
+}
+
+// ── Scenario model ──────────────────────────────────────────────────────────
+
+export interface ScenarioModel {
+  index: string;
+  edition: string;
+  group?: string;
+  isCustom: boolean;
+  custom: string;
+  revealedRooms?: number[];
+  additionalSections?: string[];
+}
+
+export type ScenarioFinish = 'success' | 'failure' | string;
+
+// ── Scenario rule identifier ────────────────────────────────────────────────
+
+export interface ScenarioRuleIdentifier {
+  edition: string;
+  scenario: string;
+  group: string;
+  index: number;
+  section: boolean;
+}
+
+// ── Building (Frosthaven) ───────────────────────────────────────────────────
+
+export interface BuildingModel {
+  name: string;
+  level: number;
+  state: string;
+}
+
+// ── Game clock ──────────────────────────────────────────────────────────────
+
+export interface GameClockTimestamp {
+  clockIn: number;
+  clockOut?: number;
+}
+
+// ── Party / campaign state ──────────────────────────────────────────────────
+
+export interface Party {
+  id: number;
+  name: string;
+  edition?: string;
+  conditions: ConditionName[];
+  battleGoalEditions: string[];
+  filteredBattleGoals: Identifier[];
+  location: string;
+  notes: string;
+  achievements: string;
+  achievementsList: string[];
+  reputation: number;
+  prosperity: number;
+  scenarios: ScenarioModel[];
+  conclusions: ScenarioModel[];
+  casualScenarios: ScenarioModel[];
+  manualScenarios: ScenarioModel[];
+  campaignMode: boolean;
+  globalAchievements: string;
+  globalAchievementsList: string[];
+  treasures: Identifier[];
+  donations: number;
+  players: string[];
+  characters: Character[];
+  availableCharacters: Character[];
+  retirements: Character[];
+  unlockedItems: CountIdentifier[];
+  unlockedCharacters: string[];
+  level: number;
+  levelCalculation: boolean;
+  levelAdjustment: number;
+  bonusAdjustment: number;
+  ge5Player: boolean;
+  playerCount: number;
+  solo: boolean;
+  envelopeB: boolean;
+  eventCards: EventCardIdentifier[];
+  // Frosthaven-specific
+  weeks: number;
+  weekSections: Record<string, string[]>;
+  loot: Partial<Record<LootType, number>>;
+  randomItemLooted: ScenarioModel[];
+  inspiration: number;
+  defense: number;
+  soldiers: number;
+  morale: number;
+  townGuardPerks: number;
+  townGuardPerkSections: string[];
+  campaignStickers: string[];
+  townGuardDeck?: AttackModifierDeckModel;
+  buildings: BuildingModel[];
+  pets: PetIdentifier[];
+  lootDeckEnhancements: LootCard[];
+  lootDeckFixed: LootType[];
+  lootDeckSections: string[];
+  trials: number;
+  // GH2E-specific
+  factionReputation: Record<string, number>;
+  imbuement: number;
+}
+
+export interface EventCardIdentifier {
+  edition: string;
+  type: string;
+  cardId: string;
+  attack: boolean;
+}
+
+export interface PetIdentifier {
+  name: string;
+  edition: string;
+}
+
+// ── Undo entry (our addition, not in GHS) ───────────────────────────────────
+
+export interface UndoEntry {
+  revision: number;
+  action: string;
+  stateBefore: string;
+  timestamp: number;
+}
+
+// ── Figure identifier (for turn order) ──────────────────────────────────────
+
+export interface FigureIdentifier {
+  type: 'character' | 'monster' | 'objectiveContainer';
+  name: string;
+  edition: string;
+}
+
+// ── Top-level game state ────────────────────────────────────────────────────
 
 export interface GameState {
+  // Our additions (not in GHS)
   gameCode: string;
+  undoStack: UndoEntry[];
+
+  // GHS fields
   revision: number;
-  phase: GamePhase;
-  round: number;
-  scenarioNumber: number | null;
-  edition: string;
+  revisionOffset: number;
+  edition?: string;
+  conditions: ConditionName[];
+  battleGoalEditions: string[];
+  filteredBattleGoals: Identifier[];
+  /** Ordered figure references in "edition-name" format */
+  figures: string[];
+  entitiesCounter: EntityCounter[];
   characters: Character[];
-  monsterGroups: MonsterGroup[];
-  elementBoard: ElementBoard;
-  lootDeck: number[];
-  drawnLoot: number[];
-  undoStack: unknown[];
+  monsters: Monster[];
+  objectiveContainers: ObjectiveContainer[];
+  state: GamePhase;
+  scenario?: ScenarioModel;
+  sections: ScenarioModel[];
+  scenarioRules: ScenarioRuleIdentifier[];
+  appliedScenarioRules: ScenarioRuleIdentifier[];
+  discardedScenarioRules: ScenarioRuleIdentifier[];
+  level: number;
+  levelCalculation: boolean;
+  levelAdjustment: number;
+  bonusAdjustment: number;
+  ge5Player: boolean;
+  playerCount: number;
+  round: number;
+  roundResets: number[];
+  roundResetsHidden: number[];
+  playSeconds: number;
+  totalSeconds: number;
+  monsterAttackModifierDeck: AttackModifierDeckModel;
+  allyAttackModifierDeck: AttackModifierDeckModel;
+  elementBoard: ElementModel[];
+  solo: boolean;
+  party: Party;
+  parties: Party[];
+  lootDeck: LootDeck;
+  lootDeckEnhancements: LootCard[];
+  lootDeckFixed: LootType[];
+  lootDeckSections: string[];
+  unlockedCharacters: string[];
+  server: boolean;
+  finish?: ScenarioFinish;
+  gameClock: GameClockTimestamp[];
+  challengeDeck: ChallengeDeck;
+  favors: Identifier[];
+  favorPoints: number[];
+  keepFavors: boolean;
 }
