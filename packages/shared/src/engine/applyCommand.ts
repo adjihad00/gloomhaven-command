@@ -214,9 +214,13 @@ function handleChangeHealth(
 
   entity.health = Math.max(0, Math.min(entity.maxHealth, entity.health + payload.delta));
 
-  // Auto-kill monster entities at 0 hp
-  if (payload.target.type === 'monster' && entity.health === 0) {
-    (entity as MonsterEntity).dead = true;
+  // Auto-kill monster entities at 0 hp, auto-revive when healed above 0
+  if (payload.target.type === 'monster') {
+    if (entity.health === 0) {
+      (entity as MonsterEntity).dead = true;
+    } else if ((entity as MonsterEntity).dead) {
+      (entity as MonsterEntity).dead = false;
+    }
   }
 }
 
