@@ -45,26 +45,42 @@ If client is too far behind (>100 revisions), server sends full state instead.
 }
 ```
 
-### Command Actions
-| Action              | Payload                                              |
-|---------------------|------------------------------------------------------|
-| changeHealth        | { target, delta }                                    |
-| toggleCondition     | { target, condition }                                |
-| setInitiative       | { characterName, value }                             |
-| advancePhase        | { } (server determines next phase)                   |
-| toggleTurn          | { figureName } (start/end turn)                      |
-| addEntity           | { monsterName, entityData }                          |
-| removeEntity        | { monsterName, entityNumber }                        |
-| moveElement         | { element, newState }                                |
-| drawLootCard        | { }                                                  |
-| assignLoot          | { cardIndex, characterName }                         |
-| drawMonsterAbility  | { monsterName }                                      |
-| shuffleModifierDeck | { deck: "monster" | characterName }                  |
-| revealRoom          | { roomId }                                           |
-| undoAction          | { }                                                  |
-| setScenario         | { scenarioNumber, edition }                          |
-| addCharacter        | { name, edition, player? }                           |
-| removeCharacter     | { name }                                             |
+### Command Actions (31 total)
+| Action                 | Payload                                                          |
+|------------------------|------------------------------------------------------------------|
+| changeHealth           | { target: CommandTarget, delta: number }                         |
+| changeMaxHealth        | { target: CommandTarget, delta: number }                         |
+| toggleCondition        | { target: CommandTarget, condition: ConditionName, value? }      |
+| setInitiative          | { characterName, edition, value }                                |
+| advancePhase           | { }                                                              |
+| toggleTurn             | { figure: FigureIdentifier }                                     |
+| addEntity              | { monsterName, edition, entityNumber, type: MonsterType }        |
+| removeEntity           | { monsterName, edition, entityNumber, type: MonsterType }        |
+| moveElement            | { element: ElementType, newState: ElementState }                 |
+| drawLootCard           | { }                                                              |
+| assignLoot             | { cardIndex, characterName, edition }                            |
+| drawMonsterAbility     | { monsterName, edition }                                         |
+| shuffleMonsterAbilities| { monsterName, edition }                                         |
+| shuffleModifierDeck    | { deck: 'monster' \| 'ally' \| { character, edition } }         |
+| drawModifierCard       | { deck: 'monster' \| 'ally' \| { character, edition } }         |
+| revealRoom             | { roomId }                                                       |
+| undoAction             | { }                                                              |
+| setScenario            | { scenarioIndex, edition, group? }                               |
+| addCharacter           | { name, edition, level, player? }                                |
+| removeCharacter        | { name, edition }                                                |
+| setLevel               | { level }                                                        |
+| setExperience          | { characterName, edition, value }                                |
+| setLoot                | { characterName, edition, value }                                |
+| addSummon              | { characterName, edition, summonName, cardId, number, color }    |
+| removeSummon           | { characterName, edition, summonUuid }                           |
+| addMonsterGroup        | { name, edition }                                                |
+| removeMonsterGroup     | { name, edition }                                                |
+| setMonsterLevel        | { name, edition, level }                                         |
+| toggleExhausted        | { characterName, edition }                                       |
+| toggleAbsent           | { characterName, edition }                                       |
+| setRound               | { round }                                                        |
+| importGhsState         | { ghsJson: string }                                              |
+| updateCampaign         | { field, value }                                                 |
 
 ## Diffs (S→C broadcast)
 ```json
@@ -83,7 +99,7 @@ Clients apply changes to their local state copy via JSON path.
 ## Heartbeat
 - Server sends WebSocket ping frame every 15 seconds
 - Client responds with pong (handled automatically by browser WebSocket)
-- Server marks client stale after 5s with no pong
+- Server marks client stale after 20s with no pong
 - Stale clients are disconnected, triggering client-side reconnect
 
 ## Client Registration (Phone)

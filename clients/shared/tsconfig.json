@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./lib",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "declaration": false,
+    "declarationMap": false,
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["lib/**/*.ts"]
+}

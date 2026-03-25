@@ -1,7 +1,183 @@
-// TODO: Typed command dispatch
+// Typed convenience methods for all 31 command actions
+import type { Connection } from './connection.js';
+import type {
+  Command, CommandTarget, ConditionName,
+  ElementType, ElementState, MonsterType, SummonColor,
+  FigureIdentifier,
+} from '@gloomhaven-command/shared';
+
+type ModifierDeck = 'monster' | 'ally' | { character: string; edition: string };
 
 export class CommandSender {
-  constructor() {
-    throw new Error('CommandSender not implemented');
+  private connection: Connection;
+
+  constructor(connection: Connection) {
+    this.connection = connection;
+  }
+
+  // ── Health & Conditions ──
+
+  changeHealth(target: CommandTarget, delta: number): void {
+    this.send({ action: 'changeHealth', payload: { target, delta } });
+  }
+
+  changeMaxHealth(target: CommandTarget, delta: number): void {
+    this.send({ action: 'changeMaxHealth', payload: { target, delta } });
+  }
+
+  toggleCondition(target: CommandTarget, condition: ConditionName, value?: number): void {
+    this.send({ action: 'toggleCondition', payload: { target, condition, value } });
+  }
+
+  // ── Initiative & Turns ──
+
+  setInitiative(characterName: string, edition: string, value: number): void {
+    this.send({ action: 'setInitiative', payload: { characterName, edition, value } });
+  }
+
+  advancePhase(): void {
+    this.send({ action: 'advancePhase', payload: {} as Record<string, never> });
+  }
+
+  toggleTurn(figure: FigureIdentifier): void {
+    this.send({ action: 'toggleTurn', payload: { figure } });
+  }
+
+  // ── Monster Entities ──
+
+  addEntity(monsterName: string, edition: string, entityNumber: number, type: MonsterType): void {
+    this.send({ action: 'addEntity', payload: { monsterName, edition, entityNumber, type } });
+  }
+
+  removeEntity(monsterName: string, edition: string, entityNumber: number, type: MonsterType): void {
+    this.send({ action: 'removeEntity', payload: { monsterName, edition, entityNumber, type } });
+  }
+
+  // ── Elements ──
+
+  moveElement(element: ElementType, newState: ElementState): void {
+    this.send({ action: 'moveElement', payload: { element, newState } });
+  }
+
+  // ── Loot ──
+
+  drawLootCard(): void {
+    this.send({ action: 'drawLootCard', payload: {} as Record<string, never> });
+  }
+
+  assignLoot(cardIndex: number, characterName: string, edition: string): void {
+    this.send({ action: 'assignLoot', payload: { cardIndex, characterName, edition } });
+  }
+
+  // ── Monster Abilities ──
+
+  drawMonsterAbility(monsterName: string, edition: string): void {
+    this.send({ action: 'drawMonsterAbility', payload: { monsterName, edition } });
+  }
+
+  shuffleMonsterAbilities(monsterName: string, edition: string): void {
+    this.send({ action: 'shuffleMonsterAbilities', payload: { monsterName, edition } });
+  }
+
+  // ── Modifier Decks ──
+
+  shuffleModifierDeck(deck: ModifierDeck): void {
+    this.send({ action: 'shuffleModifierDeck', payload: { deck } });
+  }
+
+  drawModifierCard(deck: ModifierDeck): void {
+    this.send({ action: 'drawModifierCard', payload: { deck } });
+  }
+
+  // ── Scenario ──
+
+  revealRoom(roomId: number): void {
+    this.send({ action: 'revealRoom', payload: { roomId } });
+  }
+
+  setScenario(scenarioIndex: string, edition: string, group?: string): void {
+    this.send({ action: 'setScenario', payload: { scenarioIndex, edition, ...(group ? { group } : {}) } });
+  }
+
+  setLevel(level: number): void {
+    this.send({ action: 'setLevel', payload: { level } });
+  }
+
+  setRound(round: number): void {
+    this.send({ action: 'setRound', payload: { round } });
+  }
+
+  // ── Characters ──
+
+  addCharacter(name: string, edition: string, level: number, player?: string): void {
+    this.send({ action: 'addCharacter', payload: { name, edition, level, ...(player ? { player } : {}) } });
+  }
+
+  removeCharacter(name: string, edition: string): void {
+    this.send({ action: 'removeCharacter', payload: { name, edition } });
+  }
+
+  setExperience(characterName: string, edition: string, value: number): void {
+    this.send({ action: 'setExperience', payload: { characterName, edition, value } });
+  }
+
+  setLoot(characterName: string, edition: string, value: number): void {
+    this.send({ action: 'setLoot', payload: { characterName, edition, value } });
+  }
+
+  toggleExhausted(characterName: string, edition: string): void {
+    this.send({ action: 'toggleExhausted', payload: { characterName, edition } });
+  }
+
+  toggleAbsent(characterName: string, edition: string): void {
+    this.send({ action: 'toggleAbsent', payload: { characterName, edition } });
+  }
+
+  // ── Summons ──
+
+  addSummon(characterName: string, edition: string, summonName: string, cardId: string, number: number, color: SummonColor): void {
+    this.send({ action: 'addSummon', payload: { characterName, edition, summonName, cardId, number, color } });
+  }
+
+  removeSummon(characterName: string, edition: string, summonUuid: string): void {
+    this.send({ action: 'removeSummon', payload: { characterName, edition, summonUuid } });
+  }
+
+  // ── Monster Groups ──
+
+  addMonsterGroup(name: string, edition: string): void {
+    this.send({ action: 'addMonsterGroup', payload: { name, edition } });
+  }
+
+  removeMonsterGroup(name: string, edition: string): void {
+    this.send({ action: 'removeMonsterGroup', payload: { name, edition } });
+  }
+
+  setMonsterLevel(name: string, edition: string, level: number): void {
+    this.send({ action: 'setMonsterLevel', payload: { name, edition, level } });
+  }
+
+  // ── Undo ──
+
+  undoAction(): void {
+    this.send({ action: 'undoAction', payload: {} as Record<string, never> });
+  }
+
+  // ── GHS Compat ──
+
+  importGhsState(ghsJson: string): void {
+    this.send({ action: 'importGhsState', payload: { ghsJson } });
+  }
+
+  // ── Campaign ──
+
+  updateCampaign(field: string, value: string | number | boolean): void {
+    this.send({ action: 'updateCampaign', payload: { field, value } });
+  }
+
+  // ── Internal ──
+
+  private send(command: Command): void {
+    this.connection.sendCommand(command);
   }
 }

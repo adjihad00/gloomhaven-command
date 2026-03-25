@@ -22,8 +22,8 @@
 ## Phase 2: Controller Client
 - [ ] Scaffold controller HTML + TypeScript entry
 - [ ] Implement connection UI (setup screen)
-- [ ] Implement shared WebSocket client (clients/shared/lib/connection.ts)
-- [ ] Implement client-side state store with diff application
+- [x] Implement shared WebSocket client (clients/shared/lib/connection.ts)
+- [x] Implement client-side state store with diff application
 - [ ] Build Active Play tab — initiative timeline, health, conditions, turns
 - [ ] Build Monster Management tab — ability cards, standees, modifier deck
 - [ ] Build Scenario tab — room reveals, element board, round counter
