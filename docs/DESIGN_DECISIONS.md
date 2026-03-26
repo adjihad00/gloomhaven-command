@@ -91,6 +91,20 @@ rooms, character HP tables) but applyCommand must remain a pure function. DataCo
 is an interface injected by the server — the engine doesn't know about files or HTTP.
 When DataContext is null, commands fall back to payload values or defaults.
 
+### 2026-03-26 — Separate Preact entry points per device role
+**Decision:** Three entry points (controller/phone/display) sharing a component
+library, not one monolithic app with role conditionals.
+**Rationale:** Each device role has fundamentally different interaction patterns
+(landscape/portrait, GM/player/read-only). Separate entry points give each device
+only the code it needs via tree-shaking. Shared components are the reuse mechanism.
+A phone downloads ~26KB, not 80KB+ of controller overlays it never renders.
+
+### 2026-03-26 — Preact over React
+**Decision:** Use Preact (3KB) instead of React (40KB+) for the UI framework.
+**Rationale:** The app runs on mobile devices over LAN. Preact's API is identical
+to React via preact/compat but produces dramatically smaller bundles. All three
+entry points are under 28KB minified.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are

@@ -33,7 +33,7 @@
 
 ## Phase R: Controller Rebuild (replaces original Phase 2)
 - [x] R1: Data layer — edition file loading, stat lookups, scenario auto-spawn
-- [ ] R2: Preact app scaffold with role routing
+- [x] R2: Preact app scaffold — three entry points, hooks, mode routing, connection screens
 - [ ] R3: Core shared components
 - [ ] R4: Controller single-screen view
 - [ ] R5: Scenario automation

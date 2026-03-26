@@ -12,15 +12,19 @@ export function configureStaticRoutes(app: Express, rootDir: string): void {
   // JSON body parser for import endpoint
   app.use(express.json({ limit: '10mb' }));
 
-  // Client apps — HTML with no-cache, JS/CSS with 1-hour cache
-  const clientOptions = { maxAge: '1h', setHeaders: setHtmlNoCache };
+  // New Preact app — static files from app/
+  app.use('/app', express.static(join(rootDir, 'app'), { maxAge: '1h', setHeaders: setHtmlNoCache }));
 
-  app.use('/display', express.static(join(rootDir, 'clients/display'), clientOptions));
-  app.use('/controller', express.static(join(rootDir, 'clients/controller'), clientOptions));
-  app.use('/phone', express.static(join(rootDir, 'clients/phone'), clientOptions));
-
-  // Shared styles
-  app.use('/shared/styles', express.static(join(rootDir, 'clients/shared/styles'), { maxAge: '1h' }));
+  // Preact app routes — serve index.html for each role
+  app.get('/controller', (_req, res) => {
+    res.sendFile(join(rootDir, 'app/controller/index.html'));
+  });
+  app.get('/phone', (_req, res) => {
+    res.sendFile(join(rootDir, 'app/phone/index.html'));
+  });
+  app.get('/display', (_req, res) => {
+    res.sendFile(join(rootDir, 'app/display/index.html'));
+  });
 
   // Game assets — long cache
   app.use('/assets', express.static(join(rootDir, 'assets'), { maxAge: '1d' }));

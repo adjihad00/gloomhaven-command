@@ -481,12 +481,18 @@ export interface FigureIdentifier {
   edition: string;
 }
 
+// ── App mode ─────────────────────────────────────────────────────────────────
+
+/** App-level mode: scenario play, town/outpost phase, or transitioning between */
+export type AppMode = 'scenario' | 'town' | 'transition';
+
 // ── Top-level game state ────────────────────────────────────────────────────
 
 export interface GameState {
   // Our additions (not in GHS)
   gameCode: string;
   undoStack: UndoEntry[];
+  mode?: AppMode;
 
   // GHS fields
   revision: number;
