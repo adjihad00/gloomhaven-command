@@ -426,6 +426,7 @@
 .character-bar.active {
     border-color: var(--accent-gold);
     box-shadow: 0 0 12px rgba(211, 166, 99, 0.2);
+    animation: activeGlow 2s ease-in-out infinite;
 }
 
 .character-bar.done {
@@ -618,6 +619,7 @@
 
 .monster-group.active {
     border-color: var(--accent-gold);
+    animation: activeGlow 2s ease-in-out infinite;
 }
 
 .monster-group.done {
@@ -629,6 +631,7 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
+    cursor: pointer;
 }
 
 .monster-group__thumb {
@@ -839,13 +842,52 @@
 }
 
 .ability-card__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 0.75rem;
     color: var(--text-secondary);
+}
+
+.ability-card__action-type {
+    color: var(--text-muted);
+}
+
+.ability-card__values {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.ability-card__normal-val {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.ability-card__elite-val {
+    color: var(--elite-gold, #ffd700);
+    font-weight: 600;
+}
+
+.ability-card__abs-val {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.ability-card__condition {
+    color: var(--accent-copper);
+    text-transform: capitalize;
 }
 
 .ability-card__shuffle {
     color: var(--text-muted);
     font-size: 1rem;
+}
+
+/* ── Turn state animation ────────────────────────────────────────────── */
+
+@keyframes activeGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(211, 166, 99, 0.15); }
+    50% { box-shadow: 0 0 16px rgba(211, 166, 99, 0.35); }
 }
 
 /* ── ModifierDeck ──────────────────────────────────────────────────────── */

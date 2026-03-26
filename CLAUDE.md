@@ -25,8 +25,7 @@ See docs/BUGFIX_LOG.md for issue tracking.
 See docs/PROJECT_CONTEXT.md for full tree.
 
 ## Current Phase
-Phase R (Rebuild) — replacing vanilla 5-tab controller with Preact single-screen app.
-R1: Data layer (GHS edition file loading + stat lookups + scenario auto-spawn).
+Phase R COMPLETE. Next: Phone + Display views (Phase 3-4) or Phase T (Town mode).
 
 ## Prompt-Driven Workflow
 

@@ -170,7 +170,8 @@ export class DataManager {
   getMonsterDeckForMonster(edition: string, monsterName: string): MonsterAbilityDeckData | null {
     const monster = this.monsters.get(`${edition}:${monsterName}`);
     if (!monster) return null;
-    return this.monsterDecks.get(`${edition}:${monster.deck}`) ?? null;
+    const deckName = monster.deck || monsterName;
+    return this.monsterDecks.get(`${edition}:${deckName}`) ?? null;
   }
 
   // ── Scenario lookups ──────────────────────────────────────────────────

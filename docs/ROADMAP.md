@@ -36,8 +36,10 @@
 - [x] R2: Preact app scaffold — three entry points, hooks, mode routing, connection screens
 - [x] R3: Core shared components + asset population
 - [x] R4: Controller single-screen view — ScenarioView with overlays
-- [ ] R5: Scenario automation
-- [ ] R6: Round flow automation
+- [x] R5: Scenario automation — data-driven setup, auto-spawn, room reveals
+- [x] R6: Round flow automation — ability draw, turn order, auto-advance, condition/element automation
+
+## Phase R: Controller Rebuild — COMPLETE
 
 ## Phase 3: Phone Client
 - [ ] Scaffold phone HTML + TypeScript entry

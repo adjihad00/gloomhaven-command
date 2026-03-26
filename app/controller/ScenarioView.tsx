@@ -41,19 +41,11 @@ export function ScenarioView() {
   const levelValues = useMemo(() => deriveLevelValues(level), [level]);
 
   // Phase advancement logic
+  // GHS pattern: footer button handles phase transitions only.
+  // Turn advancement is done via portrait clicks (toggleTurn).
   const advanceInfo = useMemo(() => {
     if (!state) return { canAdvance: false, label: '...' };
 
-    const activeFigure = orderedFigures.find(f => f.active);
-    const nonAbsentFigures = orderedFigures.filter(f => !f.absent);
-    const allDone = nonAbsentFigures.length > 0 && nonAbsentFigures.every(f => f.off);
-
-    if (activeFigure) {
-      return { canAdvance: true, label: 'Next Turn' };
-    }
-    if (allDone) {
-      return { canAdvance: true, label: 'Next Round' };
-    }
     if (phase === 'draw') {
       const activeChars = characters.filter(c => !c.absent && !c.exhausted);
       const allInitSet = activeChars.length > 0 && activeChars.every(c => c.initiative > 0);
@@ -62,7 +54,11 @@ export function ScenarioView() {
         label: allInitSet ? 'Start Round' : 'Set Initiatives...',
       };
     }
-    return { canAdvance: false, label: '...' };
+
+    // Play phase — "Next Round" enabled only when all figures are done
+    const nonAbsentFigures = orderedFigures.filter(f => !f.absent);
+    const allDone = nonAbsentFigures.length > 0 && nonAbsentFigures.every(f => f.off);
+    return { canAdvance: allDone, label: 'Next Round' };
   }, [state, orderedFigures, characters, phase]);
 
   // Available conditions

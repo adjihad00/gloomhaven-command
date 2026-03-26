@@ -56,7 +56,7 @@ export interface PerkEffect {
 export interface MonsterData {
   name: string;
   edition: string;
-  deck: string;           // shared ability deck name
+  deck?: string;          // shared ability deck name (defaults to monster name)
   count: number;          // max standees
   boss?: boolean;
   flying?: boolean;

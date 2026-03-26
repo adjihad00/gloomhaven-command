@@ -17,7 +17,7 @@ import type { Command, CommandTarget } from '../types/commands.js';
 import type { StateChange } from '../types/protocol.js';
 import type { ScenarioData, MonsterData, MonsterLevelStats, MonsterAbilityDeckData, ResolvedSpawn } from '../data/types.js';
 import { deepClone } from './turnOrder.js';
-import { canAdvancePhase, startRound, endRound } from './turnOrder.js';
+import { canAdvancePhase, startRound, endRound, getInitiativeOrder } from './turnOrder.js';
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
 import { diffStates } from './diffStates.js';
 import { importGhsState as importGhs } from '../utils/ghsCompat.js';
@@ -61,7 +61,7 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
       handleSetInitiative(after, command.payload);
       break;
     case 'advancePhase':
-      after = handleAdvancePhase(after);
+      after = handleAdvancePhase(after, dataContext);
       break;
     case 'toggleTurn':
       handleToggleTurn(after, command.payload);
@@ -372,14 +372,123 @@ function handleSetInitiative(
   }
 }
 
-function handleAdvancePhase(state: GameState): GameState {
+function handleAdvancePhase(state: GameState, dataContext?: DataContext): GameState {
   if (!canAdvancePhase(state)) return state;
 
   if (state.state === 'draw') {
+    // Set long-rest characters to initiative 99 before drawing
+    for (const char of state.characters) {
+      if (char.longRest) {
+        char.initiative = 99;
+      }
+    }
+
+    // Auto-draw monster ability cards (sets monster.initiative)
+    if (dataContext) {
+      drawMonsterAbilities(state, dataContext);
+    }
+
+    // startRound sorts figures by initiative and activates first
     return startRound(state);
   }
+
   // state === 'next', round is complete
+  // Check for shuffle-on-draw flags before resetting
+  if (dataContext) {
+    handleEndOfRoundShuffle(state, dataContext);
+  }
   return endRound(state);
+}
+
+// ── Auto-draw monster ability cards ─────────────────────────────────────────
+
+function drawMonsterAbilities(state: GameState, dataContext: DataContext): void {
+  // Group monsters by their shared ability deck
+  const deckGroups = new Map<string, Monster[]>();
+
+  for (const monster of state.monsters) {
+    // Only draw for monsters with living entities
+    if (!monster.entities.some((e) => !e.dead)) continue;
+
+    const monsterData = dataContext.getMonster(monster.edition, monster.name);
+    const deckName = monsterData?.deck || monster.name;
+    const key = `${monster.edition}:${deckName}`;
+
+    if (!deckGroups.has(key)) {
+      deckGroups.set(key, []);
+    }
+    deckGroups.get(key)!.push(monster);
+  }
+
+  // For each unique deck, draw one card and apply to all groups sharing it
+  for (const [, monsters] of deckGroups) {
+    const master = monsters[0];
+    const deckData = dataContext.getMonsterDeckForMonster(master.edition, master.name);
+    if (!deckData || deckData.abilities.length === 0) continue;
+
+    // Initialize abilities array if empty (first draw ever)
+    if (master.abilities.length === 0) {
+      master.abilities = deckData.abilities.map((_, i) => i);
+      shuffleArray(master.abilities);
+    }
+
+    // Draw next card
+    master.lastDraw += 1;
+    if (master.lastDraw >= master.abilities.length) {
+      shuffleArray(master.abilities);
+      master.lastDraw = 0;
+    }
+
+    const cardIndex = master.abilities[master.lastDraw];
+    const drawnCard = deckData.abilities[cardIndex];
+    if (!drawnCard) continue;
+
+    // Apply to all monsters sharing this deck
+    for (const monster of monsters) {
+      monster.ability = cardIndex;
+      monster.lastDraw = master.lastDraw;
+      monster.abilities = [...master.abilities];
+      monster.initiative = drawnCard.initiative;
+    }
+  }
+}
+
+// ── End-of-round shuffle tracking ───────────────────────────────────────────
+
+function handleEndOfRoundShuffle(state: GameState, dataContext: DataContext): void {
+  // Track which decks need shuffling (by edition:deckName)
+  const shuffledDecks = new Set<string>();
+
+  for (const monster of state.monsters) {
+    if (monster.ability < 0) continue;
+
+    const deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
+    if (!deckData) continue;
+
+    const drawnCard = deckData.abilities[monster.ability];
+    if (drawnCard?.shuffle) {
+      const monsterData = dataContext.getMonster(monster.edition, monster.name);
+      const deckName = monsterData?.deck || monster.name;
+      shuffledDecks.add(`${monster.edition}:${deckName}`);
+    }
+  }
+
+  // Reshuffle decks that had a shuffle card drawn
+  if (shuffledDecks.size > 0) {
+    for (const monster of state.monsters) {
+      const monsterData = dataContext.getMonster(monster.edition, monster.name);
+      const deckName = monsterData?.deck || monster.name;
+      if (shuffledDecks.has(`${monster.edition}:${deckName}`)) {
+        shuffleArray(monster.abilities);
+        monster.lastDraw = -1;
+      }
+    }
+  }
+
+  // Reset all monster ability tracking for new round
+  for (const monster of state.monsters) {
+    monster.ability = -1;
+  }
 }
 
 function handleToggleTurn(
@@ -420,17 +529,15 @@ function handleToggleTurn(
   if (!targetFigure) return;
 
   if (targetFigure.active) {
-    // Deactivate: set active=false, off=true, process end-of-turn
+    // Deactivate: set active=false, off=true, process end-of-turn conditions
     targetFigure.active = false;
     targetFigure.off = true;
 
     if (targetType === 'character') {
       const c = targetFigure as Character;
+      // End-of-turn: condition state transitions (wound damage moved to turn start)
       const result = processConditionEndOfTurn(c.entityConditions);
       c.entityConditions = result.conditions;
-      if (result.woundDamage > 0) {
-        c.health = Math.max(0, c.health - result.woundDamage);
-      }
       for (const summon of c.summons) {
         summon.active = false;
         summon.off = true;
@@ -440,64 +547,124 @@ function handleToggleTurn(
       for (const entity of m.entities) {
         entity.active = false;
         entity.off = true;
+        // End-of-turn: condition state transitions (wound damage moved to turn start)
         const result = processConditionEndOfTurn(entity.entityConditions);
         entity.entityConditions = result.conditions;
-        if (result.woundDamage > 0) {
-          entity.health = Math.max(0, entity.health - result.woundDamage);
-          if (entity.health === 0) entity.dead = true;
-        }
       }
     }
+
+    // Auto-advance: activate the next non-off, non-absent figure
+    activateNextInOrder(state);
   } else {
     // Activate: deactivate any currently active figure first
-    for (const c of state.characters) {
-      if (c.active) {
-        c.active = false;
-        c.off = true;
-        for (const s of c.summons) {
-          s.active = false;
-          s.off = true;
-        }
-      }
-    }
-    for (const m of state.monsters) {
-      if (m.active) {
-        m.active = false;
-        m.off = true;
-        for (const e of m.entities) {
-          e.active = false;
-          e.off = true;
-        }
-      }
-    }
-    for (const o of state.objectiveContainers) {
-      if (o.active) {
-        o.active = false;
-        o.off = true;
-      }
-    }
+    deactivateAllFigures(state);
 
     // Now activate the target
-    targetFigure.active = true;
-    targetFigure.off = false;
+    activateFigure(state, targetFigure, targetType);
+  }
+}
 
-    if (targetType === 'character') {
-      const c = targetFigure as Character;
-      for (const summon of c.summons) {
-        if (!summon.dead) {
-          summon.active = true;
-          summon.off = false;
-        }
-      }
-    } else if (targetType === 'monster') {
-      const m = targetFigure as Monster;
-      for (const entity of m.entities) {
-        if (!entity.dead) {
-          entity.active = true;
-          entity.off = false;
-        }
+/** Deactivate all currently active figures (without end-of-turn processing). */
+function deactivateAllFigures(state: GameState): void {
+  for (const c of state.characters) {
+    if (c.active) {
+      c.active = false;
+      c.off = true;
+      for (const s of c.summons) {
+        s.active = false;
+        s.off = true;
       }
     }
+  }
+  for (const m of state.monsters) {
+    if (m.active) {
+      m.active = false;
+      m.off = true;
+      for (const e of m.entities) {
+        e.active = false;
+        e.off = true;
+      }
+    }
+  }
+  for (const o of state.objectiveContainers) {
+    if (o.active) {
+      o.active = false;
+      o.off = true;
+    }
+  }
+}
+
+/** Activate a figure and process turn-start effects (wound, regenerate). */
+function activateFigure(
+  state: GameState,
+  figure: Character | Monster | ObjectiveContainer,
+  type: 'character' | 'monster' | 'objectiveContainer',
+): void {
+  figure.active = true;
+  figure.off = false;
+
+  if (type === 'character') {
+    const c = figure as Character;
+    // Turn start: wound damage
+    applyTurnStartConditions(c);
+    for (const summon of c.summons) {
+      if (!summon.dead) {
+        summon.active = true;
+        summon.off = false;
+        applyTurnStartConditions(summon);
+      }
+    }
+  } else if (type === 'monster') {
+    const m = figure as Monster;
+    for (const entity of m.entities) {
+      if (!entity.dead) {
+        entity.active = true;
+        entity.off = false;
+        applyTurnStartConditions(entity);
+        if (entity.health <= 0) entity.dead = true;
+      }
+    }
+  }
+}
+
+/** Apply wound damage and regenerate healing at the start of a figure's turn. */
+function applyTurnStartConditions(entity: { health: number; maxHealth: number; entityConditions: EntityCondition[] }): void {
+  // Wound: suffer damage at turn start
+  for (const cond of entity.entityConditions) {
+    if ((cond.name === 'wound' || cond.name === 'wound_x') && !cond.expired) {
+      entity.health = Math.max(0, entity.health - cond.value);
+    }
+  }
+
+  // Regenerate: heal 1 at turn start
+  const hasRegen = entity.entityConditions.some((c) => c.name === 'regenerate' && !c.expired);
+  if (hasRegen) {
+    entity.health = Math.min(entity.maxHealth, entity.health + 1);
+  }
+}
+
+/** Find the next non-off, non-absent figure in initiative order and activate it. */
+function activateNextInOrder(state: GameState): void {
+  const order = getInitiativeOrder(state);
+  const next = order.find((f) => !f.off && !f.absent);
+  if (!next) return;
+
+  // Find the actual figure and activate it
+  const char = state.characters.find((c) => c.name === next.name && c.edition === next.edition);
+  if (char) {
+    activateFigure(state, char, 'character');
+    return;
+  }
+
+  const mon = state.monsters.find((m) => m.name === next.name && m.edition === next.edition);
+  if (mon) {
+    activateFigure(state, mon, 'monster');
+    return;
+  }
+
+  const obj = state.objectiveContainers.find((o) => o.name === next.name && o.edition === next.edition);
+  if (obj) {
+    activateFigure(state, obj, 'objectiveContainer');
   }
 }
 
