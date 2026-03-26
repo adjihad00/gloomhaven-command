@@ -11,9 +11,10 @@ interface FigureListProps {
   monsterAbilities: Map<string, MonsterAbilityCard | null>;
   isDrawPhase: boolean;
   readonly?: boolean;
+  onCharacterDetail?: (name: string) => void;
 }
 
-export function FigureList({ state, monsterStats, monsterAbilities, isDrawPhase, readonly }: FigureListProps) {
+export function FigureList({ state, monsterStats, monsterAbilities, isDrawPhase, readonly, onCharacterDetail }: FigureListProps) {
   const figures = getInitiativeOrder(state);
 
   return (
@@ -32,6 +33,7 @@ export function FigureList({ state, monsterStats, monsterAbilities, isDrawPhase,
                 isDone={fig.off}
                 isDrawPhase={isDrawPhase}
                 readonly={readonly}
+                onOpenDetail={onCharacterDetail ? () => onCharacterDetail(character.name) : undefined}
               />
               {character.summons.filter(s => !s.dead).map(summon => (
                 <SummonCard

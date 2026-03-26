@@ -43,7 +43,7 @@ export function App() {
   return (
     <AppContext.Provider value={{
       connection, store, commands, state, connectionStatus: status,
-      gameCode, error,
+      gameCode, error, disconnect,
     }}>
       <div class="app-shell">
         {mode === 'town'

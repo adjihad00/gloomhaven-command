@@ -35,7 +35,7 @@
 - [x] R1: Data layer — edition file loading, stat lookups, scenario auto-spawn
 - [x] R2: Preact app scaffold — three entry points, hooks, mode routing, connection screens
 - [x] R3: Core shared components + asset population
-- [ ] R4: Controller single-screen view
+- [x] R4: Controller single-screen view — ScenarioView with overlays
 - [ ] R5: Scenario automation
 - [ ] R6: Round flow automation
 

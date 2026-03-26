@@ -15,9 +15,10 @@ interface CharacterBarProps {
   isDrawPhase: boolean;
   readonly?: boolean;
   characterColor?: string;
+  onOpenDetail?: () => void;
 }
 
-export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, readonly, characterColor }: CharacterBarProps) {
+export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, readonly, characterColor, onOpenDetail }: CharacterBarProps) {
   const commands = useCommands();
   const { name, health, maxHealth, initiative, experience, loot, exhausted, longRest, summons, entityConditions } = character;
   const ed = character.edition || edition;
@@ -53,7 +54,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
       />
 
       {/* Name + HP */}
-      <div class="character-bar__info">
+      <div class="character-bar__info" onClick={onOpenDetail}>
         <span class="character-bar__name">{formatName(name)}</span>
         <HealthControl
           current={health}

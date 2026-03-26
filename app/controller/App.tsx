@@ -34,7 +34,7 @@ export function App() {
   return (
     <AppContext.Provider value={{
       connection, store, commands, state, connectionStatus: status,
-      gameCode, error,
+      gameCode, error, disconnect,
     }}>
       <AppShell state={state} />
     </AppContext.Provider>

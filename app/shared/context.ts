@@ -12,6 +12,7 @@ export interface AppContextValue {
   connectionStatus: ConnectionStatus;
   gameCode: string;
   error: string | null;
+  disconnect: () => void;
 }
 
 export const AppContext = createContext<AppContextValue>({
@@ -22,4 +23,5 @@ export const AppContext = createContext<AppContextValue>({
   connectionStatus: 'disconnected',
   gameCode: '',
   error: null,
+  disconnect: () => {},
 });
