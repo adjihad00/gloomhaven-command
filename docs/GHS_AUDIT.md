@@ -21,7 +21,11 @@ state. No page navigation — everything is overlays on a persistent play surfac
 - **Footer bar:** Phase button (Draw / Next Round + round counter + game clock),
   scenario name + door controls (center), level-derived values
   (gold conversion, trap damage, bonus XP, hazardous terrain), modifier deck
-  counter + controls (right)
+  counter + controls (right), loot deck icon (bottom-left, FH only)
+  - **Event effects icons** (level/gold/trap/XP/hazardous) are clickable →
+    opens scenario level overlay
+  - **Scenario rules** — when a scenario has special rules, an overlay can
+    auto-apply them to entities (configurable setting)
 
 ### Key Design Principle
 Progressive disclosure via overlays. The main screen always shows the full
@@ -100,11 +104,20 @@ at the moment of door opening.
 
 ### Room Reveal
 - **Door icons** in footer under scenario name
-- Open doors: open-door icon; closed doors: section number indicator
+  - **Closed door**: shows tile reference (e.g., "G1b") + section marker icon
+    if section text should be read when opening
+  - **Open door**: shows open-door icon after reveal
+  - **Separator |** between revealed and unrevealed doors
+  - Hovering over closed door reads: "Open door for tile G1b"
+- **Shortcut**: click the closed door icon below the scenario name in footer
 - Clicking reveals the room:
-  - New standees auto-spawn with **halo highlight** animation
+  - New standees auto-spawn with **glowing halo** animation
   - Existing monster groups gain standees if new room includes that type
   - New monster groups appear with full stat card + ability deck
+- **Spawn timing (critical)**: Room spawns use the character count **at the time
+  of room reveal**, NOT at scenario start. Adding characters after a room was
+  opened does NOT retroactively change its spawns, but WILL affect player count
+  for future room openings.
 - **Frosthaven doors** have associated section numbers to read when opened
 - **Gloomhaven doors** have room references (e.g., G1b, I1b)
 
@@ -120,33 +133,67 @@ at the moment of door opening.
 - HP auto-set from edition data at selected level
 - Initial gold: 30 (new campaign), plus starting items available
 
-### Character Board (Always Visible)
-- Portrait thumbnail with health bar overlay
-- Class icon + character name
-- **HP** as current/max (red drop icon)
-- **XP** counter (blue star icon)
-- **Gold/Loot** counter (yellow bell icon)
-- **Active conditions** displayed inline as small icons next to HP
-- **Initiative** shown as large number during play phase; hidden during draw
-- **Summon** indicator if summons are active
-- Color-coded border by class/edition
+### Character Bar — Always Visible (Interaction Zones)
 
-### Character Interaction Overlay (Click Card Area)
-Four counter rows with −/+ buttons:
-1. **HP** (red drop) — conditions row: Stun, Immobilize, Disarm
-2. **XP** (blue star) — conditions row: Wound, Muddle, Poison
-3. **Gold** (yellow bell) — conditions row: Invisible, Strengthen
-4. **Tokens/Summons** (blue fist icon)
+The character bar is a horizontal strip with distinct clickable zones (left→right):
 
-Bottom actions:
-- **ZZZ** — Exhaust (inactivates for scenario remainder; does NOT change
-  character count for future room spawns)
-- **Door+arrow** — Make Absent (removes from character count, affects future
-  room monster spawns)
-- **Crown** — summon count indicator
+| Zone | Visual | Click Action |
+|------|--------|-------------|
+| **Far left edge** | Thin drag handle | Click+drag to manually reorder character position |
+| **Portrait** | Class art thumbnail with HP bar overlay | Marks turn complete (during play phase) |
+| **^ caret** | Small caret above initiative area | Opens initiative input overlay (numpad) |
+| **Initiative area** | Large number (play phase) or blank (draw phase) | Inline editable during draw phase |
+| **Name + HP area** | Class icon, name, HP current/max | Opens full character menu overlay |
+| **+ button** | Plus icon | Opens summon dialog (not general expand) |
+| **XP star** | Blue star with XP count | Quick-tap: +1 XP |
+| **Loot bag** (GH only) | Gold bag icon with loot count | Quick-tap: +1 loot/gold |
+| **Class icon (right)** | Large class icon | Opens full player/character sheet |
+| **Far right edge** | Thin drag handle | Click+drag to manually reorder character position |
+
+- **Color-coded border** matches class color (e.g., Brute = blue, Geminate = pink, Boneshaper = green)
+- **Active conditions** displayed as small icons inline on the bar
+- **Summon indicator** appears when summons are active (shows standee count)
+
+#### FH Character Bar Differences
+- **No gold/loot bag icon** by default — FH uses loot deck, not coin-based looting
+- **Loot icon appears** only after a character obtains loot cards (shows count of obtained cards)
+- **Class-specific token icons** for tracking scenario/ability tokens
+- **Form toggle** for multi-form classes (e.g., Geminate shows "Melee" or "Ranged")
+
+### Character Menu Overlay (Click Name/HP Area)
+
+Opens by clicking anywhere between the + icon and the initiative area, including
+the name and health numbers.
+
+**Left column** (counters with −/+ buttons):
+1. **HP** (red drop) — health counter
+2. **XP** (blue star) — experience counter
+3. **Gold/Loot** (gold icon) — loot counter
+4. **Character token** (scenario/ability token tracker)
+5. **ZZZ** — Exhaust character (greyed out, cannot act, but **still counts**
+   for future room spawns)
+6. **Crown** — Level indicator
+
+**Top-right corner:**
+- **Mark Absent** — removes character from turn order AND reduces character
+  count for future room spawns (distinct from Exhausted)
+
+**Right column** (condition icons — grid layout):
+- Row 1: Stun, Immobilize, Disarm
+- Row 2: Wound, Muddle, Poison
+- Row 3: Bane, Brittle, Impair *(FH conditions — only shown when FH edition active)*
+- Row 4: Infect, Rupture, Poison X *(expansion conditions)*
+- Row 5: Wound X, Chill X *(expansion conditions)*
+- Beneficial: Strengthen, Invisible, Rejuvenate
+- FH beneficial: Ward, Dodge, Safeguard
+- **Condition modifiers row**: Permanent | Remove at End of Round | Immune —
+  select one of these FIRST, then click a condition to apply that timeline
+
+*Note: Which conditions appear depends on selected edition. With no edition
+selected, all conditions from all editions are shown.*
 
 ### Character Sheet (Full Overlay)
-Accessed via Character Sheet link on character board:
+Accessed via the **class icon on the right side** of the character bar:
 - **Class name & race** (e.g., "Inox Brute") + retirement icon
 - **Editable name** field
 - **Level selector** 1–9 with clickable buttons
@@ -166,12 +213,23 @@ Accessed via Character Sheet link on character board:
 - **Export / Import** buttons for character data
 - **"Go to Frosthaven Character Sheet"** cross-edition link
 
+#### FH Character Sheet Differences
+- **Mastery section** — 2 masteries per class; completing a mastery rewards a perk mark
+- **Perk marks** — earned via: battle goal checkmarks (3 checks = 1 perk),
+  mastery completion, leveling up, or starting a new character (based on
+  previous retirements)
+- **FH Perks** — not just modifier deck changes but actual gameplay abilities
+  (class-specific ability perks)
+- **Form toggle** — multi-form classes (e.g., Geminate) have a special status
+  indicator to switch between forms (Melee ↔ Ranged)
+- **X checkbox row** — where checkmarks are applied from battle goals
+
 ### Absent vs Exhausted (Critical Distinction)
 | State | Still "Present"? | Affects Spawn Count? | Can Act? |
 |-------|:---:|:---:|:---:|
 | **Active** | Yes | Yes | Yes |
-| **Exhausted** | Yes | No (still counts) | No |
-| **Absent** | No | Yes (reduces count) | No |
+| **Exhausted** | Yes | Yes (still counts) | No |
+| **Absent** | No | No (reduces count) | No |
 
 ---
 
@@ -184,19 +242,32 @@ Accessed via Character Sheet link on character board:
 - Normal/elite type set from spawn data
 - Elite standees shown first (configurable setting)
 
-### Monster Group Display
-- **Portrait** circle (left of deck card)
-- **Ability deck** card back: deck name (e.g., "Guard"), remaining count (e.g., "7/8")
-- **Stat card** showing level, dual-column display:
-  - Left (white) = normal stats: HP, Move, Attack, Range, passive abilities
+### Monster Panel — Interaction Zones
+
+| Zone | Visual | Click Action |
+|------|--------|-------------|
+| **Portrait** (circle, left) | Monster artwork | Opens full monster artwork overlay |
+| **Ability deck card** | Card back with deck name + count (e.g., "7/8") | Opens monster ability deck overlay |
+| **Level number** (top-left of stat card) | Number "1", "2", etc. | Opens monster level override overlay |
+| **Monster name** | Text label (e.g., "Algox Guard") | Opens full stat info overlay + ally toggle |
+| **Grey +** | Grey plus button on stat card | Adds a new **normal** standee |
+| **Yellow +** | Yellow/gold plus button on stat card | Adds a new **elite** standee |
+| **Standee tiles** | Individual numbered standee tokens | Opens standee interaction overlay |
+
+- **Stat card** shows dual-column display:
+  - Left (white/grey) = normal stats: HP, Move, Attack, Range, passive abilities
   - Right (gold) = elite stats: HP, Move, Attack, Range, passive abilities
   - Passive abilities shown: Shield, Retaliate, flying, etc.
-- **"+" buttons** on stat card to manually add normal or elite standees
-- **Select all standees / Select all Elite standees** batch controls
+- **Ally indicator** — monsters marked as allies show "Ally" tag and use the Ally
+  modifier deck instead of the monster deck
 
 ### Monster Ability Cards
 - Drawn automatically at round start (Draw → Play phase transition)
 - Card shows: **initiative number**, action list (Move, Attack, etc.)
+- **Ability deck overlay** (click deck card): full deck management
+  - "Reveal All?" → click again → reveals all cards
+  - "Edit" → second row of editing options
+  - Shuffle controls
 - With "Show calculated stats" setting ON: resolved values for normal/elite
   (e.g., "Move 3/2, Attack 2/3") computed from: base stat + card modifier value
 - Card modifiers use `valueType: "plus"` (relative to base) or absolute values
@@ -212,16 +283,34 @@ Multiple monster types can reference the same deck. E.g., `bandit-guard` and
 monster groups sharing that deck. GHS handles this correctly.
 
 ### Standee Interaction Overlay (Click Standee Token)
-- Header: Monster name + standee number + normal/elite indicator
-- **Passive abilities** shown (e.g., "Shield 1" for elites)
-- Counter rows with −/+ buttons:
-  1. **HP** — conditions: Stun, Immobilize, Disarm
-  2. **Bless** (gold diamond) — conditions: Wound, Muddle, Poison
-  3. **Curse** (purple diamond) — conditions: Invisible, Strengthen
-- **Skull** — instant kill
-- **Max HP adjust** — modify max HP from base
-- **Gear icon** — add summon standee to this monster
+- **Header:** Monster portrait → Monster Name #N (e.g., "Bandit Guard #4")
+- **Left column** (counters with −/+ buttons):
+  1. **HP** — current health / max health
+  2. **Bless** — adds/removes Bless cards to attack modifier deck
+  3. **Curse** — adds/removes Curse cards to attack modifier deck
+- **Skull** — quick kill (instantly removes standee)
+- **±** next to HP counter — adjusts **max HP** (not current HP)
+- **Condition grid** (right side):
+  - Row 1: Stun, Immobilize, Disarm
+  - Row 2: Wound, Muddle, Poison
+  - Row 3: Bane, Brittle, Infect *(edition-dependent)*
+  - Row 4: Rupture, Poison X, Wound X *(expansion)*
+  - Row 5: Chill *(expansion)*
+  - Beneficial: Strengthen, Invisible, Regenerate
+  - FH beneficial: Ward, Safeguard
 - Death animation: standee drops and fades, removed from display
+
+### Summon System
+- **Summon dialog** (click + on character bar): opens overlay with:
+  - Summon token selection
+  - **Standee number selection** — summons use standee numbers like monsters,
+    so multiple summons of the same name have different numbers for tracking
+  - List of possible summons — class-native summons plus summons from items/abilities
+- **Summon display**: appears as small tokens next to the character; tracked with
+  own HP and conditions
+- **Passive vs Active summons** (configurable): passive summons can skip their
+  active turn; active summons activate in order at character's turn start
+- **Summons do NOT act** the round they are summoned
 
 ---
 
@@ -360,9 +449,16 @@ Monsters find focus = enemy they can attack using **fewest movement points**:
 
 ### Element Board
 - 6 elements always visible in header: Fire, Ice, Air, Earth, Light, Dark
-- **3 states:** Inert (grey), Strong (full color circle), Waning (half-filled
-  from bottom — color fills upward)
-- Click to cycle: Inert → Strong → Waning → Inert (manual toggle)
+- **4 states:** Inert (grey) → Infused (full color, just created) → Strong
+  (full color, persists) → Waning (half-filled from bottom)
+- **Manual click cycle:** Infused → Strong → Waning → Inert (4 clicks to
+  cycle through all states)
+- **Automatic lifecycle during play:**
+  1. Character/monster infuses element → **Infused**
+  2. Infusing figure's turn ends → **Strong** (available for consumption)
+  3. Click Next Round → **Waning** (half-filled visual)
+  4. Click Draw → still **Waning**
+  5. Click Next Round again → **Inert**
 - **Automatic update element state** (setting): auto-decay before each round
   - Strong → Waning at end of round
   - Waning → Inert at end of round
@@ -389,15 +485,19 @@ Monsters find focus = enemy they can attack using **fewest movement points**:
 | ×0 (Null) | 1 | Miss — zero damage |
 
 ### Deck Types
-- **Monster AMD** — one shared deck for all monsters (displayed in footer)
+- **Monster AMD** — one shared deck for all monsters (bottom-right, "m" icon)
+- **Ally AMD** — separate deck for scenario allies (bottom-right, "A" icon);
+  appears above monster deck when allies are present
 - **Character AMDs** — one per character (if Character Attack Modifier Deck setting ON)
-- **Ally AMD** — for scenario allies
 
-### GHS Modifier Deck Features
-- Footer shows deck counter (e.g., "20/20")
-- **During active round:** Click deck to draw card; gear icon opens management
-  overlay; "M" icon toggles deck image visibility
-- **During draw phase:** Click opens management overlay directly
+### GHS Modifier Deck Controls (Bottom-Right Corner)
+Each deck shows: deck icon ("m"/"A") | crossed swords (draw) | gear icon | expand icon | counter (20/20)
+
+- **Gear icon** — opens attack modifier deck management overlay
+- **"M"/"A" icon** — slides deck to the right to hide it (toggle visibility)
+- **Circle/expand icon** (above M) — shows attack modifier decks fullscreen
+- **Crossed swords / 20/20** — during active phase, clicking draws a card
+- **During draw phase:** Click on deck area opens management overlay directly
 - Management overlay shows:
   - Full card stack visualization (face-down draw pile, discard pile)
   - "Reveal All?" / "Shuffle" / "Edit" controls
@@ -625,6 +725,15 @@ Enabled editions (checkboxes):
 - Loot deck composition configured per scenario in loot table
 - Types: gold, resources (lumber, metal, hide, arrowvine, axenut,
   corpsecap, flamefruit, rockroot, snowthistle), random item, special
+- **Loot deck UI** (bottom-left): click loot deck icon to draw a card
+  - Drawn card displayed with artwork + resource label (e.g., "+2 Lumber")
+  - Deck counter shows remaining cards (e.g., "19/20")
+  - With "Apply Loot to Character" ON: loot auto-assigned to active character
+  - **Loot icon appears on character bar** after obtaining loot, showing count
+    of obtained cards (e.g., "1" next to loot bag icon)
+  - Clicking loot icon on character bar shows all loot cards obtained this scenario
+- **Resource types** (9): Lumber, Metal, Hide (materials) + Arrowvine, Axenut,
+  Corpsecap, Flamefruit, Rockroot, Snowthistle (herbs)
 - Settings: Apply Loot to Character, Draw Random Item on Loot,
   Always show Loot Apply Dialog
 
@@ -688,6 +797,10 @@ Enabled editions (checkboxes):
   corpsecap, flamefruit, rockroot, snowthistle); personal supply vs Frosthaven supply
 - **Seasons** — summer/winter cycle on calendar; affects event decks
 - **Town Guard Deck** — 20-card deck for defense checks (like AMD for town defense)
+- **Calendar** — visual calendar with seasons, passage of time tracking
+- **Buildings** — build/upgrade/repair/wreck; each building has operations that
+  resolve during outpost phase
+- **Town Guard Perks** — separate perk system for town defense deck
 
 ---
 
