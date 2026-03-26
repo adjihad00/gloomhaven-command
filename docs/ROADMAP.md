@@ -31,6 +31,14 @@
 - [x] Build Campaign tab — party sheet, unlocks, scenario tracking
 - [x] Responsive iPad landscape layout, tab navigation
 
+## Phase R: Controller Rebuild (replaces original Phase 2)
+- [x] R1: Data layer — edition file loading, stat lookups, scenario auto-spawn
+- [ ] R2: Preact app scaffold with role routing
+- [ ] R3: Core shared components
+- [ ] R4: Controller single-screen view
+- [ ] R5: Scenario automation
+- [ ] R6: Round flow automation
+
 ## Phase 3: Phone Client
 - [ ] Scaffold phone HTML + TypeScript entry
 - [ ] Character selection/registration on connect

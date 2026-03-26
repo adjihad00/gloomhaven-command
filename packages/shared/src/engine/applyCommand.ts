@@ -15,22 +15,35 @@ import type {
 } from '../types/gameState.js';
 import type { Command, CommandTarget } from '../types/commands.js';
 import type { StateChange } from '../types/protocol.js';
+import type { ScenarioData, MonsterData, MonsterLevelStats, MonsterAbilityDeckData, ResolvedSpawn } from '../data/types.js';
 import { deepClone } from './turnOrder.js';
 import { canAdvancePhase, startRound, endRound } from './turnOrder.js';
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
 import { diffStates } from './diffStates.js';
 import { importGhsState as importGhs } from '../utils/ghsCompat.js';
+import { getPlayerCount } from '../data/levelCalculation.js';
 
 export interface ApplyResult {
   state: GameState;
   changes: StateChange[];
 }
 
+/** Optional data context for data-driven automation (injected by server) */
+export interface DataContext {
+  getCharacterMaxHealth(edition: string, name: string, level: number): number;
+  getMonsterMaxHealth(edition: string, name: string, level: number, type: string): number;
+  getMonsterStats(edition: string, name: string, level: number, type: string): MonsterLevelStats | null;
+  getScenario(edition: string, index: string): ScenarioData | null;
+  resolveRoomSpawns(scenario: ScenarioData, roomNumber: number, playerCount: number): ResolvedSpawn[];
+  getMonsterDeckForMonster(edition: string, monsterName: string): MonsterAbilityDeckData | null;
+  getMonster(edition: string, name: string): MonsterData | null;
+}
+
 const UNDO_LIMIT = 50;
 
 // ── Main entry point ────────────────────────────────────────────────────────
 
-export function applyCommand(state: GameState, command: Command): ApplyResult {
+export function applyCommand(state: GameState, command: Command, dataContext?: DataContext): ApplyResult {
   const before = deepClone(state);
   let after = deepClone(state);
 
@@ -57,13 +70,13 @@ export function applyCommand(state: GameState, command: Command): ApplyResult {
       handleMoveElement(after, command.payload);
       break;
     case 'addEntity':
-      handleAddEntity(after, command.payload);
+      handleAddEntity(after, command.payload, dataContext);
       break;
     case 'removeEntity':
       handleRemoveEntity(after, command.payload);
       break;
     case 'addCharacter':
-      handleAddCharacter(after, command.payload);
+      handleAddCharacter(after, command.payload, dataContext);
       break;
     case 'removeCharacter':
       handleRemoveCharacter(after, command.payload);
@@ -111,10 +124,10 @@ export function applyCommand(state: GameState, command: Command): ApplyResult {
       handleRemoveModifierCard(after, command.payload);
       break;
     case 'setScenario':
-      handleSetScenario(after, command.payload);
+      handleSetScenario(after, command.payload, dataContext);
       break;
     case 'revealRoom':
-      handleRevealRoom(after, command.payload);
+      handleRevealRoom(after, command.payload, dataContext);
       break;
     case 'setLevel':
       handleSetLevel(after, command.payload);
@@ -163,6 +176,80 @@ export function applyCommand(state: GameState, command: Command): ApplyResult {
 
   const changes = diffStates(before, after);
   return { state: after, changes };
+}
+
+// ── Auto-spawn helpers ──────────────────────────────────────────────────────
+
+function getNextStandeeNumber(group: Monster): number {
+  const used = new Set(group.entities.map((e) => e.number));
+  let n = 1;
+  while (used.has(n)) n++;
+  return n;
+}
+
+function spawnRoomMonsters(
+  state: GameState,
+  edition: string,
+  scenario: ScenarioData,
+  roomNumber: number,
+  playerCount: number,
+  dataContext: DataContext,
+): void {
+  const spawns = dataContext.resolveRoomSpawns(scenario, roomNumber, playerCount);
+
+  for (const spawn of spawns) {
+    // Find or create monster group
+    let group = state.monsters.find((m) => m.name === spawn.monsterName && m.edition === edition);
+    if (!group) {
+      group = {
+        name: spawn.monsterName,
+        edition,
+        level: state.level,
+        initiative: 0,
+        off: false,
+        active: false,
+        drawExtra: false,
+        lastDraw: -1,
+        ability: -1,
+        abilities: [],
+        entities: [],
+        isAlly: false,
+        isAllied: false,
+        tags: [],
+      };
+      state.monsters.push(group);
+      state.figures.push(`${edition}-${spawn.monsterName}`);
+    }
+
+    // Resolve HP from data
+    let maxHealth = 0;
+    if (spawn.type !== 'boss') {
+      maxHealth = dataContext.getMonsterMaxHealth(edition, spawn.monsterName, state.level, spawn.type);
+    }
+
+    const nextNumber = getNextStandeeNumber(group);
+    group.entities.push({
+      number: nextNumber,
+      marker: '',
+      type: spawn.type as MonsterEntity['type'],
+      dead: false,
+      summon: 'false',
+      active: false,
+      off: false,
+      revealed: false,
+      dormant: false,
+      health: maxHealth,
+      maxHealth,
+      entityConditions: [],
+      immunities: [],
+      markers: [],
+      tags: [],
+      shield: '',
+      shieldPersistent: '',
+      retaliate: [],
+      retaliatePersistent: [],
+    });
+  }
 }
 
 // ── Target resolution ───────────────────────────────────────────────────────
@@ -415,12 +502,19 @@ function handleMoveElement(
 
 function handleAddEntity(
   state: GameState,
-  payload: { monsterName: string; edition: string; entityNumber: number; type: string },
+  payload: { monsterName: string; edition: string; entityNumber: number; type: string; maxHealth?: number },
+  dataContext?: DataContext,
 ): void {
   const mon = state.monsters.find(
     (m) => m.name === payload.monsterName && m.edition === payload.edition,
   );
   if (!mon) return;
+
+  // Resolve maxHealth: payload override > data lookup > 0
+  let maxHealth = payload.maxHealth ?? 0;
+  if (!maxHealth && dataContext) {
+    maxHealth = dataContext.getMonsterMaxHealth(payload.edition, payload.monsterName, mon.level, payload.type);
+  }
 
   const newEntity: MonsterEntity = {
     number: payload.entityNumber,
@@ -432,8 +526,8 @@ function handleAddEntity(
     off: false,
     revealed: false,
     dormant: false,
-    health: 0, // Caller should set appropriate health via changeMaxHealth or separate logic
-    maxHealth: 0,
+    health: maxHealth,
+    maxHealth,
     entityConditions: [],
     immunities: [],
     markers: [],
@@ -487,8 +581,14 @@ function createEmptyProgress(): CharacterProgress {
 function handleAddCharacter(
   state: GameState,
   payload: { name: string; edition: string; level: number; player?: string },
+  dataContext?: DataContext,
 ): void {
-  const maxHealth = 10; // Default; real health is set by game data
+  // Resolve maxHealth: data lookup > fallback 10
+  let maxHealth = 10;
+  if (dataContext) {
+    const dataHP = dataContext.getCharacterMaxHealth(payload.edition, payload.name, payload.level);
+    if (dataHP > 0) maxHealth = dataHP;
+  }
 
   const char: Character = {
     name: payload.name,
@@ -756,6 +856,7 @@ function handleDrawModifierCard(
 function handleSetScenario(
   state: GameState,
   payload: { scenarioIndex: string; edition: string; group?: string },
+  dataContext?: DataContext,
 ): void {
   state.scenario = {
     index: payload.scenarioIndex,
@@ -773,18 +874,41 @@ function handleSetScenario(
   state.figures = state.figures.filter((figStr) => {
     return state.characters.some((c) => `${c.edition}-${c.name}` === figStr);
   });
+
+  // Auto-spawn Room 1 monsters if data context available
+  if (dataContext) {
+    const scenario = dataContext.getScenario(payload.edition, payload.scenarioIndex);
+    if (scenario) {
+      const playerCount = getPlayerCount(state.characters);
+      const initialRoom = scenario.rooms.find((r) => r.initial);
+      if (initialRoom) {
+        spawnRoomMonsters(state, payload.edition, scenario, initialRoom.roomNumber, playerCount, dataContext);
+        state.scenario.revealedRooms!.push(initialRoom.roomNumber);
+      }
+    }
+  }
 }
 
 function handleRevealRoom(
   state: GameState,
   payload: { roomId: number },
+  dataContext?: DataContext,
 ): void {
   if (!state.scenario) return;
   if (!state.scenario.revealedRooms) {
     state.scenario.revealedRooms = [];
   }
-  if (!state.scenario.revealedRooms.includes(payload.roomId)) {
-    state.scenario.revealedRooms.push(payload.roomId);
+  if (state.scenario.revealedRooms.includes(payload.roomId)) return;
+
+  state.scenario.revealedRooms.push(payload.roomId);
+
+  // Auto-spawn monsters for the revealed room
+  if (dataContext) {
+    const scenario = dataContext.getScenario(state.scenario.edition, state.scenario.index);
+    if (scenario) {
+      const playerCount = getPlayerCount(state.characters);
+      spawnRoomMonsters(state, state.scenario.edition, scenario, payload.roomId, playerCount, dataContext);
+    }
   }
 }
 

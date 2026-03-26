@@ -8,6 +8,7 @@ assets/nerdhaven/
 *.db
 *.sqlite
 data/
+!packages/shared/src/data/
 *.sqlite-shm
 *.sqlite-wal
 *.jar

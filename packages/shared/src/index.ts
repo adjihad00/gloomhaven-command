@@ -11,6 +11,9 @@ export * from './engine/validateCommand.js';
 export * from './engine/turnOrder.js';
 export * from './engine/diffStates.js';
 
+// Data layer
+export * from './data/index.js';
+
 // Utilities
 export * from './utils/conditions.js';
 export * from './utils/elements.js';

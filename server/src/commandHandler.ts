@@ -1,6 +1,6 @@
 import { WebSocket } from 'ws';
-import type { Command, DiffMessage, ErrorMessage } from '@gloomhaven-command/shared';
-import { validateCommand, applyCommand } from '@gloomhaven-command/shared';
+import type { Command, DiffMessage, ErrorMessage, DataContext } from '@gloomhaven-command/shared';
+import { validateCommand, applyCommand, DataManager } from '@gloomhaven-command/shared';
 import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
 
@@ -11,10 +11,25 @@ export class CommandHandler {
     excludeSocket?: WebSocket
   ) => void) | null = null;
 
+  private dataContext: DataContext | undefined;
+
   constructor(
     private gameStore: GameStore,
-    private sessionManager: SessionManager
-  ) {}
+    private sessionManager: SessionManager,
+    dataManager?: DataManager,
+  ) {
+    if (dataManager) {
+      this.dataContext = {
+        getCharacterMaxHealth: (ed, name, level) => dataManager.getCharacterMaxHealth(ed, name, level),
+        getMonsterMaxHealth: (ed, name, level, type) => dataManager.getMonsterMaxHealth(ed, name, level, type),
+        getMonsterStats: (ed, name, level, type) => dataManager.getMonsterStats(ed, name, level, type),
+        getScenario: (ed, index) => dataManager.getScenario(ed, index),
+        resolveRoomSpawns: (scenario, room, count) => dataManager.resolveRoomSpawns(scenario, room, count),
+        getMonsterDeckForMonster: (ed, name) => dataManager.getMonsterDeckForMonster(ed, name),
+        getMonster: (ed, name) => dataManager.getMonster(ed, name),
+      };
+    }
+  }
 
   handleCommand(ws: WebSocket, gameCode: string, command: Command): void {
     const state = this.gameStore.load(gameCode);
@@ -29,7 +44,7 @@ export class CommandHandler {
       return;
     }
 
-    const { state: newState, changes } = applyCommand(state, command);
+    const { state: newState, changes } = applyCommand(state, command, this.dataContext);
 
     this.gameStore.save(gameCode, newState);
 

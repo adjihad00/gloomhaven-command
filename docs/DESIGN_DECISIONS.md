@@ -75,6 +75,22 @@ is handled by our own StateStore + Connection classes. A framework adds bundle s
 and learning curve without proportional benefit for this use case. esbuild produces
 a single JS file from TypeScript + workspace imports in <100ms.
 
+### 2026-03-26 — Data layer with abstract loader interface
+**Decision:** DataManager in shared package with DataLoader interface. Server uses
+filesystem loader; client will use fetch loader. Data API endpoints for client queries.
+**Rationale:** GHS edition files contain all character stats, monster stats, scenario
+room layouts, and ability decks. Without loading these, the controller can't auto-set
+HP, auto-spawn monsters, resolve ability cards, or calculate scenario level. The
+abstract loader lets the same lookup code work server-side (for applyCommand automation)
+and client-side (for UI dropdowns and stat display).
+
+### 2026-03-26 — DataContext parameter on applyCommand
+**Decision:** applyCommand takes an optional DataContext for data-driven automation.
+**Rationale:** Commands like setScenario and addCharacter need data lookups (scenario
+rooms, character HP tables) but applyCommand must remain a pure function. DataContext
+is an interface injected by the server — the engine doesn't know about files or HTTP.
+When DataContext is null, commands fall back to payload values or defaults.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are
