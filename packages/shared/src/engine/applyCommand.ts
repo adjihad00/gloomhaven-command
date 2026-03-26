@@ -149,10 +149,12 @@ export function applyCommand(state: GameState, command: Command): ApplyResult {
   after.revision += 1;
 
   // Push undo entry (capped at limit)
+  // Strip undoStack from snapshot to prevent exponential state growth
+  const { undoStack: _omit, ...beforeWithoutUndo } = before;
   after.undoStack.push({
     revision: before.revision,
     action: command.action,
-    stateBefore: JSON.stringify(before),
+    stateBefore: JSON.stringify(beforeWithoutUndo),
     timestamp: Date.now(),
   });
   if (after.undoStack.length > UNDO_LIMIT) {
@@ -844,7 +846,7 @@ function handleUndoAction(before: GameState, after: GameState): ApplyResult {
   const entry = after.undoStack.pop()!;
   const restored: GameState = JSON.parse(entry.stateBefore);
 
-  // Keep current undoStack (with popped entry removed) and increment revision
+  // Restore undoStack from current state (snapshot has it stripped to prevent bloat)
   restored.undoStack = after.undoStack;
   restored.revision = before.revision + 1;
 
