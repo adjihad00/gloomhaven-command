@@ -644,6 +644,270 @@
 }
 
 /* ============================================
+   Character Class Grid (R5)
+   ============================================ */
+
+.char-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.char-class-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 8px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent-copper);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.char-class-card:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+.char-class-card__name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.char-class-card__hp {
+  font-size: 0.7rem;
+  color: var(--health-green);
+}
+
+/* ============================================
+   Level Row (R5)
+   ============================================ */
+
+.setup-overlay__level-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.setup-overlay__level-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.setup-overlay__level-pip {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.setup-overlay__level-formula {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Derived Values Pills (R5)
+   ============================================ */
+
+.setup-overlay__derived-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-gold-dim);
+}
+
+.setup-overlay__derived-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setup-overlay__derived-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+/* ============================================
+   Scenario List Items (R5 enhancement)
+   ============================================ */
+
+.setup-overlay__scenario-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setup-overlay__scenario-num {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent-gold);
+  min-width: 36px;
+}
+
+.setup-overlay__scenario-name {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Scenario Preview (R5)
+   ============================================ */
+
+.scenario-preview__header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.scenario-preview__number {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.scenario-preview__name {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.scenario-preview__info {
+  display: flex;
+  gap: 16px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.scenario-preview__monsters {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scenario-preview__monster-row {
+  padding: 4px 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.scenario-preview__spawns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scenario-preview__spawn-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spawn-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.spawn-badge--normal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--text-muted);
+  color: var(--text-primary);
+}
+
+.spawn-badge--elite {
+  background: rgba(211, 166, 99, 0.15);
+  border: 1px solid var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.spawn-badge--boss {
+  background: rgba(197, 48, 48, 0.15);
+  border: 1px solid var(--negative-red);
+  color: var(--negative-red);
+}
+
+.scenario-preview__actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.scenario-preview__actions .btn {
+  flex: 1;
+}
+
+.setup-overlay__loading {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 8px 0;
+}
+
+/* ============================================
+   Door Controls (R5)
+   ============================================ */
+
+.scenario-footer__door {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-copper);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.scenario-footer__door:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 8px rgba(211, 166, 99, 0.3);
+}
+
+.scenario-footer__door.revealed {
+  opacity: 0.5;
+  border-color: var(--text-muted);
+  cursor: default;
+}
+
+.scenario-footer__door-icon {
+  font-size: 0.8rem;
+}
+
+.scenario-footer__door-ref {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+}
+
+.scenario-footer__door-marker {
+  font-size: 0.65rem;
+  color: var(--accent-gold);
+  vertical-align: super;
+}
+
+/* ============================================
    iPad landscape optimizations
    ============================================ */
 

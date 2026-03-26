@@ -7,6 +7,7 @@ interface DoorInfo {
   roomNumber: number;
   ref: string;
   revealed: boolean;
+  marker?: string;
 }
 
 interface ScenarioFooterProps {
@@ -61,8 +62,16 @@ export function ScenarioFooter({
                 class={`scenario-footer__door ${door.revealed ? 'revealed' : ''}`}
                 onClick={() => !door.revealed && onRevealRoom?.(door.roomNumber)}
                 disabled={door.revealed || readonly}
+                title={door.revealed
+                  ? `Room ${door.roomNumber} (${door.ref}) - revealed`
+                  : `Open door to Room ${door.roomNumber} (${door.ref})`
+                }
               >
-                {door.ref}
+                <span class="scenario-footer__door-icon">{door.revealed ? '\u25A1' : '\u25A0'}</span>
+                <span class="scenario-footer__door-ref">{door.ref}</span>
+                {door.marker && !door.revealed && (
+                  <span class="scenario-footer__door-marker">&sect;</span>
+                )}
               </button>
             ))}
           </div>

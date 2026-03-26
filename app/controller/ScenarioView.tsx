@@ -4,8 +4,9 @@ import { AppContext } from '../shared/context';
 import { useGameState } from '../hooks/useGameState';
 import { useCommands } from '../hooks/useCommands';
 import { useMonsterData } from './hooks/useMonsterData';
+import { useDataApi } from '../hooks/useDataApi';
 import { getInitiativeOrder, deriveLevelValues } from '@gloomhaven-command/shared';
-import type { ConditionName } from '@gloomhaven-command/shared';
+import type { ConditionName, ScenarioData } from '@gloomhaven-command/shared';
 import { FigureList } from '../components/FigureList';
 import { ScenarioHeader } from '../components/ScenarioHeader';
 import { ScenarioFooter } from '../components/ScenarioFooter';
@@ -75,10 +76,24 @@ export function ScenarioView() {
     ];
   }, [state?.conditions]);
 
-  // Door info placeholder (R5 fills in real data)
+  // Fetch scenario room data for door controls
+  const scenarioApiPath = state?.scenario
+    ? `${state.scenario.edition}/scenario/${state.scenario.index}`
+    : '';
+  const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!state?.scenario);
+
   const doorInfo = useMemo(() => {
-    return [];
-  }, []);
+    if (!scenarioData?.rooms || !state?.scenario) return [];
+    const revealedSet = new Set(state.scenario.revealedRooms ?? []);
+    return scenarioData.rooms
+      .filter(r => !r.initial)
+      .map(r => ({
+        roomNumber: r.roomNumber,
+        ref: r.ref,
+        revealed: revealedSet.has(r.roomNumber),
+        marker: r.marker,
+      }));
+  }, [scenarioData, state?.scenario]);
 
   if (!state) return <div class="scenario-empty"><p>Loading...</p></div>;
 

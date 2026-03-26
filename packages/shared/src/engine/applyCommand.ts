@@ -21,7 +21,7 @@ import { canAdvancePhase, startRound, endRound } from './turnOrder.js';
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
 import { diffStates } from './diffStates.js';
 import { importGhsState as importGhs } from '../utils/ghsCompat.js';
-import { getPlayerCount } from '../data/levelCalculation.js';
+import { getPlayerCount, calculateScenarioLevel } from '../data/levelCalculation.js';
 
 export interface ApplyResult {
   state: GameState;
@@ -176,6 +176,17 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
 
   const changes = diffStates(before, after);
   return { state: after, changes };
+}
+
+// ── Level recalculation ─────────────────────────────────────────────────────
+
+function recalculateLevel(state: GameState): void {
+  if (!state.levelCalculation) return; // respect manual override
+  const charLevels = state.characters
+    .filter(c => !c.absent && !c.exhausted)
+    .map(c => c.level);
+  if (charLevels.length === 0) return;
+  state.level = calculateScenarioLevel(charLevels, state.levelAdjustment, state.solo);
 }
 
 // ── Auto-spawn helpers ──────────────────────────────────────────────────────
@@ -634,6 +645,8 @@ function handleAddCharacter(
 
   state.characters.push(char);
   state.figures.push(`${payload.edition}-${payload.name}`);
+
+  recalculateLevel(state);
 }
 
 function handleRemoveCharacter(
@@ -645,6 +658,8 @@ function handleRemoveCharacter(
   );
   const figStr = `${payload.edition}-${payload.name}`;
   state.figures = state.figures.filter((f) => f !== figStr);
+
+  recalculateLevel(state);
 }
 
 function handleAddSummon(
@@ -755,6 +770,8 @@ function handleToggleExhausted(
     char.active = false;
     char.off = true;
   }
+
+  recalculateLevel(state);
 }
 
 function handleToggleAbsent(
@@ -772,6 +789,8 @@ function handleToggleAbsent(
     char.off = false;
     char.initiative = 0;
   }
+
+  recalculateLevel(state);
 }
 
 function handleDrawLootCard(state: GameState): void {
@@ -875,6 +894,10 @@ function handleSetScenario(
     return state.characters.some((c) => `${c.edition}-${c.name}` === figStr);
   });
 
+  // Enable auto-level calc for new scenarios and recalculate
+  state.levelCalculation = true;
+  recalculateLevel(state);
+
   // Auto-spawn Room 1 monsters if data context available
   if (dataContext) {
     const scenario = dataContext.getScenario(payload.edition, payload.scenarioIndex);
@@ -917,6 +940,7 @@ function handleSetLevel(
   payload: { level: number },
 ): void {
   state.level = payload.level;
+  state.levelCalculation = false; // manual override disables auto-calc
 }
 
 function handleSetMonsterLevel(
