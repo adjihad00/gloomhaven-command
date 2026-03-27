@@ -126,6 +126,7 @@ export function ScenarioView() {
           state={state}
           monsterStats={monsterStatsMap}
           monsterAbilities={abilitiesMap}
+          availableConditions={availableConditions}
           isDrawPhase={phase === 'draw'}
           onCharacterDetail={name => setActiveOverlay({ type: 'characterDetail', characterName: name })}
         />

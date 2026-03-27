@@ -1,50 +1,41 @@
 import { h } from 'preact';
-import type { GameState, MonsterLevelStats, MonsterAbilityCard } from '@gloomhaven-command/shared';
+import type { GameState, MonsterLevelStats, MonsterAbilityCard, ConditionName } from '@gloomhaven-command/shared';
 import { getInitiativeOrder } from '@gloomhaven-command/shared';
 import { CharacterBar } from './CharacterBar';
-import { SummonCard } from './SummonCard';
 import { MonsterGroup } from './MonsterGroup';
 
 interface FigureListProps {
   state: GameState;
   monsterStats: Map<string, { normal: MonsterLevelStats | null; elite: MonsterLevelStats | null }>;
   monsterAbilities: Map<string, MonsterAbilityCard | null>;
+  availableConditions?: ConditionName[];
   isDrawPhase: boolean;
   readonly?: boolean;
   onCharacterDetail?: (name: string) => void;
 }
 
-export function FigureList({ state, monsterStats, monsterAbilities, isDrawPhase, readonly, onCharacterDetail }: FigureListProps) {
+export function FigureList({ state, monsterStats, monsterAbilities, availableConditions, isDrawPhase, readonly, onCharacterDetail }: FigureListProps) {
   const figures = getInitiativeOrder(state);
 
   return (
-    <div class="figure-list">
+    <div class="figure-grid">
       {figures.map(fig => {
         if (fig.type === 'character') {
           const character = state.characters.find(c => c.name === fig.name && c.edition === fig.edition);
           if (!character) return null;
 
           return (
-            <div key={`char-${fig.edition}-${fig.name}`} class="figure-list__entry">
-              <CharacterBar
-                character={character}
-                edition={fig.edition}
-                isActive={fig.active}
-                isDone={fig.off}
-                isDrawPhase={isDrawPhase}
-                readonly={readonly}
-                onOpenDetail={onCharacterDetail ? () => onCharacterDetail(character.name) : undefined}
-              />
-              {character.summons.filter(s => !s.dead).map(summon => (
-                <SummonCard
-                  key={summon.uuid}
-                  summon={summon}
-                  characterName={character.name}
-                  characterEdition={character.edition}
-                  readonly={readonly}
-                />
-              ))}
-            </div>
+            <CharacterBar
+              key={`char-${fig.edition}-${fig.name}`}
+              character={character}
+              edition={fig.edition}
+              isActive={fig.active}
+              isDone={fig.off}
+              isDrawPhase={isDrawPhase}
+              availableConditions={availableConditions}
+              readonly={readonly}
+              onOpenDetail={onCharacterDetail ? () => onCharacterDetail(character.name) : undefined}
+            />
           );
         }
 

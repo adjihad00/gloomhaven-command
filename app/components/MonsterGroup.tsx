@@ -1,10 +1,11 @@
 import { h } from 'preact';
-import type { Monster, MonsterLevelStats, MonsterAbilityCard, MonsterAbilityAction } from '@gloomhaven-command/shared';
+import { useState } from 'preact/hooks';
+import type { Monster, MonsterEntity, MonsterLevelStats, MonsterAbilityCard, MonsterAbilityAction, ConditionName, EntityCondition } from '@gloomhaven-command/shared';
+import { NEGATIVE_CONDITIONS, isNegativeCondition } from '@gloomhaven-command/shared';
 import { useCommands } from '../hooks/useCommands';
-import { monsterThumbnail } from '../shared/assets';
+import { monsterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
-import { MonsterStatCard } from './MonsterStatCard';
-import { MonsterStandeeRow } from './MonsterStandeeRow';
+import { ConditionIcons } from './ConditionIcons';
 
 interface MonsterGroupProps {
   monster: Monster;
@@ -14,6 +15,8 @@ interface MonsterGroupProps {
   isDone: boolean;
   readonly?: boolean;
 }
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getBaseStat(stats: MonsterLevelStats | null, actionType: string): number | null {
   if (!stats) return null;
@@ -35,60 +38,161 @@ function formatActionType(type: string): string {
   return labels[type] ?? type.charAt(0).toUpperCase() + type.slice(1);
 }
 
-function renderActionValue(
-  action: MonsterAbilityAction,
-  normalStats: MonsterLevelStats | null,
-  eliteStats: MonsterLevelStats | null,
-): h.JSX.Element {
-  if (action.valueType === 'plus') {
-    const normalBase = getBaseStat(normalStats, action.type);
-    const eliteBase = getBaseStat(eliteStats, action.type);
-    const val = Number(action.value);
+// ── AbilityActions ──────────────────────────────────────────────────────────
 
-    if (normalBase !== null) {
-      const normalResolved = normalBase + val;
-      const eliteResolved = eliteBase !== null ? eliteBase + val : null;
-
-      return (
-        <span class="ability-card__values">
-          <span class="ability-card__normal-val">{normalResolved}</span>
-          {eliteResolved !== null && eliteResolved !== normalResolved && (
-            <span class="ability-card__elite-val">{eliteResolved}</span>
-          )}
-        </span>
-      );
-    }
-  }
-
-  return <span class="ability-card__abs-val">{action.value}</span>;
-}
-
-function AbilityCardDisplay({ card, stats }: { card: MonsterAbilityCard; stats?: { normal: MonsterLevelStats | null; elite: MonsterLevelStats | null } }) {
+function AbilityActions({ card, normalStats, eliteStats }: {
+  card: MonsterAbilityCard;
+  normalStats: MonsterLevelStats | null;
+  eliteStats: MonsterLevelStats | null;
+}) {
   return (
-    <div class="ability-card">
-      <span class="ability-card__initiative">{card.initiative}</span>
-      <div class="ability-card__actions">
-        {card.actions.map((action, i) => (
-          <span key={i} class="ability-card__action">
-            <span class="ability-card__action-type">{action.type === 'condition' ? '' : formatActionType(action.type)}</span>
-            {action.type === 'condition'
-              ? <span class="ability-card__condition">{String(action.value)}</span>
-              : renderActionValue(action, stats?.normal ?? null, stats?.elite ?? null)
-            }
+    <div class="ability-actions-compact">
+      {card.actions.map((action, i) => {
+        if (action.type === 'condition') {
+          return (
+            <span key={i} class="ability-action-pill">
+              <span class="condition-val">{String(action.value)}</span>
+            </span>
+          );
+        }
+
+        const label = formatActionType(action.type);
+
+        if (action.valueType === 'plus') {
+          const normalBase = getBaseStat(normalStats, action.type);
+          const eliteBase = getBaseStat(eliteStats, action.type);
+          const val = Number(action.value);
+
+          if (normalBase !== null) {
+            const normalResolved = normalBase + val;
+            const eliteResolved = eliteBase !== null ? eliteBase + val : null;
+
+            return (
+              <span key={i} class="ability-action-pill">
+                {label} <span class="normal-val">{normalResolved}</span>
+                {eliteResolved !== null && eliteResolved !== normalResolved && (
+                  <span class="elite-val">/{eliteResolved}</span>
+                )}
+              </span>
+            );
+          }
+        }
+
+        return (
+          <span key={i} class="ability-action-pill">
+            {label} <span class="normal-val">{action.value}</span>
           </span>
-        ))}
-      </div>
-      {card.shuffle && <span class="ability-card__shuffle">&#x21BB;</span>}
+        );
+      })}
+      {card.shuffle && <span class="shuffle-icon">♻</span>}
     </div>
   );
 }
 
+// ── StandeeRow ──────────────────────────────────────────────────────────────
+
+function StandeeRow({ entity, monsterName, edition, readonly }: {
+  entity: MonsterEntity;
+  monsterName: string;
+  edition: string;
+  readonly?: boolean;
+}) {
+  const commands = useCommands();
+  const target = { type: 'monster' as const, name: monsterName, edition, entityNumber: entity.number };
+
+  const isElite = entity.type === 'elite';
+  const isBoss = entity.type === 'boss';
+  const activeConditions = (entity.entityConditions || []).filter(
+    c => !c.expired && c.state !== 'removed' && c.state !== 'expire'
+  );
+
+  return (
+    <div class={`standee-row ${isElite ? 'elite' : ''} ${isBoss ? 'boss' : ''}`}>
+      <span class={`standee-num ${isElite ? 'elite' : ''} ${isBoss ? 'boss' : ''}`}>
+        {entity.number}
+      </span>
+
+      <span class={`type-badge ${entity.type}`}>
+        {isElite ? 'E' : isBoss ? 'B' : 'N'}
+      </span>
+
+      <span class="standee-hp">{entity.health}/{entity.maxHealth}</span>
+
+      {!readonly && (
+        <>
+          <button class="hp-btn mini minus"
+            onClick={() => commands.changeHealth(target, -1)}>−</button>
+          <button class="hp-btn mini plus"
+            onClick={() => commands.changeHealth(target, 1)}>+</button>
+        </>
+      )}
+
+      <div class="standee-conditions">
+        {activeConditions.map(c => (
+          <button key={c.name}
+            class={`cond-btn mini ${isNegativeCondition(c.name) ? 'active-neg' : 'active-pos'}`}
+            onClick={() => !readonly && commands.toggleCondition(target, c.name)}
+            title={`Remove ${c.name}`}
+          >
+            <img src={conditionIcon(c.name)} class="cond-icon mini" />
+          </button>
+        ))}
+        {!readonly && (
+          <StandeeConditionAdder target={target} existingConditions={activeConditions} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── StandeeConditionAdder ───────────────────────────────────────────────────
+
+function StandeeConditionAdder({ target, existingConditions }: {
+  target: { type: 'monster'; name: string; edition: string; entityNumber: number };
+  existingConditions: EntityCondition[];
+}) {
+  const [open, setOpen] = useState(false);
+  const commands = useCommands();
+
+  const conditionsToShow = NEGATIVE_CONDITIONS.filter(
+    name => !existingConditions.some(c => c.name === name)
+  );
+
+  if (conditionsToShow.length === 0) return null;
+
+  return (
+    <div class="cond-adder">
+      <button class="cond-add-btn" onClick={() => setOpen(!open)}>+</button>
+      {open && (
+        <div class="cond-adder-popup">
+          {conditionsToShow.map(name => (
+            <button key={name} class="cond-btn mini"
+              onClick={() => { commands.toggleCondition(target, name); setOpen(false); }}
+              title={name}
+            >
+              <img src={conditionIcon(name)} class="cond-icon mini" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MonsterGroup ────────────────────────────────────────────────────────────
+
 export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isDone, readonly }: MonsterGroupProps) {
   const commands = useCommands();
-  const { name, edition, entities, level } = monster;
-  const stateClass = isDone ? 'done' : isActive ? 'active' : '';
+  const { name, edition, entities } = monster;
 
-  const sorted = [...entities].sort((a, b) => a.number - b.number);
+  const liveEntities = entities
+    .filter(e => !e.dead && e.number !== undefined)
+    .sort((a, b) => a.number - b.number);
+  const deadEntities = entities
+    .filter(e => e.dead)
+    .sort((a, b) => a.number - b.number);
+
+  if (liveEntities.length === 0 && deadEntities.length === 0) return null;
 
   const handleToggleTurn = () => {
     if (!readonly) {
@@ -97,39 +201,49 @@ export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isD
   };
 
   return (
-    <div class={`monster-group ${stateClass}`}>
-      {/* Header — clickable to toggle turn */}
-      <div class="monster-group__header" onClick={handleToggleTurn}>
-        <img src={monsterThumbnail(edition, name)} alt={name} class="monster-group__thumb" />
-        <span class="monster-group__name">{formatName(name)}</span>
-        {abilityCard && <span class="monster-group__init">{abilityCard.initiative}</span>}
+    <div class={`monster-card ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}>
+      {/* Header: portrait + name + ability actions + initiative */}
+      <div class="monster-header" onClick={handleToggleTurn}>
+        <img
+          src={monsterThumbnail(edition, name)}
+          class="monster-portrait"
+        />
+        <div class="monster-info">
+          <span class="monster-name">{formatName(name)}</span>
+          {abilityCard && (
+            <AbilityActions
+              card={abilityCard}
+              normalStats={monsterStats?.normal ?? null}
+              eliteStats={monsterStats?.elite ?? null}
+            />
+          )}
+        </div>
+        {abilityCard && (
+          <span class="monster-init">{abilityCard.initiative}</span>
+        )}
       </div>
 
-      {/* Stat card */}
-      {monsterStats && (
-        <MonsterStatCard
-          normal={monsterStats.normal}
-          elite={monsterStats.elite}
-          level={level}
-          monsterName={formatName(name)}
-        />
-      )}
-
-      {/* Ability card */}
-      {abilityCard && <AbilityCardDisplay card={abilityCard} stats={monsterStats} />}
-
-      {/* Standees */}
-      <div class="monster-group__standees">
-        {sorted.map(entity => (
-          <MonsterStandeeRow
+      {/* Live standees */}
+      <div class="standee-list">
+        {liveEntities.map(entity => (
+          <StandeeRow
             key={entity.number}
             entity={entity}
             monsterName={name}
-            monsterEdition={edition}
+            edition={edition}
             readonly={readonly}
           />
         ))}
       </div>
+
+      {/* Dead standees — collapsed */}
+      {deadEntities.length > 0 && (
+        <div class="dead-standees">
+          {deadEntities.map(e => (
+            <span key={e.number} class="dead-badge">☠{e.number}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

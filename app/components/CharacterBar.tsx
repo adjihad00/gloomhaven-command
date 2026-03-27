@@ -1,11 +1,12 @@
 import { h } from 'preact';
-import type { Character } from '@gloomhaven-command/shared';
+import { useState } from 'preact/hooks';
+import type { Character, EntityCondition, ConditionName } from '@gloomhaven-command/shared';
+import { isNegativeCondition } from '@gloomhaven-command/shared';
 import { useCommands } from '../hooks/useCommands';
-import { characterThumbnail } from '../shared/assets';
+import { characterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
-import { HealthControl } from './HealthControl';
-import { ConditionIcons } from './ConditionIcons';
 import { InitiativeDisplay } from './InitiativeDisplay';
+import { ConditionIcons } from './ConditionIcons';
 
 interface CharacterBarProps {
   character: Character;
@@ -13,89 +14,193 @@ interface CharacterBarProps {
   isActive: boolean;
   isDone: boolean;
   isDrawPhase: boolean;
+  availableConditions?: ConditionName[];
   readonly?: boolean;
   characterColor?: string;
   onOpenDetail?: () => void;
 }
 
-export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, readonly, characterColor, onOpenDetail }: CharacterBarProps) {
+function isConditionActive(conditions: EntityCondition[], name: string): boolean {
+  return conditions.some(
+    c => c.name === name && !c.expired && c.state !== 'removed' && c.state !== 'expire'
+  );
+}
+
+export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, availableConditions, readonly, characterColor, onOpenDetail }: CharacterBarProps) {
   const commands = useCommands();
   const { name, health, maxHealth, initiative, experience, loot, exhausted, longRest, summons, entityConditions } = character;
   const ed = character.edition || edition;
-  const aliveSummons = summons.filter(s => !s.dead);
-
-  const stateClass = exhausted ? 'exhausted' : isDone ? 'done' : isActive ? 'active' : '';
 
   const target = { type: 'character' as const, name, edition: ed };
 
+  const hpPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
+  const hpColor = hpPercent > 50 ? 'var(--health-green)'
+    : hpPercent > 25 ? '#c8a92c' : 'var(--negative-red)';
+
+  const liveSummons = summons.filter(s => !s.dead);
+
+  if (exhausted) {
+    return (
+      <div class="char-card exhausted">
+        <div class="char-header" style={{ background: 'var(--text-muted)' }}>
+          <span class="char-name">{formatName(name)}</span>
+          <span class="char-hp-text">EXHAUSTED</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      class={`character-bar ${stateClass}`}
-      style={characterColor ? { borderLeftColor: characterColor } : undefined}
+      class={`char-card ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
+      style={{ '--char-color': characterColor || 'var(--accent-copper)' } as any}
     >
-      {/* Portrait + HP overlay */}
-      <div class="character-bar__portrait" onClick={() => !readonly && commands.toggleTurn({ type: 'character', name, edition: ed })}>
-        <img src={characterThumbnail(ed, name)} alt={name} />
-        {!exhausted && (
-          <div
-            class="character-bar__hp-overlay"
-            style={{ width: `${maxHealth > 0 ? (health / maxHealth) * 100 : 0}%` }}
+      {/* HP Bar Header */}
+      <div class="char-header" onClick={onOpenDetail}>
+        <div class="char-hp-bar" style={{ width: `${hpPercent}%`, background: hpColor }} />
+        <span class="char-name">{formatName(name)}</span>
+        <span class="char-hp-text">{health}/{maxHealth}</span>
+      </div>
+
+      {/* Body */}
+      <div class="char-body">
+        {/* Main Row: portrait, initiative, HP +/- */}
+        <div class="char-main-row">
+          <img
+            src={characterThumbnail(ed, name)}
+            class="char-portrait"
+            onClick={() => !readonly && commands.toggleTurn({ type: 'character', name, edition: ed })}
+            title={isActive ? 'End turn' : isDone ? 'Turn complete' : 'Activate'}
+          />
+
+          <InitiativeDisplay
+            value={initiative}
+            onSetInitiative={v => commands.setInitiative(name, ed, v)}
+            editable={isDrawPhase && !readonly}
+            longRest={longRest}
+          />
+
+          {!readonly && (
+            <div class="char-hp-control">
+              <button class="hp-btn minus"
+                onClick={() => commands.changeHealth(target, -1)}>−</button>
+              <span class="hp-icon">🩸</span>
+              <button class="hp-btn plus"
+                onClick={() => commands.changeHealth(target, 1)}>+</button>
+            </div>
+          )}
+        </div>
+
+        {/* Condition Toggles — inline on card */}
+        {!readonly && (
+          <ConditionRow
+            conditions={entityConditions}
+            target={target}
+            availableConditions={availableConditions}
           />
         )}
-        {exhausted && <div class="character-bar__exhausted-label">EXHAUSTED</div>}
+        {readonly && entityConditions.some(c => !c.expired && c.state !== 'removed') && (
+          <ConditionIcons conditions={entityConditions} size={20} />
+        )}
+
+        {/* XP + Loot counters */}
+        <div class="char-counters">
+          <span class="counter" onClick={() => !readonly && commands.setExperience(name, ed, experience + 1)}>
+            ★ {experience || 0}
+          </span>
+          <span class="counter" onClick={() => !readonly && commands.setLoot(name, ed, loot + 1)}>
+            💰 {loot || 0}
+          </span>
+          {liveSummons.length > 0 && (
+            <span class="counter summon-badge">🐾 {liveSummons.length}</span>
+          )}
+        </div>
+
+        {/* Summon summaries */}
+        {liveSummons.map(summon => (
+          <SummonSummary
+            key={summon.uuid}
+            summon={summon}
+            characterName={name}
+            characterEdition={ed}
+            readonly={readonly}
+          />
+        ))}
       </div>
+    </div>
+  );
+}
 
-      {/* Initiative */}
-      <InitiativeDisplay
-        value={initiative}
-        onSetInitiative={v => commands.setInitiative(name, ed, v)}
-        editable={isDrawPhase && !readonly && !exhausted}
-        longRest={longRest}
-      />
+// ── ConditionRow ────────────────────────────────────────────────────────────
 
-      {/* Name + HP */}
-      <div class="character-bar__info" onClick={onOpenDetail}>
-        <span class="character-bar__name">{formatName(name)}</span>
-        <HealthControl
-          current={health}
-          max={maxHealth}
-          onChangeHealth={delta => commands.changeHealth(target, delta)}
-          readonly={readonly || exhausted}
-          size="compact"
-        />
-      </div>
+const DEFAULT_CONDITIONS: ConditionName[] = [
+  'stun', 'immobilize', 'disarm', 'wound', 'muddle', 'poison',
+  'strengthen', 'invisible', 'regenerate', 'ward',
+];
 
-      {/* Condition icons */}
-      <ConditionIcons conditions={entityConditions} />
+function ConditionRow({ conditions, target, availableConditions }: {
+  conditions: EntityCondition[];
+  target: { type: 'character'; name: string; edition: string };
+  availableConditions?: ConditionName[];
+}) {
+  const commands = useCommands();
 
-      {/* XP */}
-      {!exhausted && (
-        <button
-          class="character-bar__counter character-bar__xp"
-          onClick={() => !readonly && commands.setExperience(name, ed, experience + 1)}
-          disabled={readonly}
-        >
-          <span class="character-bar__counter-icon">&#9733;</span>
-          <span class="character-bar__counter-value">{experience}</span>
-        </button>
+  // Use edition-filtered conditions, excluding bless/curse (deck-only)
+  const deckOnly = new Set(['bless', 'curse']);
+  const toShow = (availableConditions || DEFAULT_CONDITIONS).filter(n => !deckOnly.has(n));
+
+  const negatives = toShow.filter(n => isNegativeCondition(n));
+  const positives = toShow.filter(n => !isNegativeCondition(n));
+
+  const renderBtn = (name: ConditionName) => {
+    const active = isConditionActive(conditions, name);
+    const positive = !isNegativeCondition(name);
+    return (
+      <button
+        key={name}
+        class={`cond-btn ${active ? (positive ? 'active-pos' : 'active-neg') : ''}`}
+        onClick={() => commands.toggleCondition(target, name)}
+        title={name}
+      >
+        <img src={conditionIcon(name)} class="cond-icon" />
+      </button>
+    );
+  };
+
+  return (
+    <div class="condition-rows">
+      <div class="condition-row">{negatives.map(renderBtn)}</div>
+      {positives.length > 0 && (
+        <div class="condition-row">{positives.map(renderBtn)}</div>
       )}
+    </div>
+  );
+}
 
-      {/* Loot */}
-      {!exhausted && (
-        <button
-          class="character-bar__counter character-bar__loot"
-          onClick={() => !readonly && commands.setLoot(name, ed, loot + 1)}
-          disabled={readonly}
-        >
-          <span class="character-bar__counter-icon">&#128176;</span>
-          <span class="character-bar__counter-value">{loot}</span>
-        </button>
-      )}
+// ── SummonSummary ───────────────────────────────────────────────────────────
 
-      {/* Summon indicator */}
-      {aliveSummons.length > 0 && (
-        <span class="character-bar__summon-badge">{aliveSummons.length}</span>
+function SummonSummary({ summon, characterName, characterEdition, readonly }: {
+  summon: { uuid: string; name: string; health: number; maxHealth: number; entityConditions: EntityCondition[] };
+  characterName: string;
+  characterEdition: string;
+  readonly?: boolean;
+}) {
+  const commands = useCommands();
+  const target = { type: 'summon' as const, characterName, characterEdition, summonUuid: summon.uuid };
+
+  return (
+    <div class="summon-summary">
+      <span class="summon-name">{formatName(summon.name)}</span>
+      <span class="summon-hp">{summon.health}/{summon.maxHealth}</span>
+      {!readonly && (
+        <>
+          <button class="hp-btn mini minus"
+            onClick={() => commands.changeHealth(target, -1)}>−</button>
+          <button class="hp-btn mini plus"
+            onClick={() => commands.changeHealth(target, 1)}>+</button>
+        </>
       )}
+      <ConditionIcons conditions={summon.entityConditions || []} size={16} />
     </div>
   );
 }
