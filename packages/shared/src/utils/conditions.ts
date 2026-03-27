@@ -28,7 +28,8 @@ export const NEGATIVE_CONDITIONS: readonly ConditionName[] = [
 /** Conditions that expire at the end of the entity's next turn */
 export const EXPIRE_CONDITIONS: readonly ConditionName[] = [
   'stun', 'immobilize', 'disarm', 'muddle', 'invisible',
-  'strengthen', 'impair',
+  'strengthen', 'impair', 'bane', 'brittle', 'infect',
+  'regenerate', 'ward', 'dodge', 'empower', 'enfeeble', 'safeguard',
 ] as const;
 
 /** Conditions cleared by heal */
@@ -107,26 +108,39 @@ export function processConditionEndOfRound(conditions: EntityCondition[]): Entit
 
 /**
  * Process conditions at end of a figure's turn.
+ * - state 'normal' → 'expire' for expire-type conditions (they lasted through the figure's next turn)
  * - state 'turn' → 'normal'
- * - Wound damage is counted and returned as a flag.
- * Returns { conditions, woundDamage } so the caller can apply HP loss.
+ * - Bane damage (10) returned when bane expires
+ * Returns { conditions, baneDamage } so the caller can apply HP loss.
  */
 export function processConditionEndOfTurn(
   conditions: EntityCondition[],
-): { conditions: EntityCondition[]; woundDamage: number } {
-  let woundDamage = 0;
+): { conditions: EntityCondition[]; baneDamage: number } {
+  let baneDamage = 0;
 
-  const updated = conditions.map((c) => {
-    if (c.name === 'wound' || c.name === 'wound_x') {
-      woundDamage += c.value;
-    }
-    if (c.state === 'turn') {
-      return { ...c, state: 'normal' as const };
-    }
-    return { ...c };
-  });
+  const updated = conditions
+    .filter((c) => {
+      // Remove fully expired conditions
+      if (c.state === 'expire' || c.state === 'removed') return false;
+      if (c.expired) return false;
+      return true;
+    })
+    .map((c) => {
+      if (c.state === 'turn') {
+        return { ...c, state: 'normal' as const };
+      }
+      if (c.state === 'normal' && isExpireCondition(c.name)) {
+        // Condition has been active for a full turn — mark for expiry
+        // Bane deals 10 damage when it expires
+        if (c.name === 'bane') {
+          baneDamage = 10;
+        }
+        return { ...c, state: 'expire' as const };
+      }
+      return { ...c };
+    });
 
-  return { conditions: updated, woundDamage };
+  return { conditions: updated, baneDamage };
 }
 
 /**

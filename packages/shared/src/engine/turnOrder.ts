@@ -86,6 +86,13 @@ export function getInitiativeOrder(state: GameState): OrderedFigure[] {
 
     const { type, figure } = found;
 
+    // Skip monster groups where all entities are dead
+    if (type === 'monster') {
+      const monster = figure as Monster;
+      const hasLiveEntities = monster.entities.some((e) => !e.dead);
+      if (!hasLiveEntities) continue;
+    }
+
     const ordered: OrderedFigure = {
       figureId: { type, name, edition },
       type,

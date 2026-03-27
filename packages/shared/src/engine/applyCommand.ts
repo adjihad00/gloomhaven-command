@@ -318,7 +318,33 @@ function handleChangeHealth(
   if (!resolved) return;
   const { entity } = resolved;
 
-  entity.health = Math.max(0, Math.min(entity.maxHealth, entity.health + payload.delta));
+  let delta = payload.delta;
+
+  // Poison: +1 damage from all damage sources
+  if (delta < 0) {
+    const hasPoisonActive = entity.entityConditions?.some(
+      (c) => (c.name === 'poison' || c.name === 'poison_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+    );
+    if (hasPoisonActive) {
+      delta -= 1;
+    }
+  }
+
+  // Any heal clears wound and poison instead of healing HP
+  if (delta > 0) {
+    const hasWoundOrPoison = entity.entityConditions?.some(
+      (c) => (c.name === 'wound' || c.name === 'wound_x' || c.name === 'poison' || c.name === 'poison_x')
+        && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+    );
+    if (hasWoundOrPoison) {
+      entity.entityConditions = entity.entityConditions.filter(
+        (c) => c.name !== 'wound' && c.name !== 'wound_x' && c.name !== 'poison' && c.name !== 'poison_x',
+      );
+      delta = 0; // Heal consumed by clearing conditions
+    }
+  }
+
+  entity.health = Math.max(0, Math.min(entity.maxHealth, entity.health + delta));
 
   // Auto-kill monster entities at 0 hp, auto-revive when healed above 0
   if (payload.target.type === 'monster') {
@@ -388,8 +414,13 @@ function handleAdvancePhase(state: GameState, dataContext?: DataContext): GameSt
       drawMonsterAbilities(state, dataContext);
     }
 
-    // startRound sorts figures by initiative and activates first
-    return startRound(state);
+    // startRound sorts figures by initiative and activates first (just sets active=true)
+    const roundState = startRound(state);
+
+    // Apply turn-start conditions (wound, regenerate) on the first activated figure
+    applyTurnStartToActiveFigure(roundState);
+
+    return roundState;
   }
 
   // state === 'next', round is complete
@@ -535,21 +566,34 @@ function handleToggleTurn(
 
     if (targetType === 'character') {
       const c = targetFigure as Character;
-      // End-of-turn: condition state transitions (wound damage moved to turn start)
+      // End-of-turn: condition state transitions + bane damage
       const result = processConditionEndOfTurn(c.entityConditions);
       c.entityConditions = result.conditions;
+      if (result.baneDamage > 0) {
+        c.health = Math.max(0, c.health - result.baneDamage);
+      }
       for (const summon of c.summons) {
         summon.active = false;
         summon.off = true;
+        const summonResult = processConditionEndOfTurn(summon.entityConditions);
+        summon.entityConditions = summonResult.conditions;
+        if (summonResult.baneDamage > 0) {
+          summon.health = Math.max(0, summon.health - summonResult.baneDamage);
+          if (summon.health <= 0) summon.dead = true;
+        }
       }
     } else if (targetType === 'monster') {
       const m = targetFigure as Monster;
       for (const entity of m.entities) {
         entity.active = false;
         entity.off = true;
-        // End-of-turn: condition state transitions (wound damage moved to turn start)
+        // End-of-turn: condition state transitions + bane damage
         const result = processConditionEndOfTurn(entity.entityConditions);
         entity.entityConditions = result.conditions;
+        if (result.baneDamage > 0) {
+          entity.health = Math.max(0, entity.health - result.baneDamage);
+          if (entity.health <= 0) entity.dead = true;
+        }
       }
     }
 
@@ -627,19 +671,72 @@ function activateFigure(
   }
 }
 
-/** Apply wound damage and regenerate healing at the start of a figure's turn. */
+/** Apply wound damage and regenerate healing at the start of a figure's turn.
+ *  Order: Regenerate first (can clear wound/poison), then wound damage.
+ *  Any heal removes wound and poison INSTEAD of healing HP. */
 function applyTurnStartConditions(entity: { health: number; maxHealth: number; entityConditions: EntityCondition[] }): void {
-  // Wound: suffer damage at turn start
-  for (const cond of entity.entityConditions) {
-    if ((cond.name === 'wound' || cond.name === 'wound_x') && !cond.expired) {
-      entity.health = Math.max(0, entity.health - cond.value);
+  const hasRegen = entity.entityConditions.some(
+    (c) => c.name === 'regenerate' && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+  );
+  const hasWound = entity.entityConditions.some(
+    (c) => (c.name === 'wound' || c.name === 'wound_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+  );
+  const hasPoison = entity.entityConditions.some(
+    (c) => (c.name === 'poison' || c.name === 'poison_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+  );
+
+  // Regenerate: heal 1 at turn start — but any heal clears wound/poison INSTEAD of healing
+  if (hasRegen) {
+    if (hasWound || hasPoison) {
+      // Heal consumed by removing wound/poison — no HP gained
+      entity.entityConditions = entity.entityConditions.filter(
+        (c) => c.name !== 'wound' && c.name !== 'wound_x' && c.name !== 'poison' && c.name !== 'poison_x',
+      );
+    } else {
+      // No wound/poison — heal 1 HP
+      entity.health = Math.min(entity.maxHealth, entity.health + 1);
     }
   }
 
-  // Regenerate: heal 1 at turn start
-  const hasRegen = entity.entityConditions.some((c) => c.name === 'regenerate' && !c.expired);
-  if (hasRegen) {
-    entity.health = Math.min(entity.maxHealth, entity.health + 1);
+  // Wound: suffer damage at turn start (only if wound still present — not cleared by regenerate)
+  const stillHasPoison = entity.entityConditions.some(
+    (c) => (c.name === 'poison' || c.name === 'poison_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed',
+  );
+  for (const cond of entity.entityConditions) {
+    if ((cond.name === 'wound' || cond.name === 'wound_x') && !cond.expired && cond.state !== 'expire' && cond.state !== 'removed') {
+      let dmg = cond.value;
+      if (stillHasPoison) dmg += 1; // Poison adds +1 to all damage
+      entity.health = Math.max(0, entity.health - dmg);
+    }
+  }
+}
+
+/** Apply turn-start conditions to whichever figure is currently active (used after startRound). */
+function applyTurnStartToActiveFigure(state: GameState): void {
+  const activeChar = state.characters.find((c) => c.active);
+  if (activeChar) {
+    applyTurnStartConditions(activeChar);
+    for (const summon of activeChar.summons) {
+      if (!summon.dead) {
+        summon.active = true;
+        summon.off = false;
+        applyTurnStartConditions(summon);
+      }
+    }
+    return;
+  }
+
+  const activeMon = state.monsters.find((m) => m.active);
+  if (activeMon) {
+    for (const entity of activeMon.entities) {
+      if (!entity.dead) {
+        entity.active = true;
+        entity.off = false;
+        applyTurnStartConditions(entity);
+        if (entity.health <= 0) entity.dead = true;
+      }
+    }
+    return;
   }
 }
 
