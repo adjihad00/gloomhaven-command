@@ -1,6 +1,5 @@
 import { h } from 'preact';
-import type { ElementModel, AttackModifierDeckModel } from '@gloomhaven-command/shared';
-import { ElementBoard } from './ElementBoard';
+import type { AttackModifierDeckModel, LevelDerivedValues } from '@gloomhaven-command/shared';
 import { ModifierDeck } from './ModifierDeck';
 
 interface DoorInfo {
@@ -15,11 +14,9 @@ interface ScenarioFooterProps {
   canAdvance: boolean;
   advanceLabel: string;
   onAdvance: () => void;
-  scenarioName?: string;
   doors?: DoorInfo[];
   onRevealRoom?: (roomNumber: number) => void;
-  elementBoard: ElementModel[];
-  onCycleElement?: (elementType: string, currentState: string) => void;
+  levelValues: LevelDerivedValues;
   modifierDeck?: AttackModifierDeckModel;
   onDrawModifier?: () => void;
   onShuffleModifier?: () => void;
@@ -32,8 +29,7 @@ interface ScenarioFooterProps {
 
 export function ScenarioFooter({
   phase, canAdvance, advanceLabel, onAdvance,
-  scenarioName, doors, onRevealRoom,
-  elementBoard, onCycleElement,
+  doors, onRevealRoom, levelValues,
   modifierDeck, onDrawModifier, onShuffleModifier,
   onAddBless, onRemoveBless, onAddCurse, onRemoveCurse,
   readonly,
@@ -41,67 +37,69 @@ export function ScenarioFooter({
   return (
     <div class="scenario-footer">
       {/* Left: phase action */}
-      <div class="scenario-footer__left">
-        <button
-          class={`btn ${canAdvance ? 'btn-primary' : ''}`}
-          onClick={onAdvance}
-          disabled={!canAdvance || readonly}
-        >
-          {advanceLabel}
-        </button>
+      <button
+        class={`phase-btn ${canAdvance ? 'ready' : 'waiting'}`}
+        onClick={onAdvance}
+        disabled={!canAdvance || readonly}
+      >
+        {advanceLabel}
+      </button>
+
+      {/* Center-left: door controls */}
+      {doors && doors.length > 0 && (
+        <div class="scenario-footer__doors">
+          {doors.map(door => (
+            <button
+              key={door.roomNumber}
+              class={`scenario-footer__door ${door.revealed ? 'revealed' : ''}`}
+              onClick={() => !door.revealed && onRevealRoom?.(door.roomNumber)}
+              disabled={door.revealed || readonly}
+              title={door.revealed
+                ? `Room ${door.roomNumber} (${door.ref}) - revealed`
+                : `Open door to Room ${door.roomNumber} (${door.ref})`
+              }
+            >
+              <span class="scenario-footer__door-icon">{door.revealed ? '\u25A1' : '\u25A0'}</span>
+              <span class="scenario-footer__door-ref">{door.ref}</span>
+              {door.marker && !door.revealed && (
+                <span class="scenario-footer__door-marker">&sect;</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Center: level-derived values */}
+      <div class="footer-derived">
+        <span class="derived-pill" title="Trap Damage">
+          <span class="derived-icon">{'\u26A0'}</span>{levelValues.trapDamage}
+        </span>
+        <span class="derived-pill" title="Gold per Coin">
+          <span class="derived-icon">{'\uD83D\uDCB0'}</span>{levelValues.goldConversion}
+        </span>
+        <span class="derived-pill" title="Bonus XP">
+          <span class="derived-icon">{'\u2605'}</span>{levelValues.bonusXP}
+        </span>
+        <span class="derived-pill" title="Hazardous Terrain">
+          <span class="derived-icon">{'\u2623'}</span>{levelValues.hazardousTerrain}
+        </span>
       </div>
 
-      {/* Center: scenario + doors */}
-      <div class="scenario-footer__center">
-        {scenarioName && <span class="scenario-footer__name">{scenarioName}</span>}
-        {doors && doors.length > 0 && (
-          <div class="scenario-footer__doors">
-            {doors.map(door => (
-              <button
-                key={door.roomNumber}
-                class={`scenario-footer__door ${door.revealed ? 'revealed' : ''}`}
-                onClick={() => !door.revealed && onRevealRoom?.(door.roomNumber)}
-                disabled={door.revealed || readonly}
-                title={door.revealed
-                  ? `Room ${door.roomNumber} (${door.ref}) - revealed`
-                  : `Open door to Room ${door.roomNumber} (${door.ref})`
-                }
-              >
-                <span class="scenario-footer__door-icon">{door.revealed ? '\u25A1' : '\u25A0'}</span>
-                <span class="scenario-footer__door-ref">{door.ref}</span>
-                {door.marker && !door.revealed && (
-                  <span class="scenario-footer__door-marker">&sect;</span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Right: elements + modifier deck */}
-      <div class="scenario-footer__right">
-        <ElementBoard
-          elements={elementBoard}
-          onCycleElement={onCycleElement}
-          layout="horizontal"
+      {/* Right: modifier deck */}
+      {modifierDeck && onDrawModifier && onShuffleModifier && (
+        <ModifierDeck
+          deck={modifierDeck}
+          deckName="Monster"
+          onDraw={onDrawModifier}
+          onShuffle={onShuffleModifier}
+          onAddBless={onAddBless ?? (() => {})}
+          onRemoveBless={onRemoveBless ?? (() => {})}
+          onAddCurse={onAddCurse ?? (() => {})}
+          onRemoveCurse={onRemoveCurse ?? (() => {})}
           readonly={readonly}
-          size="compact"
+          compact
         />
-        {modifierDeck && onDrawModifier && onShuffleModifier && (
-          <ModifierDeck
-            deck={modifierDeck}
-            deckName="Monster"
-            onDraw={onDrawModifier}
-            onShuffle={onShuffleModifier}
-            onAddBless={onAddBless ?? (() => {})}
-            onRemoveBless={onRemoveBless ?? (() => {})}
-            onAddCurse={onAddCurse ?? (() => {})}
-            onRemoveCurse={onRemoveCurse ?? (() => {})}
-            readonly={readonly}
-            compact
-          />
-        )}
-      </div>
+      )}
     </div>
   );
 }

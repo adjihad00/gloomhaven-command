@@ -1,33 +1,53 @@
 import { h } from 'preact';
-import type { LevelDerivedValues } from '@gloomhaven-command/shared';
+import type { ElementModel } from '@gloomhaven-command/shared';
+import { ElementBoard } from './ElementBoard';
 
 interface ScenarioHeaderProps {
   round: number;
   phase: string;
   scenarioName?: string;
+  scenarioIndex?: string;
   level: number;
-  levelValues: LevelDerivedValues;
-  connectionStatus: string;
+  elementBoard: ElementModel[];
+  onCycleElement?: (elementType: string, currentState: string) => void;
   onMenuOpen?: () => void;
+  readonly?: boolean;
 }
 
-export function ScenarioHeader({ round, phase, scenarioName, level, levelValues, connectionStatus, onMenuOpen }: ScenarioHeaderProps) {
+export function ScenarioHeader({ round, phase, scenarioName, scenarioIndex, level, elementBoard, onCycleElement, onMenuOpen, readonly }: ScenarioHeaderProps) {
   const phaseLabel = phase === 'draw' ? 'Card Selection' : 'Playing';
-  const connected = connectionStatus === 'connected';
+
+  const scenarioDisplay = scenarioIndex && scenarioName
+    ? `#${scenarioIndex} - ${scenarioName.toUpperCase()}, LEVEL ${level}`
+    : scenarioIndex
+    ? `#${scenarioIndex}, LEVEL ${level}`
+    : `LEVEL ${level}`;
 
   return (
     <div class="scenario-header">
-      {onMenuOpen && (
-        <button class="scenario-header__menu" onClick={onMenuOpen}>&#9776;</button>
-      )}
-      <span class="scenario-header__round">Round {round} — {phaseLabel}</span>
-      {scenarioName && (
-        <span class="scenario-header__scenario">{scenarioName} — Level {level}</span>
-      )}
-      <span class="scenario-header__derived">
-        Trap:{levelValues.trapDamage} Gold:{levelValues.goldConversion} XP:{levelValues.bonusXP}
-      </span>
-      <span class={`status-dot ${connected ? 'connected' : 'disconnected'}`} />
+      <div class="header-left">
+        {onMenuOpen && (
+          <button class="menu-btn" onClick={onMenuOpen}>&#9776;</button>
+        )}
+        <div class="round-phase">
+          <span class="round-label">Round {round}</span>
+          <span class="phase-label">{phaseLabel}</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <span class="scenario-label">{scenarioDisplay}</span>
+      </div>
+
+      <div class="header-right">
+        <ElementBoard
+          elements={elementBoard}
+          onCycleElement={onCycleElement}
+          layout="horizontal"
+          readonly={readonly}
+          size="header"
+        />
+      </div>
     </div>
   );
 }

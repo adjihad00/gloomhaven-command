@@ -21,7 +21,7 @@ type OverlayState =
   | { type: 'menu' };
 
 export function ScenarioView() {
-  const { gameCode, connectionStatus, disconnect } = useContext(AppContext);
+  const { gameCode, disconnect } = useContext(AppContext);
   const gameState = useGameState();
   const commands = useCommands();
   const { state, characters, monsters, elementBoard, round, phase, level, edition } = gameState;
@@ -114,10 +114,14 @@ export function ScenarioView() {
       <ScenarioHeader
         round={round}
         phase={phase}
-        scenarioName={state.scenario ? `#${state.scenario.index}` : undefined}
+        scenarioIndex={state.scenario?.index}
+        scenarioName={scenarioData?.name}
         level={level}
-        levelValues={levelValues}
-        connectionStatus={connectionStatus}
+        elementBoard={elementBoard}
+        onCycleElement={(type, currentState) => {
+          const cycle: Record<string, string> = { inert: 'new', new: 'strong', strong: 'waning', waning: 'inert' };
+          commands.moveElement(type as any, (cycle[currentState] || 'inert') as any);
+        }}
         onMenuOpen={() => setActiveOverlay({ type: 'menu' })}
       />
 
@@ -137,14 +141,9 @@ export function ScenarioView() {
         canAdvance={advanceInfo.canAdvance}
         advanceLabel={advanceInfo.label}
         onAdvance={() => commands.advancePhase()}
-        scenarioName={state.scenario ? `#${state.scenario.index}` : undefined}
         doors={doorInfo}
         onRevealRoom={roomNum => commands.revealRoom(roomNum)}
-        elementBoard={elementBoard}
-        onCycleElement={(type, currentState) => {
-          const cycle: Record<string, string> = { inert: 'new', new: 'strong', strong: 'waning', waning: 'inert' };
-          commands.moveElement(type as any, (cycle[currentState] || 'inert') as any);
-        }}
+        levelValues={levelValues}
         modifierDeck={state.monsterAttackModifierDeck}
         onDrawModifier={() => commands.drawModifierCard('monster')}
         onShuffleModifier={() => commands.shuffleModifierDeck('monster')}
