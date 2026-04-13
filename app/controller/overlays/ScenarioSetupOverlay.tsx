@@ -23,6 +23,7 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
   const [newCharLevel, setNewCharLevel] = useState(1);
   const [step, setStep] = useState<SetupStep>('main');
   const [previewScenario, setPreviewScenario] = useState<{ index: string; name: string } | null>(null);
+  const [showAllScenarios, setShowAllScenarios] = useState(false);
 
   const { data: editions } = useEditions();
   const { data: characters } = useCharacterList(selectedEdition);
@@ -34,14 +35,41 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
     !!previewScenario,
   );
 
+  // Determine unlocked scenarios from completed + initial
+  const completedIndices = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of state.party?.scenarios || []) set.add(s.index);
+    return set;
+  }, [state.party?.scenarios]);
+
+  const unlockedIndices = useMemo(() => {
+    if (!scenarios) return new Set<string>();
+    const unlocked = new Set<string>();
+    for (const s of scenarios as any[]) {
+      if (s.initial) unlocked.add(s.index);
+    }
+    for (const s of scenarios as any[]) {
+      if (completedIndices.has(s.index) && s.unlocks) {
+        for (const u of s.unlocks) unlocked.add(u);
+      }
+    }
+    return unlocked;
+  }, [scenarios, completedIndices]);
+
   const filteredScenarios = useMemo(() => {
     if (!scenarios) return [];
-    const search = scenarioSearch.toLowerCase();
-    if (!search) return scenarios;
-    return scenarios.filter((s: any) =>
-      s.name?.toLowerCase().includes(search) || s.index?.toString().includes(search)
-    );
-  }, [scenarios, scenarioSearch]);
+    return (scenarios as any[]).filter((s: any) => {
+      // Search filter
+      if (scenarioSearch) {
+        const q = scenarioSearch.toLowerCase();
+        if (!s.index?.toString().includes(q) &&
+            !(s.name && s.name.toLowerCase().includes(q))) return false;
+      }
+      // Show-all filter: if not showing all, only show unlocked
+      if (!showAllScenarios && !unlockedIndices.has(s.index)) return false;
+      return true;
+    });
+  }, [scenarios, scenarioSearch, showAllScenarios, unlockedIndices]);
 
   // Characters already in party
   const existingNames = useMemo(
@@ -72,8 +100,7 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
     if (!previewScenario) return;
     const s = scenarios?.find((sc: any) => sc.index === previewScenario.index);
     commands.setScenario(previewScenario.index, selectedEdition, s?.group);
-    setStep('main');
-    setPreviewScenario(null);
+    onClose();
   };
 
   const handleAddCharacter = (name: string) => {
@@ -261,6 +288,26 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
               </button>
             ))}
           </div>
+          <div class="difficulty-selector">
+            <span class="difficulty-selector__label">Difficulty:</span>
+            {[-2, -1, 0, 1, 2, 3, 4].map(adj => {
+              const labels: Record<number, string> = {
+                [-2]: 'Very Easy', [-1]: 'Easy', [0]: 'Normal',
+                [1]: 'Hard', [2]: 'Very Hard', [3]: 'Brutal', [4]: 'Nightmare',
+              };
+              const isActive = state.levelAdjustment === adj;
+              return (
+                <button
+                  key={adj}
+                  class={`difficulty-btn ${isActive ? 'difficulty-btn--active' : ''}`}
+                  onClick={() => commands.setLevelAdjustment(adj)}
+                  title={labels[adj]}
+                >
+                  {isActive ? labels[adj] : (adj > 0 ? `+${adj}` : String(adj))}
+                </button>
+              );
+            })}
+          </div>
           <div class="setup-overlay__derived">
             <span class="setup-overlay__derived-pill">
               <span class="setup-overlay__derived-label">Trap</span>
@@ -291,20 +338,35 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
             value={scenarioSearch}
             onInput={e => setScenarioSearch((e.target as HTMLInputElement).value)}
           />
+          <div class="scenario-filters">
+            <label class="filter-toggle">
+              <input type="checkbox" checked={showAllScenarios}
+                onChange={e => setShowAllScenarios((e.target as HTMLInputElement).checked)} />
+              Show all scenarios
+            </label>
+            <span class="scenario-count">
+              {filteredScenarios.length} scenario{filteredScenarios.length !== 1 ? 's' : ''}
+              {!showAllScenarios && ' (unlocked)'}
+            </span>
+          </div>
           <div class="setup-overlay__scenario-list">
-            {filteredScenarios.slice(0, 30).map((s: any) => (
-              <button
-                key={s.index}
-                class={`setup-overlay__scenario-item ${state.scenario?.index === s.index ? 'active' : ''}`}
-                onClick={() => handleSelectScenario(s.index, s.name || `Scenario ${s.index}`)}
-              >
-                <span class="setup-overlay__scenario-num">#{s.index}</span>
-                <span class="setup-overlay__scenario-name">{s.name || 'Unnamed'}</span>
-                {s.monsters && (
-                  <span class="setup-overlay__monster-preview">{s.monsters.length} groups</span>
-                )}
-              </button>
-            ))}
+            {filteredScenarios.slice(0, 50).map((s: any) => {
+              const isCompleted = completedIndices.has(s.index);
+              return (
+                <button
+                  key={s.index}
+                  class={`setup-overlay__scenario-item ${state.scenario?.index === s.index ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+                  onClick={() => handleSelectScenario(s.index, s.name || `Scenario ${s.index}`)}
+                >
+                  <span class="setup-overlay__scenario-num">#{s.index}</span>
+                  <span class="setup-overlay__scenario-name">{s.name || 'Unnamed'}</span>
+                  {isCompleted && <span class="completed-badge">{'\u2713'}</span>}
+                  {s.monsters && (
+                    <span class="setup-overlay__monster-preview">{s.monsters.length} groups</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 

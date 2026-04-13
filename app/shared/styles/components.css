@@ -1153,6 +1153,78 @@ a,
     touch-action: manipulation;
 }
 
+/* ── EditionSelector ──────────────────────────────────────────────────── */
+
+.edition-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: var(--space-6);
+}
+
+.edition-selector__title {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent-gold);
+    text-align: center;
+    margin-bottom: var(--space-2);
+}
+
+.edition-selector__subtitle {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+}
+
+.edition-selector__loading {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.edition-selector__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-4);
+    width: 100%;
+    max-width: 680px;
+}
+
+.edition-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-5) var(--space-4);
+    background: var(--bg-card);
+    border: 2px solid var(--edition-color, var(--accent-copper));
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    touch-action: manipulation;
+}
+
+.edition-card:active {
+    transform: scale(0.96);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--edition-color, var(--accent-copper)) 30%, transparent);
+}
+
+.edition-card__abbrev {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--edition-color, var(--accent-gold));
+}
+
+.edition-card__name {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
 /* ── ScenarioHeader ────────────────────────────────────────────────────── */
 
 .scenario-header {

@@ -32,6 +32,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
   const commands = useCommands();
   const { name, health, maxHealth, initiative, experience, loot, exhausted, longRest, summons, entityConditions } = character;
   const ed = character.edition || edition;
+  const displayName = character.title || formatName(name);
   const [showNumpad, setShowNumpad] = useState(false);
 
   const target = { type: 'character' as const, name, edition: ed };
@@ -46,7 +47,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
     return (
       <div class="char-card exhausted">
         <div class="char-header" style={{ background: 'var(--text-muted)' }}>
-          <span class="char-name">{formatName(name)}</span>
+          <span class="char-name">{displayName}</span>
           <span class="char-hp-text">EXHAUSTED</span>
         </div>
       </div>
@@ -61,7 +62,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
       {/* HP Bar Header */}
       <div class="char-header" onClick={onOpenDetail}>
         <div class="char-hp-bar" style={{ width: `${hpPercent}%`, background: hpColor }} />
-        <span class="char-name">{formatName(name)}</span>
+        <span class="char-name">{displayName}</span>
         <span class="char-hp-text">{health}/{maxHealth}</span>
       </div>
 

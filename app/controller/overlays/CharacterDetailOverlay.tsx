@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { useState } from 'preact/hooks';
 import type { Character, ConditionName } from '@gloomhaven-command/shared';
 import { useCommands } from '../../hooks/useCommands';
 import { OverlayBackdrop } from './OverlayBackdrop';
@@ -23,6 +24,16 @@ export function CharacterDetailOverlay({ character, edition, availableConditions
   const target = { type: 'character' as const, name, edition: ed };
   const aliveSummons = summons.filter(s => !s.dead);
 
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(character.title || '');
+
+  const handleNameSave = () => {
+    if (editName.trim()) {
+      commands.renameCharacter(name, ed, editName.trim());
+    }
+    setEditingName(false);
+  };
+
   return (
     <OverlayBackdrop onClose={onClose} position="right">
       <div class="char-detail">
@@ -30,7 +41,25 @@ export function CharacterDetailOverlay({ character, edition, availableConditions
         <div class="char-detail__header">
           <img class="char-detail__portrait" src={characterThumbnail(ed, name)} alt={name} />
           <div>
-            <h2 class="char-detail__name">{formatName(name)}</h2>
+            {editingName ? (
+              <input
+                class="char-detail__name-input"
+                value={editName}
+                onInput={e => setEditName((e.target as HTMLInputElement).value)}
+                onBlur={handleNameSave}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                placeholder={formatName(name)}
+                autoFocus
+              />
+            ) : (
+              <h2 class="char-detail__name char-detail__name--editable" onClick={() => {
+                setEditName(character.title || '');
+                setEditingName(true);
+              }}>
+                {character.title || formatName(name)}
+                <span class="char-detail__edit-hint">{'\u270E'}</span>
+              </h2>
+            )}
             <span class="char-detail__level">Level {level}</span>
           </div>
         </div>

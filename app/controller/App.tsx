@@ -1,8 +1,10 @@
+import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import { AppContext } from '../shared/context';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useConnection } from '../hooks/useConnection';
 import { ConnectionScreen } from './ConnectionScreen';
+import { EditionSelector } from './EditionSelector';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
@@ -10,6 +12,9 @@ import type { GameState, AppMode } from '@gloomhaven-command/shared';
 export function App() {
   const { connection, store, commands, state, status, error, connect, disconnect } = useConnection();
   const [gameCode, setGameCode] = useState(localStorage.getItem('gc_gameCode') || '');
+  const [selectedEdition, setSelectedEdition] = useState<string | null>(
+    localStorage.getItem('gc_edition') || null
+  );
 
   const handleConnect = (code: string) => {
     setGameCode(code);
@@ -31,7 +36,17 @@ export function App() {
     );
   }
 
-  // Connected — provide context and route by mode
+  // Connected but no edition — show edition selector
+  const activeEdition = state.edition || selectedEdition;
+  if (!activeEdition) {
+    return (
+      <EditionSelector
+        onSelect={(ed) => setSelectedEdition(ed)}
+      />
+    );
+  }
+
+  // Connected with edition — provide context and route by mode
   return (
     <ErrorBoundary>
       <AppContext.Provider value={{

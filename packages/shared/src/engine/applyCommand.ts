@@ -102,6 +102,12 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'toggleLongRest':
       handleToggleLongRest(after, command.payload);
       break;
+    case 'renameCharacter':
+      handleRenameCharacter(after, command.payload);
+      break;
+    case 'setLevelAdjustment':
+      handleSetLevelAdjustment(after, command.payload);
+      break;
     case 'drawLootCard':
       handleDrawLootCard(after);
       break;
@@ -1075,6 +1081,26 @@ function handleToggleLongRest(
   }
 }
 
+function handleRenameCharacter(
+  state: GameState,
+  payload: { characterName: string; edition: string; title: string },
+): void {
+  const char = state.characters.find(
+    (c) => c.name === payload.characterName && c.edition === payload.edition,
+  );
+  if (char) {
+    char.title = payload.title;
+  }
+}
+
+function handleSetLevelAdjustment(
+  state: GameState,
+  payload: { adjustment: number },
+): void {
+  state.levelAdjustment = Math.max(-2, Math.min(4, payload.adjustment));
+  recalculateLevel(state);
+}
+
 function handleDrawLootCard(state: GameState): void {
   if (state.lootDeck.current < state.lootDeck.cards.length) {
     state.lootDeck.current += 1;
@@ -1175,6 +1201,19 @@ function handleSetScenario(
   state.figures = state.figures.filter((figStr) => {
     return state.characters.some((c) => `${c.edition}-${c.name}` === figStr);
   });
+
+  // Reset character scenario-specific state (preserve XP, gold, level, title)
+  for (const char of state.characters) {
+    char.initiative = 0;
+    char.health = char.maxHealth;
+    char.exhausted = false;
+    char.longRest = false;
+    char.entityConditions = [];
+    char.summons = [];
+    char.active = false;
+    char.off = false;
+    char.absent = false;
+  }
 
   // Enable auto-level calc for new scenarios and recalculate
   state.levelCalculation = true;

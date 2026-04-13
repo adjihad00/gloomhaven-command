@@ -50,6 +50,8 @@ export type CommandAction =
   | 'toggleExhausted'
   | 'toggleAbsent'
   | 'toggleLongRest'
+  | 'renameCharacter'
+  | 'setLevelAdjustment'
   | 'setRound'
   | 'addModifierCard'
   | 'removeModifierCard'
@@ -230,6 +232,16 @@ export interface ToggleLongRestCommand {
   payload: { characterName: string; edition: string };
 }
 
+export interface RenameCharacterCommand {
+  action: 'renameCharacter';
+  payload: { characterName: string; edition: string; title: string };
+}
+
+export interface SetLevelAdjustmentCommand {
+  action: 'setLevelAdjustment';
+  payload: { adjustment: number };
+}
+
 export interface SetRoundCommand {
   action: 'setRound';
   payload: { round: number };
@@ -295,6 +307,8 @@ export type Command =
   | ToggleExhaustedCommand
   | ToggleAbsentCommand
   | ToggleLongRestCommand
+  | RenameCharacterCommand
+  | SetLevelAdjustmentCommand
   | SetRoundCommand
   | AddModifierCardCommand
   | RemoveModifierCardCommand

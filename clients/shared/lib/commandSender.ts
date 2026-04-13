@@ -145,6 +145,14 @@ export class CommandSender {
     this.send({ action: 'toggleLongRest', payload: { characterName, edition } });
   }
 
+  renameCharacter(characterName: string, edition: string, title: string): void {
+    this.send({ action: 'renameCharacter', payload: { characterName, edition, title } });
+  }
+
+  setLevelAdjustment(adjustment: number): void {
+    this.send({ action: 'setLevelAdjustment', payload: { adjustment } });
+  }
+
   // ── Summons ──
 
   addSummon(characterName: string, edition: string, summonName: string, cardId: string, number: number, color: SummonColor): void {
