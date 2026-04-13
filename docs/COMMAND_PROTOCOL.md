@@ -45,7 +45,7 @@ If client is too far behind (>100 revisions), server sends full state instead.
 }
 ```
 
-### Command Actions (31 total)
+### Command Actions (39 total)
 | Action                 | Payload                                                          |
 |------------------------|------------------------------------------------------------------|
 | changeHealth           | { target: CommandTarget, delta: number }                         |
@@ -63,6 +63,8 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | shuffleMonsterAbilities| { monsterName, edition }                                         |
 | shuffleModifierDeck    | { deck: 'monster' \| 'ally' \| { character, edition } }         |
 | drawModifierCard       | { deck: 'monster' \| 'ally' \| { character, edition } }         |
+| addModifierCard        | { deck: 'monster' \| 'ally' \| { character, edition }, cardType: 'bless' \| 'curse' } |
+| removeModifierCard     | { deck: 'monster' \| 'ally' \| { character, edition }, cardType: 'bless' \| 'curse' } |
 | revealRoom             | { roomId }                                                       |
 | undoAction             | { }                                                              |
 | setScenario            | { scenarioIndex, edition, group? }                               |
@@ -78,9 +80,13 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | setMonsterLevel        | { name, edition, level }                                         |
 | toggleExhausted        | { characterName, edition }                                       |
 | toggleAbsent           | { characterName, edition }                                       |
+| toggleLongRest         | { characterName, edition }                                       |
+| renameCharacter        | { characterName, edition, title }                                |
+| setLevelAdjustment     | { adjustment }                                                   |
 | setRound               | { round }                                                        |
 | importGhsState         | { ghsJson: string }                                              |
 | updateCampaign         | { field, value }                                                 |
+| completeScenario       | { outcome: 'victory' \| 'defeat' }                               |
 
 ## Diffs (S→C broadcast)
 ```json

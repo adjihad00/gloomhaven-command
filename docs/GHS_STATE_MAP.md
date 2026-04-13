@@ -108,7 +108,7 @@ name(ConditionName), value(number), state(new/normal/expire/roundExpire/removed/
 
 ## AttackModifierDeck (serialized model)
 
-current(number), cards(string[] of IDs), discarded(number[]), active(bool), lastVisible(number), state(advantage/disadvantage/undefined), bb(bool)
+current(number), cards(string[] of IDs), discarded(number[]), active(bool), lastVisible(number), state(advantage/disadvantage/undefined), bb(bool), lastDrawn(string? — tracks drawn card ID for UI display; needed because bless/curse are spliced from cards array on draw)
 
 ## Party (Frosthaven fields)
 

@@ -43,7 +43,8 @@ Key areas that require rules verification:
 See docs/PROJECT_CONTEXT.md for full tree.
 
 ## Current Phase
-Phase R COMPLETE. Next: Phone + Display views (Phase 3-4) or Phase T (Town mode).
+Phase R COMPLETE (13 fix batches). Next: Phase 3 (Phone Client).
+Controller is feature-complete for scenario play.
 
 ## Design Skills & Conventions
 

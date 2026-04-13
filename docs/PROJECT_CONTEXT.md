@@ -88,7 +88,8 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Persistence: SQLite via better-sqlite3
 
 ## Current Phase
-Phase R COMPLETE. Next: Phone + Display views (Phase 3-4) or Phase T (Town mode).
+Phase R COMPLETE (13 fix batches). Next: Phase 3 (Phone Client).
+Controller is feature-complete for scenario play.
 
 ## Documentation Policy
 All project documents MUST be updated to reflect any code changes before committing
@@ -107,12 +108,15 @@ The shared engine can import/export GHS JSON game saves via
 existing campaigns and provides a fallback bridge if needed.
 
 ## Commands Quick Reference
-changeHealth, toggleCondition, setInitiative, advancePhase,
+changeHealth, changeMaxHealth, toggleCondition, setInitiative, advancePhase,
 toggleTurn, addEntity, removeEntity, moveElement,
-drawLootCard, assignLoot, drawMonsterAbility, shuffleModifierDeck,
-drawModifierCard, addModifierCard, removeModifierCard,
+drawLootCard, assignLoot, drawMonsterAbility, shuffleMonsterAbilities,
+shuffleModifierDeck, drawModifierCard, addModifierCard, removeModifierCard,
 revealRoom, undoAction, setScenario, addCharacter, removeCharacter,
-completeScenario
+setLevel, setExperience, setLoot, toggleExhausted, toggleAbsent,
+toggleLongRest, renameCharacter, setLevelAdjustment, setRound,
+addSummon, removeSummon, addMonsterGroup, removeMonsterGroup,
+setMonsterLevel, importGhsState, updateCampaign, completeScenario
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw

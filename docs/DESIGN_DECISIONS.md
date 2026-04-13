@@ -155,6 +155,67 @@ The summary calculates and previews XP (scenario + bonus), gold (coins × conver
 and FH resources per character. This also prevents accidental taps from completing
 a scenario prematurely.
 
+### 2026-04-13 — Poison as visual reminder, not auto-applied to manual HP changes
+**Decision:** `handleChangeHealth()` does NOT add +1 damage for poison on manual
+HP taps. A comment in the code explains this is deliberate.
+**Rationale:** Per game rules, poison adds +1 per damage SOURCE (attack), not per
+HP tap on the controller. Manual HP taps represent arbitrary health changes (heals,
+damage from various sources). Automated sources (wound at turn start) handle the
+poison +1 correctly in `applyTurnStartConditions()`. The UI shows a poison icon as
+a visual reminder for the player to account for it during attack resolution.
+
+### 2026-04-13 — Edition-specific condition constants with getConditionsForEdition()
+**Decision:** Condition lists are filtered per edition using `getConditionsForEdition()`
+in `packages/shared/src/utils/conditions.ts`.
+**Rationale:** GH and FH have different condition sets (e.g., bane/brittle/ward/impair
+are FH-only). Using a single hardcoded list caused the monster condition picker to show
+unavailable conditions. The function takes an edition string and returns the appropriate
+conditions, excluding AM deck-only conditions (bless, curse, empower, enfeeble).
+
+### 2026-04-13 — EDITION_INITIAL_SCENARIOS hardcoded fallback
+**Decision:** `ScenarioSetupOverlay` uses a hardcoded `EDITION_INITIAL_SCENARIOS` map
+(e.g., `gh → "1"`, `fh → "0"`) as a fallback when scenario unlock data is unavailable.
+**Rationale:** The data layer doesn't track campaign progress or scenario unlocks yet.
+Without a fallback, the setup wizard would have no default scenario to select. The
+hardcoded map covers the initial scenario for each supported edition.
+
+### 2026-04-13 — XP_THRESHOLDS with index=level convention
+**Decision:** `XP_THRESHOLDS` array in `packages/shared/src/data/levelCalculation.ts`
+uses index=level (i.e., `XP_THRESHOLDS[2] = 95` means level 2 requires 95 XP).
+**Rationale:** Direct indexing avoids off-by-one errors when checking if a character
+can level up. The thresholds match the rulebook exactly: [0, 45, 95, 150, 210, 275,
+345, 420, 500].
+
+### 2026-04-13 — Fixed-position popups for condition picker escaping scroll containers
+**Decision:** The `StandeeConditionAdder` popup uses `position: fixed` with a
+full-viewport backdrop (`.cond-adder-portal`) instead of absolute positioning.
+**Rationale:** Monster standee rows render inside a scrolling container. Absolute-
+positioned popups clip at the container boundary or get obscured by sibling elements.
+Fixed positioning with `inset: 0` and `z-index: 60` ensures the popup escapes any
+scroll container stacking context.
+
+### 2026-04-13 — Door confirmation overlay prevents accidental room reveals
+**Decision:** Tapping a door SVG in `ScenarioFooter` shows a confirmation panel
+("Open door to Room X?") instead of immediately calling `revealRoom`.
+**Rationale:** Room reveals are irreversible — they spawn monsters and change the
+game board. On a tablet, accidental taps are common. The confirmation overlay
+(`pendingDoor` state) adds a Cancel/Open Door choice with minimal friction.
+
+### 2026-04-13 — Absent character bench strip with greyscale portraits
+**Decision:** Absent characters render in a horizontal strip below the initiative-
+sorted figure grid, with greyscale portrait thumbnails.
+**Rationale:** Absent characters should not appear in the initiative order but must
+remain accessible for toggling back to active. The bench strip uses `filter: grayscale(1)`
+to visually distinguish absent from active characters.
+
+### 2026-04-13 — Dual XP tracking: scenario vs career
+**Decision:** `character.experience` tracks in-scenario XP (resets each scenario).
+`character.progress.experience` tracks career/total XP (persists across scenarios).
+`completeScenario` transfers scenario XP + bonus XP into career XP.
+**Rationale:** GHS stores both values but earlier code only used `character.experience`.
+The scenario XP dial needs to reset to 0 at scenario start while career XP accumulates.
+The transfer happens in `handleCompleteScenario()` before resetting combat state.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are

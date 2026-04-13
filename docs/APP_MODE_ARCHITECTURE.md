@@ -59,15 +59,31 @@ Three parallel esbuild builds. Tree-shaking gives each device only what it uses.
 ## SCENARIO MODE
 
 ### Controller (iPad, landscape)
-Primary: Single GHS-style screen — initiative-sorted figure list with characters
-and monsters interleaved. Footer bar with phase button, scenario info, elements,
-modifier deck.
+Primary: Single-screen with initiative-sorted figure grid — characters and monsters
+interleaved by initiative. Absent characters shown in a greyscale bench strip below
+the figure grid.
 
-Overlays: Character detail, monster detail, scenario controls (doors, manual
-monster add, level adjust). Collapsible secondary panel for less-frequent actions.
+Header: Scenario info (name, level, round), element board (top-right).
+
+Footer: Phase advance button, door SVGs with confirmation overlay, derived-value
+pills with SVG icons (trap damage, gold conversion, hazard damage, bonus XP),
+modifier deck floating overlay, loot deck badge.
+
+Overlays:
+- CharacterDetailOverlay — health, conditions, XP, loot, summons
+- CharacterSheetOverlay — stats tab with resources, campaign progress
+- ScenarioSetupOverlay — 3-step wizard (edition → characters → scenario)
+- InitiativeNumpad — lifted to ScenarioView level (escapes scroll stacking context)
+- MenuOverlay — scenario end (victory/defeat), settings
+- ScenarioSummaryOverlay — per-character reward preview before commit
+- LootDeckOverlay — FH loot deck draw/assign
+- OverlayBackdrop — shared backdrop for all overlays
 
 ### Phone (portrait)
-Character-scoped: Health bar, initiative input (numpad overlay), active conditions
+Scaffold complete (App, ConnectionScreen, CharacterPicker, ScenarioView placeholder,
+TownView placeholder, main entry point). Character-scoped scenario view not yet built.
+
+Target design: Health bar, initiative input (numpad overlay), active conditions
 (inline icons), XP counter, loot/gold counter, summon cards, turn indicator,
 long rest button. Does NOT show: monster details, other characters, modifier decks,
 element board.
