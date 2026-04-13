@@ -14,13 +14,16 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
   Single process serves HTTP static files + WebSocket on one port.
 - **Shared Engine** (`packages/shared/`): TypeScript. Pure functions for
   game state mutations, validation, turn order, element decay, GHS compat.
-- **Display Client** (`clients/display/`): Portrait-oriented TV/monitor.
-  Read-only. Vertical tower layout: initiative timeline → characters → monsters.
-- **Controller Client** (`clients/controller/`): iPad landscape. Tabbed GM
-  interface. Full mutation access. Tabs: Active Play, Monster Mgmt, Scenario,
-  Loot & Decks, Campaign.
-- **Phone Client** (`clients/phone/`): Player phone, portrait. Scoped to one
+- **Shared Components** (`app/components/`): Preact component library shared
+  across all three clients. CharacterBar, MonsterGroup, ModifierDeck,
+  InitiativeDisplay, ConditionGrid, ElementBoard, etc.
+- **Controller Client** (`app/controller/`): iPad landscape. Single-screen
+  ScenarioView with overlays. Setup wizard (edition → characters → scenario).
+  Initiative numpad, modifier deck controls, door reveals.
+- **Phone Client** (`app/phone/`): Player phone, portrait. Scoped to one
   character. Initiative input, health, conditions, turn actions, loot.
+- **Display Client** (`app/display/`): Portrait-oriented TV/monitor.
+  Read-only. Vertical tower layout: initiative timeline → characters → monsters.
 
 ### Key Files for Understanding the System
 - Types: `packages/shared/src/types/gameState.ts` — all data structures
@@ -37,12 +40,14 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
 ```
 packages/shared/src/    — game logic, types, GHS compat
 server/src/             — HTTP + WebSocket server
-clients/shared/         — CSS theme, WS client lib, state store
-clients/display/        — portrait TV app
-clients/controller/     — landscape tablet app
-clients/phone/          — portrait phone app
+app/components/         — shared Preact UI components
+app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands)
+app/shared/styles/      — CSS theme, typography, component styles
+app/controller/         — landscape tablet app (GM)
+app/phone/              — portrait phone app (player)
+app/display/            — portrait TV app (read-only)
 assets/                 — game images/data (gitignored, local only)
-docs/                   — context, roadmap, decisions, bugs, protocol spec
+docs/                   — context, roadmap, decisions, bugs, rules reference
 ```
 
 ## Design Principles
@@ -94,4 +99,15 @@ existing campaigns and provides a fallback bridge if needed.
 changeHealth, toggleCondition, setInitiative, advancePhase,
 toggleTurn, addEntity, removeEntity, moveElement,
 drawLootCard, assignLoot, drawMonsterAbility, shuffleModifierDeck,
-revealRoom, undoAction, setScenario, addCharacter, removeCharacter
+drawModifierCard, addModifierCard, removeModifierCard,
+revealRoom, undoAction, setScenario, addCharacter, removeCharacter,
+completeScenario
+
+### Notable Command Behaviors
+- **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
+  (returned to supply per rules §5). `lastDrawn` field tracks display.
+- **completeScenario:** Transfers XP + gold, clears monsters/objectives,
+  resets character combat state (HP, conditions, initiative), resets round/phase,
+  sets elements inert. GH uses `char.loot` for gold; FH uses loot card system.
+- **activateFigure (internal):** Long rest characters heal 2 HP on activation
+  (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.

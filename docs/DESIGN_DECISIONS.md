@@ -105,6 +105,27 @@ A phone downloads ~26KB, not 80KB+ of controller overlays it never renders.
 to React via preact/compat but produces dramatically smaller bundles. All three
 entry points are under 28KB minified.
 
+### 2026-04-13 — lastDrawn field on AttackModifierDeckModel
+**Decision:** Added `lastDrawn?: string` to the modifier deck model instead of
+relying on `deck.cards[deck.current - 1]` for UI display.
+**Rationale:** Bless/curse cards are spliced out of `deck.cards` when drawn
+(returned to supply per rules). After splice, the index-based approach
+(`cards[current - 1]`) points to the wrong card or is out of bounds.
+`lastDrawn` stores the actual card ID on every draw, decoupling display
+from array position. The UI (`ModifierDeck.tsx`) falls back to the old
+index method when `lastDrawn` is undefined for backward compatibility with
+pre-batch-12 game saves.
+
+### 2026-04-13 — Dual gold system: FH loot cards + GH coin counter
+**Decision:** `handleCompleteScenario()` checks for FH loot deck first, falls
+back to `char.loot` (simple coin counter) for GH.
+**Rationale:** FH uses a loot card system where card types (money, lumber, etc.)
+are drawn and assigned to characters. GH uses a simple counter — each tap of the
+gold icon increments `char.loot` by 1. Both editions were already in the codebase
+but the scenario-end gold conversion only handled the FH path. Conditional branching
+on `state.lootDeck?.cards?.length > 0` cleanly separates the two systems without
+breaking either.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are

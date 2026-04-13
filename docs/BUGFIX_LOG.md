@@ -40,3 +40,27 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 **Symptom:** Wound/regenerate didn't fire on the first figure activated at the start of a round.
 **Root cause:** `startRound()` in turnOrder.ts only set `figure.active = true` — it didn't call `applyTurnStartConditions()` which lives in applyCommand.ts.
 **Fix:** `handleAdvancePhase()` now calls `applyTurnStartToActiveFigure()` after `startRound()` returns, ensuring the first activated figure gets wound/regenerate processing.
+
+---
+
+## 2026-04-13 — Batch 12: Game Logic & Combat Fixes
+
+### B12.1: Long rest doesn't heal 2 HP
+**Symptom:** Characters declaring long rest (initiative 99) activate but never receive the "Heal 2, self" that the rules mandate.
+**Root cause:** `activateFigure()` in applyCommand.ts calls `applyTurnStartConditions()` for characters but never checks the `longRest` flag. The long rest heal was simply never implemented.
+**Fix:** Added long rest processing inside the `if (type === 'character')` block, before `applyTurnStartConditions()`. When `c.longRest` is true: checks for heal-blocking conditions (wound, poison, bane, brittle); if present, removes them (heal consumed); otherwise heals 2 HP. Clears `c.longRest = false` after processing so it doesn't repeat next round. Per rules §3, long rest heal fires before wound/regenerate turn-start processing.
+
+### B12.2: Bless/curse cards not removed after drawing
+**Symptom:** Drawing a bless or curse from the attack modifier deck leaves it in the deck. It reappears after shuffle and persists indefinitely.
+**Root cause:** `handleDrawModifierCard()` always advanced `deck.current` and pushed to `deck.discarded` — same logic for all cards. Bless/curse cards were never spliced out.
+**Fix:** After drawing, check if the card is `'bless'` or `'curse'`. If so, `splice()` it from `deck.cards` (returned to supply per rules §5) and leave `deck.current` unchanged (next card shifts into position). Normal cards advance `deck.current` as before. Added `lastDrawn?: string` field to `AttackModifierDeckModel` to track the drawn card ID for UI display — necessary because after splicing a bless/curse, `deck.cards[deck.current - 1]` would point to the wrong card. Updated `ModifierDeck.tsx` to read `deck.lastDrawn` instead of indexing into the cards array.
+
+### B12.3: Monsters remain on board after scenario complete
+**Symptom:** Clicking "Scenario Complete (Victory)" transfers XP and gold but all monster groups remain visible. Character state (HP, conditions, initiative) is not reset.
+**Root cause:** `handleCompleteScenario()` only handled XP/gold transfer and party scenario tracking. No cleanup of scenario-specific state.
+**Fix:** Added cleanup before `state.finish` assignment: clear `state.monsters` and `state.objectiveContainers`, filter `state.figures` to characters only, reset all character combat state (HP to max, initiative to 0, clear conditions/summons, deactivate), reset round to 0 and phase to `'draw'`, set all elements to `'inert'`.
+
+### B12.4: Gold not tracked for GH scenarios
+**Symptom:** GH scenarios always show 0 gold earned on scenario completion, even when characters looted coins during play.
+**Root cause:** `handleCompleteScenario()` derived gold exclusively from `char.lootCards` + `state.lootDeck.cards` (the FH loot card system). GH scenarios have no loot deck — `state.lootDeck.cards` is empty, so `char.lootCards` is always empty. The simple `char.loot` coin counter (incremented by the gold icon tap) was never consulted.
+**Fix:** Added conditional: if `char.lootCards` has entries AND `state.lootDeck` has cards, use FH loot card system. Otherwise fall back to `char.loot` as a simple coin count. Both paths feed into the same `totalCoins * goldConversion` calculation.

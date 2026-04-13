@@ -39,6 +39,13 @@
 - [x] R5: Scenario automation — data-driven setup, auto-spawn, room reveals
 - [x] R6: Round flow automation — ability draw, turn order, auto-advance, condition/element automation
 
+## Phase R: Controller Rebuild — Post-R6 Batches (bug fixes + polish)
+- [x] R7-R8: Interaction fixes — condition picker, door confirm, modifier overlay, absent bench
+- [x] R9: XP system overhaul — dual tracking, scenario-end transfer, fill bar
+- [x] R10: Icon system — GHS assets + custom SVGs for game-consistent iconography
+- [x] R11: PWA + reconnect + setup wizard + FH loot deck
+- [x] R12: Game logic — long rest heal, bless/curse removal, scenario cleanup, GH gold
+
 ## Phase R: Controller Rebuild — COMPLETE
 
 ## Phase 3: Phone Client
@@ -63,9 +70,9 @@
 ## Phase 5: Polish & Compatibility
 - [ ] GHS save file import/export UI in controller
 - [ ] Campaign persistence across sessions
-- [ ] Undo/redo stack (bounded, 50 actions)
-- [ ] Scenario setup wizard in controller
+- [x] Undo/redo stack (bounded, 50 actions)
+- [x] Scenario setup wizard in controller (batch 11)
 - [ ] Monster stat reference overlay
-- [ ] PWA manifests for phone + controller
+- [x] PWA manifests for phone + controller (batch 11)
 - [ ] Docker image for server deployment
 - [ ] README with setup instructions
