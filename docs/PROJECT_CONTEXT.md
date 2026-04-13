@@ -90,6 +90,17 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 ## Current Phase
 Phase R COMPLETE. Next: Phone + Display views (Phase 3-4) or Phase T (Town mode).
 
+## Documentation Policy
+All project documents MUST be updated to reflect any code changes before committing
+and pushing to the repo. Stale docs cause compounding errors across sessions.
+Documents to review on every change:
+- `docs/BUGFIX_LOG.md` — bug fixes (append-only)
+- `docs/DESIGN_DECISIONS.md` — architectural choices (append-only)
+- `docs/ROADMAP.md` — completion status
+- `docs/PROJECT_CONTEXT.md` — repo layout, components, commands
+- `docs/APP_MODE_ARCHITECTURE.md` — UI structure, views, flows
+- `docs/GAME_RULES_REFERENCE.md` — game rules implemented or clarified
+
 ## GHS Compatibility
 The shared engine can import/export GHS JSON game saves via
 `packages/shared/src/utils/ghsCompat.ts`. This allows migrating

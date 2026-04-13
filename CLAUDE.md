@@ -68,6 +68,21 @@ Component conventions: Preact functional components, useCommands() for interacti
 GHS assets exclusively (no fallbacks), touch-action: manipulation on all interactive
 elements, aria-labels on all buttons.
 
+## Documentation Currency
+
+**MANDATORY:** Before committing and pushing ANY changes to the repo, all project
+documents must be reviewed and updated to reflect the changes made. This includes:
+
+- `docs/BUGFIX_LOG.md` — append entries for any bugs fixed (symptom, root cause, fix)
+- `docs/DESIGN_DECISIONS.md` — append entries for any architectural or design choices made
+- `docs/ROADMAP.md` — update completion status of any roadmap items affected
+- `docs/PROJECT_CONTEXT.md` — update if repo layout, components, commands, or architecture changed
+- `docs/APP_MODE_ARCHITECTURE.md` — update if UI structure, views, or interaction flows changed
+- `docs/GAME_RULES_REFERENCE.md` — update if new game rules were implemented or clarified
+
+Do NOT commit code changes without also committing the corresponding doc updates.
+Stale documentation causes compounding errors across sessions.
+
 ## Prompt-Driven Workflow
 
 When the user provides an MD file prompt (or references one by name/location), follow this workflow **in order**:
