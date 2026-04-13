@@ -12,6 +12,9 @@ import type {
   CharacterProgress,
   ScenarioStats,
   SummonScenarioStats,
+  LootCard,
+  LootDeck,
+  LootType,
 } from '../types/gameState.js';
 import type { Command, CommandTarget } from '../types/commands.js';
 import type { StateChange } from '../types/protocol.js';
@@ -1243,6 +1246,13 @@ function handleSetScenario(
         spawnRoomMonsters(state, payload.edition, scenario, initialRoom.roomNumber, playerCount, dataContext);
         state.scenario.revealedRooms!.push(initialRoom.roomNumber);
       }
+
+      // Build loot deck from scenario config (FH)
+      if (scenario.lootDeckConfig && Object.keys(scenario.lootDeckConfig).length > 0) {
+        state.lootDeck = buildLootDeck(scenario.lootDeckConfig);
+      } else {
+        state.lootDeck = { current: 0, cards: [], active: false };
+      }
     }
   }
 }
@@ -1352,6 +1362,37 @@ function handleUpdateCampaign(
   if (payload.field in state.party) {
     (state.party as unknown as Record<string, unknown>)[payload.field] = payload.value;
   }
+}
+
+function buildLootDeck(config: Record<string, number>): LootDeck {
+  const cards: LootCard[] = [];
+  let cardId = 1;
+
+  for (const [type, count] of Object.entries(config)) {
+    if (count <= 0) continue;
+    const lootType = type as LootType;
+    const isMoney = lootType === 'money';
+
+    for (let i = 0; i < count; i++) {
+      const coinValue = isMoney ? (i % 3) + 1 : 0;
+      cards.push({
+        type: lootType,
+        cardId: cardId++,
+        value4P: isMoney ? coinValue : 1,
+        value3P: isMoney ? coinValue : 1,
+        value2P: isMoney ? Math.max(1, coinValue - 1) : 1,
+        enhancements: 0,
+      });
+    }
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  return { current: 0, cards, active: true };
 }
 
 function handleCompleteScenario(

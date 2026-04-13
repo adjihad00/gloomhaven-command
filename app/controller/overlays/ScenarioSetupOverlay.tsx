@@ -13,16 +13,22 @@ interface ScenarioSetupOverlayProps {
   onClose: () => void;
 }
 
-type SetupStep = 'main' | 'scenarioPreview';
+type SetupStep = 'edition' | 'party' | 'scenario' | 'scenarioPreview';
 
 export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayProps) {
   const commands = useCommands();
   const currentEdition = state.edition || 'gh';
 
-  const [selectedEdition, setSelectedEdition] = useState(currentEdition);
+  const [selectedEdition, setSelectedEdition] = useState(
+    state.characters.length > 0 ? currentEdition : ''
+  );
   const [scenarioSearch, setScenarioSearch] = useState('');
   const [newCharLevel, setNewCharLevel] = useState(1);
-  const [step, setStep] = useState<SetupStep>('main');
+  const [step, setStep] = useState<SetupStep>(() => {
+    if (state.characters.length > 0) return 'scenario';
+    // Fresh game — always start at edition selection
+    return 'edition';
+  });
   const [previewScenario, setPreviewScenario] = useState<{ index: string; name: string } | null>(null);
   const [showAllScenarios, setShowAllScenarios] = useState(false);
 
@@ -186,7 +192,7 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
           </div>
 
           <div class="scenario-preview__actions">
-            <button class="btn" onClick={() => { setStep('main'); setPreviewScenario(null); }}>
+            <button class="btn" onClick={() => { setStep('scenario'); setPreviewScenario(null); }}>
               Back
             </button>
             <button
@@ -202,90 +208,108 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
     );
   }
 
-  // ── Main Setup Step ──
+  // ── Edition Step ──
+  if (step === 'edition') {
+    return (
+      <OverlayBackdrop onClose={onClose} position="right">
+        <div class="setup-overlay">
+          <h2 class="setup-overlay__title">Select Edition</h2>
+          <div class="setup-overlay__section">
+            <div class="edition-grid">
+              {(editions ?? [currentEdition]).map(ed => (
+                <button
+                  key={ed}
+                  class={`edition-card ${selectedEdition === ed ? 'edition-card--active' : ''}`}
+                  onClick={() => setSelectedEdition(ed)}
+                >
+                  <span class="edition-card__name">{ed.toUpperCase()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div class="setup-wizard__nav">
+            <button class="btn" onClick={onClose}>Cancel</button>
+            <button class="btn btn-primary" onClick={() => setStep('party')}
+              disabled={!selectedEdition}>
+              Next: Add Characters
+            </button>
+          </div>
+        </div>
+      </OverlayBackdrop>
+    );
+  }
+
+  // ── Party Step ──
+  if (step === 'party') {
+    return (
+      <OverlayBackdrop onClose={onClose} position="right">
+        <div class="setup-overlay">
+          <h2 class="setup-overlay__title">Build Party</h2>
+
+          <div class="setup-overlay__section">
+            <label class="setup-overlay__label">
+              Party ({state.characters.length} character{state.characters.length !== 1 ? 's' : ''})
+            </label>
+            {state.characters.map(c => (
+              <div key={`${c.edition}-${c.name}`} class="setup-overlay__char-row">
+                <span class="setup-overlay__char-name">{formatName(c.name)}</span>
+                <span class="setup-overlay__char-level">Lv {c.level}</span>
+                <span class="setup-overlay__char-hp">{c.health}/{c.maxHealth} HP</span>
+                <button class="btn setup-overlay__remove-btn"
+                  onClick={() => commands.removeCharacter(c.name, c.edition)}>
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div class="setup-overlay__section">
+            <label class="setup-overlay__label">Add Character</label>
+            <div class="setup-overlay__level-row">
+              <span class="setup-overlay__level-label">Level:</span>
+              {[1,2,3,4,5,6,7,8,9].map(lvl => (
+                <button key={lvl}
+                  class={`btn setup-overlay__level-pip ${lvl === newCharLevel ? 'btn-primary' : ''}`}
+                  onClick={() => setNewCharLevel(lvl)}>
+                  {lvl}
+                </button>
+              ))}
+            </div>
+            <div class="char-class-grid">
+              {availableClasses.map((c: any) => {
+                const hpAtLevel = c.stats?.find((s: any) => s.level === newCharLevel)?.health ?? '?';
+                return (
+                  <button key={c.name} class="char-class-card"
+                    style={c.color ? { borderColor: c.color } : undefined}
+                    onClick={() => handleAddCharacter(c.name)}>
+                    <img src={characterThumbnail(selectedEdition, c.name)}
+                      alt={formatName(c.name)} class="char-class-card__thumb" loading="lazy" />
+                    <span class="char-class-card__name">{formatName(c.name)}</span>
+                    <span class="char-class-card__hp">HP: {hpAtLevel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div class="setup-wizard__nav">
+            <button class="btn" onClick={() => setStep('edition')}>Back: Edition</button>
+            <button class="btn btn-primary" onClick={() => setStep('scenario')}
+              disabled={state.characters.length === 0}>
+              Next: Select Scenario
+            </button>
+          </div>
+        </div>
+      </OverlayBackdrop>
+    );
+  }
+
+  // ── Scenario Step ──
   return (
     <OverlayBackdrop onClose={onClose} position="right">
       <div class="setup-overlay">
-        <h2 class="setup-overlay__title">Scenario Setup</h2>
+        <h2 class="setup-overlay__title">Select Scenario</h2>
 
-        {/* Edition selection */}
-        <div class="setup-overlay__section">
-          <label class="setup-overlay__label">Edition</label>
-          <select
-            class="form-input"
-            value={selectedEdition}
-            onChange={e => setSelectedEdition((e.target as HTMLSelectElement).value)}
-          >
-            {(editions ?? [currentEdition]).map(ed => (
-              <option key={ed} value={ed}>{ed.toUpperCase()}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Characters — current party */}
-        <div class="setup-overlay__section">
-          <label class="setup-overlay__label">
-            Party ({state.characters.length} character{state.characters.length !== 1 ? 's' : ''})
-          </label>
-          {state.characters.map(c => (
-            <div key={`${c.edition}-${c.name}`} class="setup-overlay__char-row">
-              <span class="setup-overlay__char-name">{formatName(c.name)}</span>
-              <span class="setup-overlay__char-level">Lv {c.level}</span>
-              <span class="setup-overlay__char-hp">{c.health}/{c.maxHealth} HP</span>
-              <button
-                class="btn setup-overlay__remove-btn"
-                onClick={() => commands.removeCharacter(c.name, c.edition)}
-              >
-                &times;
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Add character — class grid */}
-        <div class="setup-overlay__section">
-          <label class="setup-overlay__label">Add Character</label>
-
-          {/* Level selector */}
-          <div class="setup-overlay__level-row">
-            <span class="setup-overlay__level-label">Level:</span>
-            {[1,2,3,4,5,6,7,8,9].map(lvl => (
-              <button
-                key={lvl}
-                class={`btn setup-overlay__level-pip ${lvl === newCharLevel ? 'btn-primary' : ''}`}
-                onClick={() => setNewCharLevel(lvl)}
-              >
-                {lvl}
-              </button>
-            ))}
-          </div>
-
-          {/* Character class grid */}
-          <div class="char-class-grid">
-            {availableClasses.map((c: any) => {
-              const hpAtLevel = c.stats?.find((s: any) => s.level === newCharLevel)?.health ?? '?';
-              return (
-                <button
-                  key={c.name}
-                  class="char-class-card"
-                  style={c.color ? { borderColor: c.color } : undefined}
-                  onClick={() => handleAddCharacter(c.name)}
-                >
-                  <img
-                    src={characterThumbnail(selectedEdition, c.name)}
-                    alt={formatName(c.name)}
-                    class="char-class-card__thumb"
-                    loading="lazy"
-                  />
-                  <span class="char-class-card__name">{formatName(c.name)}</span>
-                  <span class="char-class-card__hp">HP: {hpAtLevel}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Scenario Level */}
         <div class="setup-overlay__section">
           <label class="setup-overlay__label">Scenario Level</label>
           <div class="setup-overlay__level-info">
@@ -299,11 +323,9 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
           </div>
           <div class="setup-overlay__level-buttons">
             {[0,1,2,3,4,5,6,7].map(l => (
-              <button
-                key={l}
+              <button key={l}
                 class={`btn ${state.level === l ? 'btn-primary' : ''}`}
-                onClick={() => commands.setLevel(l)}
-              >
+                onClick={() => commands.setLevel(l)}>
                 {l}
               </button>
             ))}
@@ -317,12 +339,10 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
               };
               const isActive = state.levelAdjustment === adj;
               return (
-                <button
-                  key={adj}
+                <button key={adj}
                   class={`difficulty-btn ${isActive ? 'difficulty-btn--active' : ''}`}
                   onClick={() => commands.setLevelAdjustment(adj)}
-                  title={labels[adj]}
-                >
+                  title={labels[adj]}>
                   {isActive ? labels[adj] : (adj > 0 ? `+${adj}` : String(adj))}
                 </button>
               );
@@ -348,16 +368,11 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
           </div>
         </div>
 
-        {/* Scenario selection */}
         <div class="setup-overlay__section">
-          <label class="setup-overlay__label">Select Scenario</label>
-          <input
-            class="form-input"
-            type="text"
+          <input class="form-input" type="text"
             placeholder="Search by number or name..."
             value={scenarioSearch}
-            onInput={e => setScenarioSearch((e.target as HTMLInputElement).value)}
-          />
+            onInput={e => setScenarioSearch((e.target as HTMLInputElement).value)} />
           <div class="scenario-filters">
             <label class="filter-toggle">
               <input type="checkbox" checked={showAllScenarios}
@@ -373,11 +388,9 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
             {filteredScenarios.slice(0, 50).map((s: any) => {
               const isCompleted = completedIndices.has(s.index);
               return (
-                <button
-                  key={s.index}
+                <button key={s.index}
                   class={`setup-overlay__scenario-item ${state.scenario?.index === s.index ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
-                  onClick={() => handleSelectScenario(s.index, s.name || `Scenario ${s.index}`)}
-                >
+                  onClick={() => handleSelectScenario(s.index, s.name || `Scenario ${s.index}`)}>
                   <span class="setup-overlay__scenario-num">#{s.index}</span>
                   <span class="setup-overlay__scenario-name">{s.name || 'Unnamed'}</span>
                   {isCompleted && <span class="completed-badge">{'\u2713'}</span>}
@@ -390,17 +403,9 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
           </div>
         </div>
 
-        {/* Active scenario info */}
-        {state.scenario && (
-          <div class="setup-overlay__section">
-            <label class="setup-overlay__label">Active Scenario</label>
-            <div class="setup-overlay__active-info">
-              <span>#{state.scenario.index} ({state.scenario.edition})</span>
-              <span>Monsters: {state.monsters.length} groups</span>
-              <span>Rooms revealed: {state.scenario.revealedRooms?.length ?? 0}</span>
-            </div>
-          </div>
-        )}
+        <div class="setup-wizard__nav">
+          <button class="btn" onClick={() => setStep('party')}>Back: Party</button>
+        </div>
       </div>
     </OverlayBackdrop>
   );

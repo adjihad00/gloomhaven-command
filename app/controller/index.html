@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Gloomhaven Command — Controller</title>
+    <link rel="manifest" href="/app/controller/manifest.json">
     <link rel="stylesheet" href="/app/shared/styles/theme.css">
     <link rel="stylesheet" href="/app/shared/styles/typography.css">
     <link rel="stylesheet" href="/app/shared/styles/components.css">
@@ -16,5 +17,11 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/app/controller/dist/main.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/app/controller/sw.js', { scope: '/controller' })
+          .catch(err => console.warn('SW registration failed:', err));
+      }
+    </script>
 </body>
 </html>

@@ -29,6 +29,12 @@ export function configureStaticRoutes(app: Express, rootDir: string): void {
   // Game assets — long cache
   app.use('/assets', express.static(join(rootDir, 'assets'), { maxAge: '1d' }));
 
+  // Service worker — must be served with correct scope header
+  app.get('/app/controller/sw.js', (req, res) => {
+    res.setHeader('Service-Worker-Allowed', '/controller');
+    res.sendFile(join(rootDir, 'app/controller/sw.js'));
+  });
+
   // Default landing page
   app.get('/', (_req, res) => {
     res.redirect('/controller');

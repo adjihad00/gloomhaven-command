@@ -26,6 +26,8 @@ export class Connection {
   private readonly maxReconnectAttempts: number = 20;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private manualDisconnect: boolean = false;
+  private healthCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+  private awaitingHealthCheck: boolean = false;
   private options: ConnectionOptions;
 
   constructor(options: ConnectionOptions) {
@@ -44,10 +46,17 @@ export class Connection {
 
     // Reconnect when returning from background
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.status !== 'connected' && !this.manualDisconnect) {
+      if (document.hidden) return;
+      if (this.manualDisconnect) return;
+
+      if (this.status !== 'connected') {
         this.reconnectAttempts = 0;
         this.connect();
+        return;
       }
+
+      // Status says connected, but WS may be silently dead (iOS background kill)
+      this.checkConnectionHealth();
     });
   }
 
@@ -84,6 +93,15 @@ export class Connection {
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
+      // Any message from server means connection is alive
+      if (this.awaitingHealthCheck) {
+        this.awaitingHealthCheck = false;
+        if (this.healthCheckTimeout) {
+          clearTimeout(this.healthCheckTimeout);
+          this.healthCheckTimeout = null;
+        }
+      }
+
       const message = JSON.parse(event.data as string) as ServerMessage;
 
       switch (message.type) {
@@ -158,6 +176,11 @@ export class Connection {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    if (this.healthCheckTimeout) {
+      clearTimeout(this.healthCheckTimeout);
+      this.healthCheckTimeout = null;
+    }
+    this.awaitingHealthCheck = false;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -224,5 +247,31 @@ export class Connection {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 15000);
     this.reconnectTimeout = setTimeout(() => this.connect(), delay);
+  }
+
+  private checkConnectionHealth(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.reconnectAttempts = 0;
+      this.connect();
+      return;
+    }
+
+    this.awaitingHealthCheck = true;
+    try {
+      this.ws.send(JSON.stringify({ type: 'pong' }));
+    } catch {
+      this.reconnectAttempts = 0;
+      this.connect();
+      return;
+    }
+
+    this.healthCheckTimeout = setTimeout(() => {
+      if (this.awaitingHealthCheck) {
+        console.warn('Health check timeout — forcing reconnect');
+        this.awaitingHealthCheck = false;
+        this.reconnectAttempts = 0;
+        this.connect();
+      }
+    }, 5000);
   }
 }

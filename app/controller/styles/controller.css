@@ -607,6 +607,45 @@
   background: var(--bg-secondary);
 }
 
+/* Setup wizard navigation */
+.setup-wizard__nav {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--accent-copper);
+  margin-top: var(--space-4);
+}
+
+/* Edition cards */
+.edition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.edition-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--text-muted);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3);
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.edition-card--active {
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, var(--bg-secondary), rgba(212, 175, 55, 0.1));
+}
+
+.edition-card__name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
 .char-class-card__hp {
   font-size: 0.7rem;
   color: var(--health-green);
