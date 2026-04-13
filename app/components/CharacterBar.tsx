@@ -7,6 +7,7 @@ import { characterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
 import { InitiativeDisplay } from './InitiativeDisplay';
 import { ConditionIcons } from './ConditionIcons';
+import { HeartIcon, StarIcon, CoinIcon, PawIcon } from './Icons';
 
 interface CharacterBarProps {
   character: Character;
@@ -68,6 +69,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
         <div class="char-main-row">
           <img
             src={characterThumbnail(ed, name)}
+            alt={formatName(name)}
             class="char-portrait"
             onClick={() => !readonly && commands.toggleTurn({ type: 'character', name, edition: ed })}
             title={isActive ? 'End turn' : isDone ? 'Turn complete' : 'Activate'}
@@ -82,10 +84,10 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
 
           {!readonly && (
             <div class="char-hp-control">
-              <button class="hp-btn minus"
+              <button class="hp-btn minus" aria-label="Decrease health"
                 onClick={() => commands.changeHealth(target, -1)}>−</button>
-              <span class="hp-icon">🩸</span>
-              <button class="hp-btn plus"
+              <HeartIcon size={16} class="hp-icon" />
+              <button class="hp-btn plus" aria-label="Increase health"
                 onClick={() => commands.changeHealth(target, 1)}>+</button>
             </div>
           )}
@@ -106,13 +108,13 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
         {/* XP + Loot counters */}
         <div class="char-counters">
           <span class="counter" onClick={() => !readonly && commands.setExperience(name, ed, experience + 1)}>
-            ★ {experience || 0}
+            <StarIcon size={14} /> {experience || 0}
           </span>
           <span class="counter" onClick={() => !readonly && commands.setLoot(name, ed, loot + 1)}>
-            💰 {loot || 0}
+            <CoinIcon size={14} /> {loot || 0}
           </span>
           {liveSummons.length > 0 && (
-            <span class="counter summon-badge">🐾 {liveSummons.length}</span>
+            <span class="counter summon-badge"><PawIcon size={14} /> {liveSummons.length}</span>
           )}
         </div>
 
@@ -162,7 +164,7 @@ function ConditionRow({ conditions, target, availableConditions }: {
         onClick={() => commands.toggleCondition(target, name)}
         title={name}
       >
-        <img src={conditionIcon(name)} class="cond-icon" />
+        <img src={conditionIcon(name)} alt={name} class="cond-icon" />
       </button>
     );
   };
@@ -194,9 +196,9 @@ function SummonSummary({ summon, characterName, characterEdition, readonly }: {
       <span class="summon-hp">{summon.health}/{summon.maxHealth}</span>
       {!readonly && (
         <>
-          <button class="hp-btn mini minus"
+          <button class="hp-btn mini minus" aria-label="Decrease summon health"
             onClick={() => commands.changeHealth(target, -1)}>−</button>
-          <button class="hp-btn mini plus"
+          <button class="hp-btn mini plus" aria-label="Increase summon health"
             onClick={() => commands.changeHealth(target, 1)}>+</button>
         </>
       )}

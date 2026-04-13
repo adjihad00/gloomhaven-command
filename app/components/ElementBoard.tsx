@@ -25,6 +25,7 @@ export function ElementBoard({ elements, onCycleElement, layout = 'horizontal', 
             disabled={readonly}
             data-element={el.type}
             title={`${el.type}: ${el.state}`}
+            aria-label={`${el.type}: ${el.state}`}
           >
             <div class="element-img-container">
               <img src={elementIcon(el.type)} alt={el.type} class="element-img" />

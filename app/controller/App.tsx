@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { AppContext } from '../shared/context';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useConnection } from '../hooks/useConnection';
 import { ConnectionScreen } from './ConnectionScreen';
 import { ScenarioView } from './ScenarioView';
@@ -32,12 +33,14 @@ export function App() {
 
   // Connected — provide context and route by mode
   return (
-    <AppContext.Provider value={{
-      connection, store, commands, state, connectionStatus: status,
-      gameCode, error, disconnect,
-    }}>
-      <AppShell state={state} />
-    </AppContext.Provider>
+    <ErrorBoundary>
+      <AppContext.Provider value={{
+        connection, store, commands, state, connectionStatus: status,
+        gameCode, error, disconnect,
+      }}>
+        <AppShell state={state} />
+      </AppContext.Provider>
+    </ErrorBoundary>
   );
 }
 

@@ -64,7 +64,7 @@ export function ConnectionScreen({ gameCode: initialCode, status, error, onConne
         )}
 
         {error && (
-          <div class="import-status error">{error}</div>
+          <div class="error-status">{error}</div>
         )}
 
         {connected && (

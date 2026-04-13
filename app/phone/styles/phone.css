@@ -1,118 +1,25 @@
 /* ============================================
    Phone — Preact app styles (portrait-optimized)
+   Base connection/setup styles in shared/styles/connection.css
    ============================================ */
 
-/* ── App Shell ── */
-
-.app-shell {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
-
-/* ── Setup Screen (phone overrides) ── */
+/* ── Phone-specific setup overrides ── */
 
 .setup-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
   padding: 32px 16px;
-  position: relative;
-  z-index: 1;
 }
 
 .setup-content {
-  width: 100%;
   max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 20px;
 }
 
-.setup-title {
-  color: var(--accent-gold);
-  text-align: center;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 20px rgba(211, 166, 99, 0.3);
-  line-height: 1.2;
-}
-
 .setup-subtitle {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  text-align: center;
-  letter-spacing: 2px;
-  text-transform: uppercase;
   margin-top: -12px;
 }
 
 .setup-section {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 14px;
-}
-
-.setup-section .form-group {
-  width: 100%;
-}
-
-.setup-section .form-label {
-  display: block;
-  font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
-  color: var(--accent-gold);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.setup-section .form-input {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 1.1rem;
-}
-
-.setup-section .btn {
-  width: 100%;
-  padding: 14px;
-  font-size: 1rem;
-}
-
-/* Connection status badge */
-.connection-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--accent-gold-dim);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  width: 100%;
-}
-
-.connection-status.connected {
-  border-color: rgba(74, 124, 89, 0.4);
-}
-
-/* Error display */
-.import-status.error {
-  background: rgba(197, 48, 48, 0.15);
-  border: 1px solid var(--negative-red);
-  color: var(--negative-red);
-  padding: 10px;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  text-align: center;
-  width: 100%;
 }
 
 /* ── Character Picker ── */
@@ -161,20 +68,4 @@
 .character-level {
   font-size: 0.75rem;
   color: var(--text-muted);
-}
-
-/* Disconnect text button */
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: 'Crimson Pro', serif;
-  font-size: 0.9rem;
-  padding: 8px;
-  transition: color var(--transition-fast);
-}
-
-.btn-text:hover {
-  color: var(--negative-red);
 }

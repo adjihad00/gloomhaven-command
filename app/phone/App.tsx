@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { AppContext } from '../shared/context';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useConnection } from '../hooks/useConnection';
 import { ConnectionScreen } from './ConnectionScreen';
 import { CharacterPicker } from './CharacterPicker';
@@ -61,16 +62,18 @@ export function App() {
   const mode: AppMode = state.mode ?? 'scenario';
 
   return (
-    <AppContext.Provider value={{
-      connection, store, commands, state, connectionStatus: status,
-      gameCode, error, disconnect: handleDisconnect,
-    }}>
-      <div class="app-shell">
-        {mode === 'town'
-          ? <TownView />
-          : <ScenarioView />
-        }
-      </div>
-    </AppContext.Provider>
+    <ErrorBoundary>
+      <AppContext.Provider value={{
+        connection, store, commands, state, connectionStatus: status,
+        gameCode, error, disconnect: handleDisconnect,
+      }}>
+        <div class="app-shell">
+          {mode === 'town'
+            ? <TownView />
+            : <ScenarioView />
+          }
+        </div>
+      </AppContext.Provider>
+    </ErrorBoundary>
   );
 }

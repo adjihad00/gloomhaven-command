@@ -35,6 +35,7 @@ export function MonsterStandeeRow({ entity, monsterName, monsterEdition, readonl
       {!readonly && !dead && (
         <button
           class="standee-row__kill"
+          aria-label="Kill standee"
           onClick={() => commands.removeEntity(monsterName, monsterEdition, number, type)}
         >
           &#9760;

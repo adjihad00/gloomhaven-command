@@ -120,9 +120,9 @@ function StandeeRow({ entity, monsterName, edition, readonly }: {
 
       {!readonly && (
         <>
-          <button class="hp-btn mini minus"
+          <button class="hp-btn mini minus" aria-label="Decrease health"
             onClick={() => commands.changeHealth(target, -1)}>−</button>
-          <button class="hp-btn mini plus"
+          <button class="hp-btn mini plus" aria-label="Increase health"
             onClick={() => commands.changeHealth(target, 1)}>+</button>
         </>
       )}
@@ -134,7 +134,7 @@ function StandeeRow({ entity, monsterName, edition, readonly }: {
             onClick={() => !readonly && commands.toggleCondition(target, c.name)}
             title={`Remove ${c.name}`}
           >
-            <img src={conditionIcon(c.name)} class="cond-icon mini" />
+            <img src={conditionIcon(c.name)} alt={c.name} class="cond-icon mini" />
           </button>
         ))}
         {!readonly && (
@@ -162,7 +162,7 @@ function StandeeConditionAdder({ target, existingConditions }: {
 
   return (
     <div class="cond-adder">
-      <button class="cond-add-btn" onClick={() => setOpen(!open)}>+</button>
+      <button class="cond-add-btn" onClick={() => setOpen(!open)} aria-label="Add condition">+</button>
       {open && (
         <div class="cond-adder-popup">
           {conditionsToShow.map(name => (
@@ -170,7 +170,7 @@ function StandeeConditionAdder({ target, existingConditions }: {
               onClick={() => { commands.toggleCondition(target, name); setOpen(false); }}
               title={name}
             >
-              <img src={conditionIcon(name)} class="cond-icon mini" />
+              <img src={conditionIcon(name)} alt={name} class="cond-icon mini" />
             </button>
           ))}
         </div>
@@ -206,6 +206,7 @@ export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isD
       <div class="monster-header" onClick={handleToggleTurn}>
         <img
           src={monsterThumbnail(edition, name)}
+          alt={formatName(name)}
           class="monster-portrait"
         />
         <div class="monster-info">

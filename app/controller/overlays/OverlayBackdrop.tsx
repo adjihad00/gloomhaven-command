@@ -18,9 +18,9 @@ export function OverlayBackdrop({ onClose, children, position = 'center' }: Over
       : 'overlay-panel';
 
   return (
-    <div class="overlay-backdrop" onClick={handleBackdropClick}>
+    <div class="overlay-backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true">
       <div class={panelClass}>
-        <button class="overlay-close" onClick={onClose}>&times;</button>
+        <button class="overlay-close" onClick={onClose} aria-label="Close">&times;</button>
         {children}
       </div>
     </div>

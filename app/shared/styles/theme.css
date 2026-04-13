@@ -21,6 +21,14 @@
     --radius-lg: 14px;
     --transition-fast: 0.15s ease;
     --transition-normal: 0.3s ease;
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
 }
 
 * {
@@ -36,6 +44,16 @@ body {
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
+}
+
+/* ── Focus-visible ── */
+:focus-visible {
+    outline: 2px solid var(--accent-gold);
+    outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+    outline: none;
 }
 
 body::before {

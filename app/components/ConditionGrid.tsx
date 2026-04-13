@@ -44,6 +44,8 @@ export function ConditionGrid({ conditions, availableConditions, onToggleConditi
             key={name}
             class={`condition-btn ${active ? 'active' : ''} ${active ? (negative ? 'negative' : 'positive') : ''}`}
             onClick={() => onToggleCondition(name)}
+            aria-label={`Toggle ${name}`}
+            aria-pressed={active}
           >
             <img src={conditionIcon(name)} alt={name} />
           </button>
