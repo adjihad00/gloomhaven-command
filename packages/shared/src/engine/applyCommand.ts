@@ -161,6 +161,9 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'updateCampaign':
       handleUpdateCampaign(after, command.payload);
       break;
+    case 'completeScenario':
+      handleCompleteScenario(after, command.payload);
+      break;
     default: {
       const _exhaustive: never = command;
       throw new Error(`Unknown command action: ${(_exhaustive as Command).action}`);
@@ -1212,7 +1215,15 @@ function handleSetScenario(
     char.active = false;
     char.off = false;
     char.absent = false;
+    // Reset in-scenario counters
+    char.experience = 0;
+    char.loot = 0;
+    char.lootCards = [];
+    char.treasures = [];
   }
+
+  // Clear any previous scenario finish state
+  state.finish = undefined as any;
 
   // Enable auto-level calc for new scenarios and recalculate
   state.levelCalculation = true;
@@ -1341,6 +1352,55 @@ function handleUpdateCampaign(
   if (payload.field in state.party) {
     (state.party as unknown as Record<string, unknown>)[payload.field] = payload.value;
   }
+}
+
+function handleCompleteScenario(
+  state: GameState,
+  payload: { outcome: 'victory' | 'defeat' },
+): void {
+  const isVictory = payload.outcome === 'victory';
+  const level = state.level ?? 0;
+  const bonusXP = isVictory ? (4 + 2 * level) : 0;
+  const goldConversion = [2, 2, 3, 3, 4, 4, 5, 6][level] ?? 2;
+
+  for (const char of state.characters) {
+    // Transfer in-scenario XP → total XP (always, even on defeat per rules)
+    const scenarioXP = char.experience || 0;
+    char.progress.experience += scenarioXP + bonusXP;
+
+    // Transfer loot → gold (coins × conversion rate)
+    const scenarioCoins = char.loot || 0;
+    char.progress.gold += scenarioCoins * goldConversion;
+
+    // Reset in-scenario counters
+    char.experience = 0;
+    char.loot = 0;
+    char.lootCards = [];
+  }
+
+  // Record scenario completion in party data
+  if (isVictory && state.scenario) {
+    if (!state.party) {
+      state.party = {} as any;
+    }
+    if (!state.party.scenarios) {
+      state.party.scenarios = [];
+    }
+    const alreadyComplete = state.party.scenarios.some(
+      (s: any) => s.index === state.scenario!.index && s.edition === state.scenario!.edition,
+    );
+    if (!alreadyComplete) {
+      state.party.scenarios.push({
+        index: state.scenario.index,
+        edition: state.scenario.edition,
+        isCustom: false,
+        custom: '',
+      } as any);
+    }
+  }
+
+  // Store finish state
+  state.finish = isVictory ? 'success' : 'failure';
 }
 
 function handleAddModifierCard(

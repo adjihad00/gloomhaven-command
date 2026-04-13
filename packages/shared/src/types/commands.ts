@@ -56,7 +56,8 @@ export type CommandAction =
   | 'addModifierCard'
   | 'removeModifierCard'
   | 'importGhsState'
-  | 'updateCampaign';
+  | 'updateCampaign'
+  | 'completeScenario';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -273,6 +274,11 @@ export interface UpdateCampaignCommand {
   payload: { field: string; value: string | number | boolean };
 }
 
+export interface CompleteScenarioCommand {
+  action: 'completeScenario';
+  payload: { outcome: 'victory' | 'defeat' };
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -313,7 +319,8 @@ export type Command =
   | AddModifierCardCommand
   | RemoveModifierCardCommand
   | ImportGhsStateCommand
-  | UpdateCampaignCommand;
+  | UpdateCampaignCommand
+  | CompleteScenarioCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

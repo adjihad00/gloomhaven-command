@@ -195,6 +195,12 @@ export class CommandSender {
     this.send({ action: 'updateCampaign', payload: { field, value } });
   }
 
+  // ── Scenario end ──
+
+  completeScenario(outcome: 'victory' | 'defeat'): void {
+    this.send({ action: 'completeScenario', payload: { outcome } });
+  }
+
   // ── Internal ──
 
   private send(command: Command): void {

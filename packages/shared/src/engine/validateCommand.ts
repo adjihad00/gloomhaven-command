@@ -325,6 +325,17 @@ export function validateCommand(state: GameState, command: Command): ValidationR
     case 'updateCampaign':
       return OK;
 
+    case 'completeScenario': {
+      const p = command.payload as any;
+      if (!p.outcome || (p.outcome !== 'victory' && p.outcome !== 'defeat')) {
+        return fail('completeScenario requires outcome: victory|defeat');
+      }
+      if (!state.scenario) {
+        return fail('No active scenario to complete');
+      }
+      return OK;
+    }
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

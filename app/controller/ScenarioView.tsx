@@ -192,6 +192,7 @@ export function ScenarioView() {
       {activeOverlay.type === 'menu' && (
         <MenuOverlay
           gameCode={gameCode}
+          hasScenario={!!state?.scenario}
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
           onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}

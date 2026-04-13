@@ -373,6 +373,30 @@
   color: var(--negative-red);
 }
 
+.menu-overlay__section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--accent-copper);
+}
+
+.menu-overlay__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.menu-overlay__item--victory {
+  color: var(--health-green);
+}
+
+.menu-overlay__item--defeat {
+  color: var(--negative-red);
+}
+
 /* ============================================
    Scenario Setup Overlay
    ============================================ */
@@ -1113,4 +1137,52 @@
   border-color: var(--accent-gold);
   color: var(--accent-gold);
   background: linear-gradient(135deg, var(--bg-primary), rgba(212, 175, 55, 0.15));
+}
+
+/* XP progress bar */
+.xp-bar-section {
+  padding: var(--space-2) 0;
+}
+
+.xp-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+
+.xp-bar-numbers {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.xp-bar-track {
+  height: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-copper);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--accent-copper) 0%,
+    var(--accent-gold) 100%
+  );
+  border-radius: 6px;
+  transition: width 0.4s ease;
+  min-width: 0;
+}
+
+.xp-bar-remaining {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+  text-align: right;
 }

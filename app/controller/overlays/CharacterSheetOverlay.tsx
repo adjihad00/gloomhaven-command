@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Character } from '@gloomhaven-command/shared';
+import { XP_THRESHOLDS } from '@gloomhaven-command/shared';
 import { useDataApi } from '../../hooks/useDataApi';
 import { OverlayBackdrop } from './OverlayBackdrop';
 import { formatName } from '../../shared/formatName';
@@ -56,11 +57,24 @@ export function CharacterSheetOverlay({ character, edition, onClose }: Character
   );
 }
 
-const XP_THRESHOLDS = [0, 45, 95, 150, 210, 275, 345, 420, 500];
+function getXPBarInfo(totalXP: number, level: number) {
+  const currentThreshold = XP_THRESHOLDS[level] ?? 0;
+  const nextThreshold = XP_THRESHOLDS[level + 1] ?? XP_THRESHOLDS[XP_THRESHOLDS.length - 1];
+
+  if (level >= 9 || nextThreshold <= currentThreshold) {
+    return { percent: 100, currentThreshold, nextThreshold, xpIntoLevel: 0, xpNeeded: 0 };
+  }
+
+  const xpIntoLevel = totalXP - currentThreshold;
+  const xpNeeded = nextThreshold - currentThreshold;
+  const percent = Math.min(100, Math.max(0, (xpIntoLevel / xpNeeded) * 100));
+
+  return { percent, currentThreshold, nextThreshold, xpIntoLevel, xpNeeded };
+}
 
 function StatsTab({ character, classData }: { character: Character; classData: any }) {
   const currentXP = character.progress?.experience ?? character.experience ?? 0;
-  const nextThreshold = XP_THRESHOLDS.find(t => t > currentXP) || 500;
+  const currentGold = character.progress?.gold ?? 0;
 
   return (
     <div class="sheet__stats">
@@ -72,10 +86,31 @@ function StatsTab({ character, classData }: { character: Character; classData: a
         <span class="sheet__stat-label">Level</span>
         <span class="sheet__stat-value">{character.level}</span>
       </div>
-      <div class="sheet__stat-row">
-        <span class="sheet__stat-label">XP</span>
-        <span class="sheet__stat-value">{currentXP} / {nextThreshold}</span>
-      </div>
+
+      {/* XP progress bar */}
+      {(() => {
+        const bar = getXPBarInfo(currentXP, character.level);
+        return (
+          <div class="xp-bar-section">
+            <div class="xp-bar-header">
+              <span class="sheet__stat-label">
+                XP — Level {character.level}
+                {character.level < 9 ? ` → ${character.level + 1}` : ' (Max)'}
+              </span>
+              <span class="xp-bar-numbers">{currentXP} / {bar.nextThreshold}</span>
+            </div>
+            <div class="xp-bar-track">
+              <div class="xp-bar-fill" style={{ width: `${bar.percent}%` }} />
+            </div>
+            {character.level < 9 && (
+              <span class="xp-bar-remaining">
+                {bar.xpNeeded - bar.xpIntoLevel} XP to next level
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       <div class="sheet__stat-row">
         <span class="sheet__stat-label">HP at level</span>
         <span class="sheet__stat-value">{character.maxHealth}</span>
@@ -88,17 +123,7 @@ function StatsTab({ character, classData }: { character: Character; classData: a
       )}
       <div class="sheet__stat-row">
         <span class="sheet__stat-label">Gold</span>
-        <span class="sheet__stat-value">{character.loot || 0}</span>
-      </div>
-      <div class="sheet__thresholds">
-        <span class="sheet__stat-label">XP Thresholds</span>
-        <div class="sheet__threshold-row">
-          {XP_THRESHOLDS.map((t, i) => (
-            <span key={i} class={`sheet__threshold ${currentXP >= t ? 'sheet__threshold--reached' : ''}`}>
-              Lv{i + 1}: {t}
-            </span>
-          ))}
-        </div>
+        <span class="sheet__stat-value">{currentGold}</span>
       </div>
     </div>
   );
