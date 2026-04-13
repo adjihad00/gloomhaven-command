@@ -926,10 +926,13 @@
     touch-action: manipulation;
 }
 
+.cond-adder-portal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+}
+
 .cond-adder-popup {
-    position: absolute;
-    bottom: 100%;
-    right: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 3px;
@@ -937,8 +940,8 @@
     background: var(--bg-card);
     border: 1px solid var(--accent-copper);
     border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-medium);
-    z-index: 30;
+    box-shadow: var(--shadow-heavy);
+    z-index: 61;
     max-width: 200px;
 }
 
@@ -949,6 +952,48 @@
     gap: 4px;
     padding: 4px 8px;
     opacity: 0.35;
+}
+
+/* Absent character bench */
+.bench-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    background: var(--bg-secondary);
+    border: 1px dashed var(--text-muted);
+    border-radius: var(--radius-sm);
+    opacity: 0.65;
+}
+
+.bench-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bench-portrait {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--text-muted);
+    background: var(--bg-card);
+    padding: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.bench-portrait-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(0.6);
 }
 
 .dead-badge {
@@ -1120,6 +1165,29 @@
 .modifier-deck__bless-curse {
     display: flex;
     gap: 3px;
+}
+
+/* Modifier deck floating overlay */
+.modifier-deck-overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+}
+
+.modifier-deck-overlay {
+    position: fixed;
+    bottom: 56px;
+    right: 16px;
+    width: 260px;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: var(--shadow-heavy);
+    z-index: 56;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* ── FigureGrid ────────────────────────────────────────────────────────── */

@@ -1070,3 +1070,47 @@
     padding: 16px 32px;
   }
 }
+
+/* Door confirm overlay */
+.door-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.door-confirm-panel {
+  background: var(--bg-card);
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  max-width: 340px;
+  text-align: center;
+}
+
+.door-confirm-text {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.door-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.door-confirm-cancel {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.door-confirm-ok {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background: linear-gradient(135deg, var(--bg-primary), rgba(212, 175, 55, 0.15));
+}

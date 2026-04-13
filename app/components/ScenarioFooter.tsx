@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { useState } from 'preact/hooks';
 import type { AttackModifierDeckModel, LevelDerivedValues, LootDeck } from '@gloomhaven-command/shared';
 import { ModifierDeck } from './ModifierDeck';
 
@@ -37,6 +38,8 @@ export function ScenarioFooter({
   lootDeck, onOpenLootDeck,
   readonly,
 }: ScenarioFooterProps) {
+  const [pendingDoor, setPendingDoor] = useState<DoorInfo | null>(null);
+
   return (
     <div class="scenario-footer">
       {/* Left: phase action */}
@@ -55,7 +58,7 @@ export function ScenarioFooter({
             <button
               key={door.roomNumber}
               class={`scenario-footer__door ${door.revealed ? 'revealed' : ''}`}
-              onClick={() => !door.revealed && onRevealRoom?.(door.roomNumber)}
+              onClick={() => !door.revealed && setPendingDoor(door)}
               disabled={door.revealed || readonly}
               title={door.revealed
                 ? `Room ${door.roomNumber} (${door.ref}) - revealed`
@@ -109,6 +112,27 @@ export function ScenarioFooter({
           readonly={readonly}
           compact
         />
+      )}
+
+      {pendingDoor && (
+        <div class="door-confirm-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) setPendingDoor(null); }}
+        >
+          <div class="door-confirm-panel">
+            <p class="door-confirm-text">
+              Open door to Room {pendingDoor.roomNumber} ({pendingDoor.ref})?
+            </p>
+            <div class="door-confirm-actions">
+              <button class="btn door-confirm-cancel"
+                onClick={() => setPendingDoor(null)}>Cancel</button>
+              <button class="btn door-confirm-ok"
+                onClick={() => {
+                  onRevealRoom?.(pendingDoor.roomNumber);
+                  setPendingDoor(null);
+                }}>Open Door</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

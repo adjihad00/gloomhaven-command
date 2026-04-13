@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { useState, useRef } from 'preact/hooks';
 import type { Monster, MonsterEntity, MonsterLevelStats, MonsterAbilityCard, MonsterAbilityAction, ConditionName, EntityCondition } from '@gloomhaven-command/shared';
 import { NEGATIVE_CONDITIONS, isNegativeCondition } from '@gloomhaven-command/shared';
 import { useCommands } from '../hooks/useCommands';
@@ -155,6 +155,8 @@ function StandeeConditionAdder({ target, existingConditions }: {
   existingConditions: EntityCondition[];
 }) {
   const [open, setOpen] = useState(false);
+  const [popupPos, setPopupPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const commands = useCommands();
 
   const conditionsToShow = NEGATIVE_CONDITIONS.filter(
@@ -163,19 +165,41 @@ function StandeeConditionAdder({ target, existingConditions }: {
 
   if (conditionsToShow.length === 0) return null;
 
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPopupPos({
+        top: rect.top - 8,
+        left: Math.max(8, rect.right - 200),
+      });
+    }
+    setOpen(!open);
+  };
+
   return (
     <div class="cond-adder">
-      <button class="cond-add-btn" onClick={() => setOpen(!open)} aria-label="Add condition">+</button>
-      {open && (
-        <div class="cond-adder-popup">
-          {conditionsToShow.map(name => (
-            <button key={name} class="cond-btn mini"
-              onClick={() => { commands.toggleCondition(target, name); setOpen(false); }}
-              title={name}
-            >
-              <img src={conditionIcon(name)} alt={name} class="cond-icon mini" />
-            </button>
-          ))}
+      <button ref={btnRef} class="cond-add-btn" onClick={handleOpen}
+        aria-label="Add condition">+</button>
+      {open && popupPos && (
+        <div class="cond-adder-portal"
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+        >
+          <div class="cond-adder-popup"
+            style={{
+              position: 'fixed',
+              bottom: `${window.innerHeight - popupPos.top}px`,
+              left: `${popupPos.left}px`,
+            }}
+          >
+            {conditionsToShow.map(name => (
+              <button key={name} class="cond-btn mini"
+                onClick={() => { commands.toggleCondition(target, name); setOpen(false); }}
+                title={name}
+              >
+                <img src={conditionIcon(name)} alt={name} class="cond-icon mini" />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
