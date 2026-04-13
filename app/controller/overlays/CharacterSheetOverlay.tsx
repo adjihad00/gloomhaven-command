@@ -59,7 +59,7 @@ export function CharacterSheetOverlay({ character, edition, onClose }: Character
 const XP_THRESHOLDS = [0, 45, 95, 150, 210, 275, 345, 420, 500];
 
 function StatsTab({ character, classData }: { character: Character; classData: any }) {
-  const currentXP = character.experience || 0;
+  const currentXP = character.progress?.experience ?? character.experience ?? 0;
   const nextThreshold = XP_THRESHOLDS.find(t => t > currentXP) || 500;
 
   return (

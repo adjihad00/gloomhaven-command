@@ -93,6 +93,9 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
             <div class="char-hp-control">
               <button class="hp-btn minus" aria-label="Decrease health"
                 onClick={() => commands.changeHealth(target, -1)}>−</button>
+              {entityConditions?.some(c => (c.name === 'poison' || c.name === 'poison_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed') && (
+                <span class="poison-reminder" title="Poison: +1 damage per attack">+1</span>
+              )}
               <HeartIcon size={16} class="hp-icon" />
               <button class="hp-btn plus" aria-label="Increase health"
                 onClick={() => commands.changeHealth(target, 1)}>+</button>

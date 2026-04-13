@@ -63,6 +63,29 @@ export const MONSTER_ONLY_CONDITIONS: readonly ConditionName[] = [
   'plague',
 ] as const;
 
+/** Gloomhaven conditions (10) */
+export const GH_CONDITIONS: readonly ConditionName[] = [
+  'stun', 'immobilize', 'disarm', 'wound', 'muddle',
+  'poison', 'strengthen', 'invisible', 'curse', 'bless',
+] as const;
+
+/** Frosthaven conditions (16) */
+export const FH_CONDITIONS: readonly ConditionName[] = [
+  'stun', 'immobilize', 'disarm', 'wound', 'muddle',
+  'poison', 'strengthen', 'invisible', 'curse', 'bless',
+  'regenerate', 'ward', 'bane', 'brittle', 'impair', 'infect',
+] as const;
+
+/** Get conditions for an edition */
+export function getConditionsForEdition(edition: string): readonly ConditionName[] {
+  switch (edition) {
+    case 'fh': return FH_CONDITIONS;
+    case 'gh':
+    case 'jotl':
+    default: return GH_CONDITIONS;
+  }
+}
+
 export function isNegativeCondition(name: ConditionName): boolean {
   return (NEGATIVE_CONDITIONS as readonly string[]).includes(name);
 }

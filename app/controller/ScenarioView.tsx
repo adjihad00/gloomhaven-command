@@ -7,6 +7,7 @@ import { useMonsterData } from './hooks/useMonsterData';
 import { useDataApi } from '../hooks/useDataApi';
 import { getInitiativeOrder, deriveLevelValues } from '@gloomhaven-command/shared';
 import type { ConditionName, ScenarioData } from '@gloomhaven-command/shared';
+import { getConditionsForEdition } from '@gloomhaven-command/shared';
 import { FigureList } from '../components/FigureList';
 import { ScenarioHeader } from '../components/ScenarioHeader';
 import { ScenarioFooter } from '../components/ScenarioFooter';
@@ -65,16 +66,12 @@ export function ScenarioView() {
     return { canAdvance: allDone, label: 'Next Round' };
   }, [state, orderedFigures, characters, phase]);
 
-  // Available conditions
+  // Available conditions — filtered by edition
+  const conditionEdition = state?.scenario?.edition ?? state?.party?.edition ?? edition ?? 'gh';
   const availableConditions = useMemo<ConditionName[]>(() => {
     if (state?.conditions && state.conditions.length > 0) return state.conditions;
-    // Fallback: common GH conditions
-    return [
-      'stun', 'immobilize', 'disarm', 'wound', 'muddle',
-      'poison', 'strengthen', 'invisible', 'curse', 'bless',
-      'regenerate', 'ward', 'bane', 'brittle', 'impair',
-    ];
-  }, [state?.conditions]);
+    return [...getConditionsForEdition(conditionEdition)];
+  }, [state?.conditions, conditionEdition]);
 
   // Fetch scenario room data for door controls
   const scenarioApiPath = state?.scenario

@@ -23,6 +23,33 @@ function createEmptyAttackModifierDeck(): AttackModifierDeckModel {
   };
 }
 
+/** Build the standard 20-card attack modifier deck (6×+0, 5×+1, 5×-1, 1×+2, 1×-2, 1×2×, 1×null) */
+export function buildStandardModifierDeck(): AttackModifierDeckModel {
+  const cards: string[] = [];
+  for (let i = 1; i <= 6; i++) cards.push(`am-plus0-${i}`);
+  for (let i = 1; i <= 5; i++) cards.push(`am-plus1-${i}`);
+  for (let i = 1; i <= 5; i++) cards.push(`am-minus1-${i}`);
+  cards.push('am-plus2-1');
+  cards.push('am-minus2-1');
+  cards.push('am-double-1');
+  cards.push('am-null-1');
+
+  // Fisher-Yates shuffle
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  return {
+    current: 0,
+    cards,
+    discarded: [],
+    active: false,
+    lastVisible: -1,
+    bb: false,
+  };
+}
+
 function createEmptyLootDeck(): LootDeck {
   return {
     current: 0,

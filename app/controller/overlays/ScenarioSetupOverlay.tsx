@@ -42,19 +42,32 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
     return set;
   }, [state.party?.scenarios]);
 
+  // GHS data has excessive `initial: true` flags — use hardcoded starting scenarios
+  const EDITION_INITIAL_SCENARIOS: Record<string, string[]> = {
+    gh: ['1'],
+    fh: ['0'],
+    jotl: ['1'],
+  };
+
   const unlockedIndices = useMemo(() => {
     if (!scenarios) return new Set<string>();
     const unlocked = new Set<string>();
-    for (const s of scenarios as any[]) {
-      if (s.initial) unlocked.add(s.index);
-    }
+
+    // Add the true starting scenario(s) for this edition
+    const initials = EDITION_INITIAL_SCENARIOS[selectedEdition] ?? ['1'];
+    for (const idx of initials) unlocked.add(idx);
+
+    // Add scenarios unlocked by completing other scenarios
     for (const s of scenarios as any[]) {
       if (completedIndices.has(s.index) && s.unlocks) {
         for (const u of s.unlocks) unlocked.add(u);
       }
+      // Completed scenarios are also "known/unlocked"
+      if (completedIndices.has(s.index)) unlocked.add(s.index);
     }
+
     return unlocked;
-  }, [scenarios, completedIndices]);
+  }, [scenarios, completedIndices, selectedEdition]);
 
   const filteredScenarios = useMemo(() => {
     if (!scenarios) return [];

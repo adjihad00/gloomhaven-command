@@ -122,6 +122,9 @@ function StandeeRow({ entity, monsterName, edition, readonly }: {
         <>
           <button class="hp-btn mini minus" aria-label="Decrease health"
             onClick={() => commands.changeHealth(target, -1)}>−</button>
+          {activeConditions.some(c => c.name === 'poison' || c.name === 'poison_x') && (
+            <span class="poison-reminder" title="Poison: +1 damage per attack">+1</span>
+          )}
           <button class="hp-btn mini plus" aria-label="Increase health"
             onClick={() => commands.changeHealth(target, 1)}>+</button>
         </>

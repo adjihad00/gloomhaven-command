@@ -45,6 +45,14 @@ export function deriveLevelValues(scenarioLevel: number): LevelDerivedValues {
   };
 }
 
+/** Minimum XP for each character level (index = level) */
+export const XP_THRESHOLDS = [0, 0, 45, 95, 150, 210, 275, 345, 420, 500] as const;
+
+/** Get minimum XP for a given level */
+export function getMinXPForLevel(level: number): number {
+  return XP_THRESHOLDS[Math.min(level, XP_THRESHOLDS.length - 1)] ?? 0;
+}
+
 /** Get active player count (non-absent, non-exhausted characters) */
 export function getPlayerCount(
   characters: { absent?: boolean; exhausted?: boolean }[],

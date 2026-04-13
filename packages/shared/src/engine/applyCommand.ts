@@ -20,8 +20,8 @@ import { deepClone } from './turnOrder.js';
 import { canAdvancePhase, startRound, endRound, getInitiativeOrder } from './turnOrder.js';
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
 import { diffStates } from './diffStates.js';
-import { importGhsState as importGhs } from '../utils/ghsCompat.js';
-import { getPlayerCount, calculateScenarioLevel } from '../data/levelCalculation.js';
+import { importGhsState as importGhs, buildStandardModifierDeck } from '../utils/ghsCompat.js';
+import { getPlayerCount, calculateScenarioLevel, getMinXPForLevel } from '../data/levelCalculation.js';
 
 export interface ApplyResult {
   state: GameState;
@@ -329,15 +329,10 @@ function handleChangeHealth(
 
   let delta = payload.delta;
 
-  // Poison: +1 damage from all damage sources
-  if (delta < 0) {
-    const hasPoisonActive = entity.entityConditions?.some(
-      (c) => (c.name === 'poison' || c.name === 'poison_x') && !c.expired && c.state !== 'expire' && c.state !== 'removed',
-    );
-    if (hasPoisonActive) {
-      delta -= 1;
-    }
-  }
+  // NOTE: Poison +1 is NOT auto-applied here. Per game rules, poison adds +1 per
+  // damage SOURCE (attack), not per HP tap. The UI shows a visual reminder; the user
+  // manually accounts for poison. Automated sources (wound at turn start) handle
+  // poison +1 in applyTurnStartConditions().
 
   // Any heal clears wound and poison instead of healing HP
   if (delta > 0) {
@@ -896,7 +891,11 @@ function handleAddCharacter(
     tags: [],
     identity: 0,
     summons: [],
-    progress: createEmptyProgress(),
+    progress: (() => {
+      const p = createEmptyProgress();
+      if (payload.level > 1) p.experience = getMinXPForLevel(payload.level);
+      return p;
+    })(),
     scenarioStats: createEmptyScenarioStats(),
     number: state.characters.length + 1,
     attackModifierDeck: {
@@ -1218,6 +1217,10 @@ function handleSetScenario(
   // Enable auto-level calc for new scenarios and recalculate
   state.levelCalculation = true;
   recalculateLevel(state);
+
+  // Populate standard 20-card attack modifier decks
+  state.monsterAttackModifierDeck = buildStandardModifierDeck();
+  state.allyAttackModifierDeck = buildStandardModifierDeck();
 
   // Auto-spawn Room 1 monsters if data context available
   if (dataContext) {

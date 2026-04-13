@@ -588,6 +588,18 @@
 .hp-btn.minus { color: var(--negative-red); }
 .hp-btn.plus { color: var(--health-green); }
 
+.poison-reminder {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--health-green);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--health-green);
+    border-radius: 3px;
+    padding: 0 3px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
 .hp-btn.mini {
     width: 24px;
     height: 24px;
