@@ -1107,8 +1107,19 @@ function handleSetLevelAdjustment(
 }
 
 function handleDrawLootCard(state: GameState): void {
-  if (state.lootDeck.current < state.lootDeck.cards.length) {
-    state.lootDeck.current += 1;
+  if (state.lootDeck.current >= state.lootDeck.cards.length) return;
+
+  const drawnIndex = state.lootDeck.current;
+  state.lootDeck.current += 1;
+
+  // Auto-assign to active character if one exists
+  const activeChar = state.characters.find(c => c.active && !c.exhausted && !c.absent);
+  if (activeChar) {
+    handleAssignLoot(state, {
+      cardIndex: drawnIndex,
+      characterName: activeChar.name,
+      edition: activeChar.edition,
+    });
   }
 }
 
@@ -1116,15 +1127,27 @@ function handleAssignLoot(
   state: GameState,
   payload: { cardIndex: number; characterName: string; edition: string },
 ): void {
-  const char = state.characters.find(
+  const newChar = state.characters.find(
     (c) => c.name === payload.characterName && c.edition === payload.edition,
   );
-  if (!char) return;
+  if (!newChar) return;
 
-  // Add card index to character's lootCards
-  if (!char.lootCards.includes(payload.cardIndex)) {
-    char.lootCards.push(payload.cardIndex);
+  // Check if this card is already assigned to another character — re-assignment
+  for (const c of state.characters) {
+    const idx = c.lootCards.indexOf(payload.cardIndex);
+    if (idx !== -1) {
+      c.lootCards.splice(idx, 1);
+      c.loot = Math.max(0, c.loot - 1); // decrement loot action count
+      break;
+    }
   }
+
+  // Skip if already assigned to same character
+  if (newChar.lootCards.includes(payload.cardIndex)) return;
+
+  // Assign card and increment loot action count
+  newChar.lootCards.push(payload.cardIndex);
+  newChar.loot += 1;
 }
 
 function handleDrawMonsterAbility(
@@ -1404,14 +1427,35 @@ function handleCompleteScenario(
   const bonusXP = isVictory ? (4 + 2 * level) : 0;
   const goldConversion = [2, 2, 3, 3, 4, 4, 5, 6][level] ?? 2;
 
+  const playerCount = getPlayerCount(state.characters);
+
   for (const char of state.characters) {
     // Transfer in-scenario XP → total XP (always, even on defeat per rules)
     const scenarioXP = char.experience || 0;
     char.progress.experience += scenarioXP + bonusXP;
 
-    // Transfer loot → gold (coins × conversion rate)
-    const scenarioCoins = char.loot || 0;
-    char.progress.gold += scenarioCoins * goldConversion;
+    // Transfer loot cards → gold and resources (derived from lootCards, not char.loot)
+    let totalCoins = 0;
+    if (!char.progress.loot) char.progress.loot = {};
+
+    for (const cardIndex of char.lootCards) {
+      const card = state.lootDeck.cards[cardIndex];
+      if (!card) continue;
+
+      if (card.type === 'money') {
+        // Sum raw coin values — conversion applied once below
+        const coinValue = playerCount <= 2 ? card.value2P
+          : playerCount === 3 ? card.value3P
+          : card.value4P;
+        totalCoins += coinValue;
+      } else {
+        // Resources: add to campaign inventory
+        char.progress.loot[card.type] = (char.progress.loot[card.type] || 0) + 1;
+      }
+    }
+
+    // Convert total coins to gold at scenario level rate
+    char.progress.gold += totalCoins * goldConversion;
 
     // Reset in-scenario counters
     char.experience = 0;

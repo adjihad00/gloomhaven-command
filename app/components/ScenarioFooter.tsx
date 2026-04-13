@@ -27,6 +27,7 @@ interface ScenarioFooterProps {
   onAddCurse?: () => void;
   onRemoveCurse?: () => void;
   lootDeck?: LootDeck;
+  onDrawLoot?: () => void;
   onOpenLootDeck?: () => void;
   readonly?: boolean;
 }
@@ -36,7 +37,7 @@ export function ScenarioFooter({
   doors, onRevealRoom, levelValues,
   modifierDeck, onDrawModifier, onShuffleModifier,
   onAddBless, onRemoveBless, onAddCurse, onRemoveCurse,
-  lootDeck, onOpenLootDeck,
+  lootDeck, onDrawLoot, onOpenLootDeck,
   readonly,
 }: ScenarioFooterProps) {
   const [pendingDoor, setPendingDoor] = useState<DoorInfo | null>(null);
@@ -96,9 +97,17 @@ export function ScenarioFooter({
 
       {/* Loot deck badge */}
       {lootDeck && lootDeck.cards && lootDeck.cards.length > 0 && (
-        <button class="loot-deck-badge" onClick={onOpenLootDeck} aria-label="Loot Deck">
-          {'\uD83C\uDCCF'} {lootDeck.cards.length - lootDeck.current}/{lootDeck.cards.length}
-        </button>
+        <div class="deck-badge">
+          <button class="deck-badge__draw" onClick={onDrawLoot}
+            disabled={lootDeck.current >= lootDeck.cards.length || readonly}
+            aria-label="Draw loot card">
+            <img src="/assets/ghs/images/fh/loot/loot-back.png" alt="" />
+          </button>
+          <button class="deck-badge__count" onClick={onOpenLootDeck}
+            aria-label="Open loot deck">
+            {lootDeck.cards.length - lootDeck.current}/{lootDeck.cards.length}
+          </button>
+        </div>
       )}
 
       {/* Right: modifier deck */}

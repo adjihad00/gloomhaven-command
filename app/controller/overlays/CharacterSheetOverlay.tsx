@@ -122,9 +122,17 @@ function StatsTab({ character, classData }: { character: Character; classData: a
         </div>
       )}
       <div class="sheet__stat-row">
-        <span class="sheet__stat-label">Gold</span>
+        <span class="sheet__stat-label">Total Gold</span>
         <span class="sheet__stat-value">{currentGold}</span>
       </div>
+      {(character.loot > 0) && (
+        <div class="sheet__stat-row">
+          <span class="sheet__stat-label">Scenario Coins</span>
+          <span class="sheet__stat-value sheet__stat-value--muted">
+            {character.loot} coins (pending conversion)
+          </span>
+        </div>
+      )}
     </div>
   );
 }

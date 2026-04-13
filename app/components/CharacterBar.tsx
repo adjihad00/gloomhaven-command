@@ -8,7 +8,7 @@ import { formatName } from '../shared/formatName';
 import { InitiativeDisplay } from './InitiativeDisplay';
 import { InitiativeNumpad } from '../controller/overlays/InitiativeNumpad';
 import { ConditionIcons } from './ConditionIcons';
-import { HealthIcon, XPIcon, GoldIcon, PawIcon } from './Icons';
+import { HealthIcon, XPIcon, LootIcon, PawIcon } from './Icons';
 
 interface CharacterBarProps {
   character: Character;
@@ -120,8 +120,9 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
           <span class="counter" onClick={() => !readonly && commands.setExperience(name, ed, experience + 1)}>
             <XPIcon size={14} /> {experience || 0}
           </span>
-          <span class="counter" onClick={() => !readonly && commands.setLoot(name, ed, loot + 1)}>
-            <GoldIcon size={14} /> {loot || 0}
+          <span class="counter" onClick={() => !readonly && commands.setLoot(name, ed, loot + 1)}
+            title="Loot actions this scenario">
+            <LootIcon size={14} /> {loot || 0}
           </span>
           {liveSummons.length > 0 && (
             <span class="counter summon-badge"><PawIcon size={14} /> {liveSummons.length}</span>

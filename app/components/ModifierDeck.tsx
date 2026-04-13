@@ -60,14 +60,17 @@ export function ModifierDeck({
   if (compact) {
     return (
       <>
-        <button ref={badgeRef}
-          class="modifier-deck modifier-deck--compact"
-          onClick={() => setExpanded(!expanded)}
-          title={`${deckName}: ${remaining}/${total}${lastDrawnDisplay ? ` | Last: ${lastDrawnDisplay.label}` : ''}`}
-        >
-          <span class="modifier-deck__icon">{'\u2694'}</span>
-          <span class="modifier-deck__badge">{remaining}</span>
-        </button>
+        <div ref={badgeRef} class="deck-badge"
+          title={`${deckName}: ${remaining}/${total}${lastDrawnDisplay ? ` | Last: ${lastDrawnDisplay.label}` : ''}`}>
+          <button class="deck-badge__draw" onClick={onDraw}
+            disabled={remaining <= 0 || readonly} aria-label="Draw modifier card">
+            <img src="/assets/ghs/images/attackmodifier/am-back.png" alt="" />
+          </button>
+          <button class="deck-badge__count" onClick={() => setExpanded(!expanded)}
+            aria-label="Open modifier deck">
+            {remaining}/{total}
+          </button>
+        </div>
 
         {expanded && (
           <div class="modifier-deck-overlay-backdrop"

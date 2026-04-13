@@ -24,3 +24,10 @@ export function statusIcon(name: string): string {
 export function gameIcon(name: string): string {
   return `/assets/ghs/images/${name}.svg`;
 }
+
+export function lootCardIcon(type: string, coinValue?: number): string {
+  if (type === 'money' && coinValue) {
+    return `/assets/ghs/images/fh/loot/loot-money${coinValue}.png`;
+  }
+  return `/assets/ghs/images/fh/loot/loot-${type}.png`;
+}

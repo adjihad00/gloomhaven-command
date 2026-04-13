@@ -26,6 +26,12 @@ export function GoldIcon({ size = 14, class: className }: IconProps) {
     class={className} aria-hidden="true" loading="lazy" />;
 }
 
+/** Loot — official GHS loot icon (bag/sack) */
+export function LootIcon({ size = 14, class: className }: IconProps) {
+  return <img src={statusIcon('loot')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
+}
+
 /** Trap — official GHS trap icon */
 export function TrapIcon({ size = 14, class: className }: IconProps) {
   return <img src={gameIcon('trap')} alt="" width={size} height={size}

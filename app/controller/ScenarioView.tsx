@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useState, useMemo, useContext } from 'preact/hooks';
+import { useState, useMemo, useContext, useCallback } from 'preact/hooks';
 import { AppContext } from '../shared/context';
 import { useGameState } from '../hooks/useGameState';
 import { useCommands } from '../hooks/useCommands';
@@ -16,6 +16,8 @@ import { CharacterSheetOverlay } from './overlays/CharacterSheetOverlay';
 import { ScenarioSetupOverlay } from './overlays/ScenarioSetupOverlay';
 import { MenuOverlay } from './overlays/MenuOverlay';
 import { LootDeckOverlay } from './overlays/LootDeckOverlay';
+import { characterThumbnail } from '../shared/assets';
+import { formatName } from '../shared/formatName';
 
 type OverlayState =
   | { type: 'none' }
@@ -32,6 +34,19 @@ export function ScenarioView() {
   const { state, characters, monsters, elementBoard, round, phase, level, edition } = gameState;
 
   const [activeOverlay, setActiveOverlay] = useState<OverlayState>({ type: 'none' });
+  const [pendingLootCard, setPendingLootCard] = useState<number | null>(null);
+
+  // Draw loot card — auto-assigns to active character server-side.
+  // If no active character, show floating picker for manual assignment.
+  const handleDrawLoot = useCallback(() => {
+    const cardIndex = state?.lootDeck?.current ?? 0;
+    commands.drawLootCard();
+    // Check if there's an active character — if not, show picker
+    const hasActive = characters.some(c => c.active && !c.exhausted && !c.absent);
+    if (!hasActive) {
+      setPendingLootCard(cardIndex);
+    }
+  }, [state, characters, commands]);
 
   // Monster data fetching
   const { statsMap: monsterStatsMap, abilitiesMap } = useMonsterData(monsters, edition, level);
@@ -153,6 +168,7 @@ export function ScenarioView() {
         onAddCurse={() => commands.addModifierCard('monster', 'curse')}
         onRemoveCurse={() => commands.removeModifierCard('monster', 'curse')}
         lootDeck={state.lootDeck}
+        onDrawLoot={handleDrawLoot}
         onOpenLootDeck={() => setActiveOverlay({ type: 'lootDeck' })}
       />
 
@@ -206,6 +222,29 @@ export function ScenarioView() {
           edition={edition}
           onClose={() => setActiveOverlay({ type: 'none' })}
         />
+      )}
+
+      {/* Floating loot assignment picker — shown when card drawn with no active character */}
+      {pendingLootCard !== null && (
+        <div class="loot-assign-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) setPendingLootCard(null); }}>
+          <div class="loot-assign-picker">
+            <span class="loot-assign-picker__label">Assign loot to:</span>
+            <div class="loot-assign-picker__chars">
+              {characters.filter(c => !c.exhausted && !c.absent).map(c => (
+                <button key={c.name} class="loot-assign-picker__char"
+                  onClick={() => {
+                    commands.assignLoot(pendingLootCard, c.name, c.edition || edition);
+                    setPendingLootCard(null);
+                  }}
+                  title={c.title || formatName(c.name)}>
+                  <img src={characterThumbnail(c.edition || edition, c.name)}
+                    alt={formatName(c.name)} class="loot-assign-picker__img" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

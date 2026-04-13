@@ -1167,6 +1167,114 @@
     gap: 3px;
 }
 
+/* Split deck badge (draw icon + counter) */
+.deck-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--accent-gold-dim);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.deck-badge__draw {
+    padding: 2px;
+    cursor: pointer;
+    border: none;
+    border-right: 1px solid var(--accent-gold-dim);
+    background: none;
+    touch-action: manipulation;
+}
+
+.deck-badge__draw:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.deck-badge__draw img {
+    height: 28px;
+    width: auto;
+    display: block;
+    border-radius: 2px;
+}
+
+.deck-badge__count {
+    padding: 4px 8px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    touch-action: manipulation;
+}
+
+.deck-badge__count:hover {
+    background: var(--bg-elevated);
+}
+
+/* Loot assignment floating picker */
+.loot-assign-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+}
+
+.loot-assign-picker {
+    position: fixed;
+    bottom: 56px;
+    right: 80px;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    box-shadow: var(--shadow-heavy);
+    z-index: 56;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.loot-assign-picker__label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.loot-assign-picker__chars {
+    display: flex;
+    gap: 8px;
+}
+
+.loot-assign-picker__char {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--accent-copper);
+    background: var(--bg-secondary);
+    padding: 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    overflow: hidden;
+    transition: border-color var(--transition-fast);
+}
+
+.loot-assign-picker__char:hover {
+    border-color: var(--accent-gold);
+}
+
+.loot-assign-picker__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 /* Modifier deck floating overlay */
 .modifier-deck-overlay-backdrop {
     position: fixed;
@@ -1714,7 +1822,7 @@ a,
     border-radius: var(--radius-sm);
 }
 
-.loot-card__icon { font-size: 1.2rem; }
+.loot-card__icon-img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; border-radius: 3px; }
 .loot-card__label { font-family: 'Crimson Pro', serif; font-size: 0.85rem; color: var(--text-primary); }
 
 .loot-card__assign-btn {
@@ -1750,6 +1858,35 @@ a,
 
 .loot-card__char-btn:active { background: var(--accent-gold); color: var(--bg-primary); }
 .loot-card__char-btn--cancel { border-color: var(--text-muted); color: var(--text-muted); }
+
+.loot-card__assigned {
+    margin-left: auto;
+    padding: 0;
+    border: 2px solid var(--accent-gold);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    overflow: hidden;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.loot-card__assigned-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.loot-card__picker-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
 
 .loot-deck-badge {
     padding: var(--space-1) var(--space-3);
