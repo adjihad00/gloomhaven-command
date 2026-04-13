@@ -1457,7 +1457,8 @@ a,
 }
 
 .derived-icon {
-    font-size: 0.7rem;
+    flex-shrink: 0;
+    color: var(--accent-copper);
 }
 
 /* ── Initiative Numpad Overlay ────────────────────────────────────────── */

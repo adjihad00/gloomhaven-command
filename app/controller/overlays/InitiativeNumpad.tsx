@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import { formatName } from '../../shared/formatName';
+import { LongRestIcon } from '../../components/Icons';
 
 interface InitiativeNumpadProps {
   characterName: string;
@@ -59,7 +60,7 @@ export function InitiativeNumpad({ characterName, currentInitiative, onSet, onLo
             >
               {key === 'rest' ? (
                 <span class="numpad-rest__content">
-                  <span class="numpad-rest__icon">{'\u23F8'}</span>
+                  <LongRestIcon size={20} class="numpad-rest__icon" />
                   <span class="numpad-rest__label">Rest</span>
                 </span>
               ) : key === 'back' ? '\u232B' : key}

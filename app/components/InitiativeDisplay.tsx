@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
+import { LongRestIcon } from './Icons';
 
 interface InitiativeDisplayProps {
   value: number;
@@ -13,7 +14,11 @@ export function InitiativeDisplay({ value, onSetInitiative, editable, longRest, 
   const [editing, setEditing] = useState(false);
 
   if (longRest) {
-    return <span class={`initiative-display initiative-display--${size} initiative-display--rest`}>REST</span>;
+    return (
+      <span class={`initiative-display initiative-display--${size} initiative-display--rest`}>
+        <LongRestIcon size={size === 'large' ? 28 : 20} />
+      </span>
+    );
   }
 
   if (editable && editing) {

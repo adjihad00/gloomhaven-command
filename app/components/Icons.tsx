@@ -1,39 +1,50 @@
 import { h } from 'preact';
+import { statusIcon, gameIcon } from '../shared/assets';
 
 interface IconProps {
   size?: number;
   class?: string;
 }
 
-export function HeartIcon({ size = 16, class: className }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" class={className} aria-hidden="true">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-    </svg>
-  );
+// ── GHS asset-based icons ─────────────────────────────────────────────────
+
+/** Health — official GHS blood drop */
+export function HealthIcon({ size = 16, class: className }: IconProps) {
+  return <img src={statusIcon('health')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
 }
 
-export function StarIcon({ size = 14, class: className }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" class={className} aria-hidden="true">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
-  );
+/** XP — official GHS angular star */
+export function XPIcon({ size = 14, class: className }: IconProps) {
+  return <img src={statusIcon('experience')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
 }
 
-export function CoinIcon({ size = 14, class: className }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" class={className} aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-      <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-      <circle cx="12" cy="12" r="2" />
-    </svg>
-  );
+/** Gold/Loot — official GHS coin */
+export function GoldIcon({ size = 14, class: className }: IconProps) {
+  return <img src={statusIcon('loot')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
 }
 
+/** Trap — official GHS trap icon */
+export function TrapIcon({ size = 14, class: className }: IconProps) {
+  return <img src={gameIcon('trap')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
+}
+
+/** Long Rest — official GHS long-rest icon */
+export function LongRestIcon({ size = 18, class: className }: IconProps) {
+  return <img src={gameIcon('long-rest')} alt="" width={size} height={size}
+    class={className} aria-hidden="true" loading="lazy" />;
+}
+
+// ── Custom inline SVG icons (no GHS equivalent) ───────────────────────────
+
+/** Summon paw icon */
 export function PawIcon({ size = 14, class: className }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" class={className} aria-hidden="true">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"
+      class={className} aria-hidden="true">
       <ellipse cx="12" cy="16" rx="5" ry="4"/>
       <circle cx="7" cy="9" r="2.5"/>
       <circle cx="17" cy="9" r="2.5"/>
@@ -42,3 +53,40 @@ export function PawIcon({ size = 14, class: className }: IconProps) {
     </svg>
   );
 }
+
+/** Closed door silhouette */
+export function DoorClosedIcon({ size = 18, class: className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"
+      class={className} aria-hidden="true">
+      <rect x="4" y="2" width="16" height="20" rx="1" fill="currentColor"/>
+      <rect x="6" y="4" width="12" height="8" rx="0.5" fill="currentColor" opacity="0.5"/>
+      <rect x="6" y="14" width="12" height="6" rx="0.5" fill="currentColor" opacity="0.5"/>
+      <circle cx="16" cy="13" r="1.2" fill="currentColor" opacity="0.7"/>
+    </svg>
+  );
+}
+
+/** Open door silhouette */
+export function DoorOpenIcon({ size = 18, class: className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"
+      class={className} aria-hidden="true">
+      <rect x="4" y="2" width="16" height="20" rx="1" fill="none"
+        stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <rect x="6" y="4" width="5" height="16" rx="0.5" fill="currentColor" opacity="0.4"
+        transform="skewY(-5)"/>
+    </svg>
+  );
+}
+
+/** Hazard/danger icon — spiky star shape */
+export function HazardIcon({ size = 14, class: className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"
+      class={className} aria-hidden="true">
+      <path d="M12 2L14 8L18 6L16 12L22 14L16 16L18 22L12 18L6 22L8 16L2 14L8 12L6 6L10 8L12 2Z"/>
+    </svg>
+  );
+}
+

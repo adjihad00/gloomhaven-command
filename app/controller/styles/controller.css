@@ -598,6 +598,15 @@
   line-height: 1.2;
 }
 
+.char-class-card__thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid currentColor;
+  background: var(--bg-secondary);
+}
+
 .char-class-card__hp {
   font-size: 0.7rem;
   color: var(--health-green);

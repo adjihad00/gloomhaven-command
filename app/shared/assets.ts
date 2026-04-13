@@ -16,3 +16,11 @@ export function conditionIcon(name: string): string {
 export function elementIcon(name: string): string {
   return `/assets/ghs/images/element/${name}.svg`;
 }
+
+export function statusIcon(name: string): string {
+  return `/assets/ghs/images/status/${name}.svg`;
+}
+
+export function gameIcon(name: string): string {
+  return `/assets/ghs/images/${name}.svg`;
+}

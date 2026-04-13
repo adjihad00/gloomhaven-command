@@ -6,6 +6,7 @@ import { useCommands } from '../../hooks/useCommands';
 import { useEditions, useCharacterList, useScenarioList, useDataApi } from '../../hooks/useDataApi';
 import { OverlayBackdrop } from './OverlayBackdrop';
 import { formatName } from '../../shared/formatName';
+import { characterThumbnail } from '../../shared/assets';
 
 interface ScenarioSetupOverlayProps {
   state: GameState;
@@ -270,6 +271,12 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
                   style={c.color ? { borderColor: c.color } : undefined}
                   onClick={() => handleAddCharacter(c.name)}
                 >
+                  <img
+                    src={characterThumbnail(selectedEdition, c.name)}
+                    alt={formatName(c.name)}
+                    class="char-class-card__thumb"
+                    loading="lazy"
+                  />
                   <span class="char-class-card__name">{formatName(c.name)}</span>
                   <span class="char-class-card__hp">HP: {hpAtLevel}</span>
                 </button>

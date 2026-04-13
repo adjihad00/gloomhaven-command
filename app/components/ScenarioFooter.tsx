@@ -2,6 +2,7 @@ import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import type { AttackModifierDeckModel, LevelDerivedValues, LootDeck } from '@gloomhaven-command/shared';
 import { ModifierDeck } from './ModifierDeck';
+import { DoorClosedIcon, DoorOpenIcon, TrapIcon, GoldIcon, XPIcon, HazardIcon } from './Icons';
 
 interface DoorInfo {
   roomNumber: number;
@@ -65,7 +66,9 @@ export function ScenarioFooter({
                 : `Open door to Room ${door.roomNumber} (${door.ref})`
               }
             >
-              <span class="scenario-footer__door-icon">{door.revealed ? '\u25A1' : '\u25A0'}</span>
+              <span class="scenario-footer__door-icon">
+                {door.revealed ? <DoorOpenIcon size={16} /> : <DoorClosedIcon size={16} />}
+              </span>
               <span class="scenario-footer__door-ref">{door.ref}</span>
               {door.marker && !door.revealed && (
                 <span class="scenario-footer__door-marker">&sect;</span>
@@ -78,16 +81,16 @@ export function ScenarioFooter({
       {/* Center: level-derived values */}
       <div class="footer-derived">
         <span class="derived-pill" title="Trap Damage">
-          <span class="derived-icon">{'\u26A0'}</span>{levelValues.trapDamage}
+          <TrapIcon size={14} class="derived-icon" />{levelValues.trapDamage}
         </span>
         <span class="derived-pill" title="Gold per Coin">
-          <span class="derived-icon">{'\uD83D\uDCB0'}</span>{levelValues.goldConversion}
+          <GoldIcon size={14} class="derived-icon" />{levelValues.goldConversion}
         </span>
         <span class="derived-pill" title="Bonus XP">
-          <span class="derived-icon">{'\u2605'}</span>{levelValues.bonusXP}
+          <XPIcon size={14} class="derived-icon" />{levelValues.bonusXP}
         </span>
         <span class="derived-pill" title="Hazardous Terrain">
-          <span class="derived-icon">{'\u2623'}</span>{levelValues.hazardousTerrain}
+          <HazardIcon size={14} class="derived-icon" />{levelValues.hazardousTerrain}
         </span>
       </div>
 
