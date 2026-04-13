@@ -31,6 +31,7 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
 - Design: `docs/DESIGN_DECISIONS.md` — rationale for all architectural choices
 - Roadmap: `docs/ROADMAP.md` — phased plan with completion tracking
 - Bugs: `docs/BUGFIX_LOG.md` — issue log
+- **Rules: `docs/GAME_RULES_REFERENCE.md` — authoritative GH/FH rules. MUST be consulted for all game logic implementation**
 
 ## Repo Layout (condensed)
 ```

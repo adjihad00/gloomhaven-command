@@ -1581,6 +1581,177 @@ a,
     color: var(--health-green);
 }
 
+/* ── Loot Deck ───────────────────────────────────────────────────────── */
+
+.loot-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+
+.loot-panel__title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+}
+
+.loot-panel__count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.loot-panel__draw {
+    width: 100%;
+    margin-bottom: var(--space-4);
+}
+
+.loot-panel__section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+
+.loot-panel__cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.loot-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-secondary);
+    border: 1.5px solid;
+    border-radius: var(--radius-sm);
+}
+
+.loot-card__icon { font-size: 1.2rem; }
+.loot-card__label { font-family: 'Crimson Pro', serif; font-size: 0.85rem; color: var(--text-primary); }
+
+.loot-card__assign-btn {
+    margin-left: auto;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--accent-gold);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.loot-card__picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-left: auto;
+}
+
+.loot-card__char-btn {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.loot-card__char-btn:active { background: var(--accent-gold); color: var(--bg-primary); }
+.loot-card__char-btn--cancel { border-color: var(--text-muted); color: var(--text-muted); }
+
+.loot-deck-badge {
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    touch-action: manipulation;
+    flex-shrink: 0;
+}
+
+/* ── Modifier Deck (enhanced) ────────────────────────────────────────── */
+
+.modifier-deck--expanded {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.modifier-deck__icon {
+    margin-right: var(--space-1);
+}
+
+.modifier-deck__last-drawn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--bg-primary);
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+}
+
+.modifier-deck__drawn-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.modifier-deck__drawn-card {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.modifier-deck__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.modifier-deck__actions .btn {
+    flex: 1;
+}
+
+.modifier-deck__bless-curse {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.modifier-deck__bc-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.modifier-deck__bc-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    min-width: 70px;
+}
+
+.modifier-deck__bc-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ── ErrorBoundary ────────────────────────────────────────────────────── */
 
 .error-boundary {

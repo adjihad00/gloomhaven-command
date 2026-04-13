@@ -110,6 +110,27 @@ export function ConnectionScreen({ gameCode: initialCode, status, error, onConne
             >
               {connecting ? 'Connecting...' : 'Connect'}
             </button>
+
+            <details class="advanced-connection">
+              <summary>Advanced</summary>
+              <div class="form-group">
+                <label class="form-label">Server URL (leave blank for auto-detect)</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder={`ws://${location.host}`}
+                  value={localStorage.getItem('gc_serverHost') || ''}
+                  onInput={(e) => {
+                    const val = (e.target as HTMLInputElement).value.trim();
+                    if (val) {
+                      localStorage.setItem('gc_serverHost', val);
+                    } else {
+                      localStorage.removeItem('gc_serverHost');
+                    }
+                  }}
+                />
+              </div>
+            </details>
           </div>
         )}
 

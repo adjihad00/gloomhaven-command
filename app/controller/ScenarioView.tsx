@@ -11,14 +11,18 @@ import { FigureList } from '../components/FigureList';
 import { ScenarioHeader } from '../components/ScenarioHeader';
 import { ScenarioFooter } from '../components/ScenarioFooter';
 import { CharacterDetailOverlay } from './overlays/CharacterDetailOverlay';
+import { CharacterSheetOverlay } from './overlays/CharacterSheetOverlay';
 import { ScenarioSetupOverlay } from './overlays/ScenarioSetupOverlay';
 import { MenuOverlay } from './overlays/MenuOverlay';
+import { LootDeckOverlay } from './overlays/LootDeckOverlay';
 
 type OverlayState =
   | { type: 'none' }
   | { type: 'characterDetail'; characterName: string }
+  | { type: 'characterSheet'; characterName: string }
   | { type: 'scenarioSetup' }
-  | { type: 'menu' };
+  | { type: 'menu' }
+  | { type: 'lootDeck' };
 
 export function ScenarioView() {
   const { gameCode, disconnect } = useContext(AppContext);
@@ -151,6 +155,8 @@ export function ScenarioView() {
         onRemoveBless={() => commands.removeModifierCard('monster', 'bless')}
         onAddCurse={() => commands.addModifierCard('monster', 'curse')}
         onRemoveCurse={() => commands.removeModifierCard('monster', 'curse')}
+        lootDeck={state.lootDeck}
+        onOpenLootDeck={() => setActiveOverlay({ type: 'lootDeck' })}
       />
 
       {/* Overlays */}
@@ -162,6 +168,18 @@ export function ScenarioView() {
             edition={edition}
             availableConditions={availableConditions}
             isDrawPhase={phase === 'draw'}
+            onClose={() => setActiveOverlay({ type: 'none' })}
+            onOpenSheet={() => setActiveOverlay({ type: 'characterSheet', characterName: activeOverlay.characterName })}
+          />
+        ) : null;
+      })()}
+
+      {activeOverlay.type === 'characterSheet' && (() => {
+        const character = characters.find(c => c.name === activeOverlay.characterName);
+        return character ? (
+          <CharacterSheetOverlay
+            character={character}
+            edition={edition}
             onClose={() => setActiveOverlay({ type: 'none' })}
           />
         ) : null;
@@ -180,6 +198,15 @@ export function ScenarioView() {
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
           onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}
+        />
+      )}
+
+      {activeOverlay.type === 'lootDeck' && (
+        <LootDeckOverlay
+          lootDeck={state.lootDeck}
+          characters={characters}
+          edition={edition}
+          onClose={() => setActiveOverlay({ type: 'none' })}
         />
       )}
     </div>

@@ -874,6 +874,184 @@
 }
 
 /* ============================================
+   Character Sheet Overlay
+   ============================================ */
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sheet__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--accent-copper);
+}
+
+.sheet__portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 2px solid var(--accent-copper);
+}
+
+.sheet__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sheet__class {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.sheet__name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.sheet__level {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.sheet__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--bg-secondary);
+  margin-top: var(--space-3);
+}
+
+.sheet__tab {
+  flex: 1;
+  padding: var(--space-3);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+.sheet__tab--active {
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold);
+}
+
+.sheet__content {
+  padding-top: var(--space-4);
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.sheet__stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--bg-secondary);
+}
+
+.sheet__stat-label { color: var(--text-muted); font-size: 0.85rem; }
+.sheet__stat-value { color: var(--text-primary); font-weight: 600; font-size: 0.85rem; }
+
+.sheet__thresholds {
+  margin-top: var(--space-3);
+}
+
+.sheet__threshold-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.sheet__threshold {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.sheet__threshold--reached {
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-dim);
+}
+
+.sheet__perk-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--bg-secondary);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.sheet__perk-check { color: var(--text-muted); flex-shrink: 0; }
+
+.sheet__item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--bg-secondary);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.sheet__item-edition {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.sheet__empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: var(--space-4) 0;
+  text-align: center;
+}
+
+/* Character detail sheet button */
+.char-detail__sheet-btn {
+  margin-left: var(--space-2);
+  padding: 2px 6px;
+  border: 1px solid var(--accent-copper);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Advanced connection */
+.advanced-connection {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.advanced-connection summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.advanced-connection .form-group {
+  margin-top: var(--space-2);
+}
+
+/* ============================================
    iPad landscape optimizations
    ============================================ */
 

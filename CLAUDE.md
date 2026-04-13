@@ -9,6 +9,24 @@ See docs/GHS_AUDIT.md for GHS functionality audit and gap analysis.
 See docs/ROADMAP.md for execution plan.
 See docs/DESIGN_DECISIONS.md for rationale log.
 See docs/BUGFIX_LOG.md for issue tracking.
+See docs/GAME_RULES_REFERENCE.md for **authoritative game rules** (conditions, elements, attacks, monsters, etc.).
+
+## Game Rules Compliance
+
+**CRITICAL:** Before implementing ANY game logic (conditions, attacks, healing, elements,
+initiative, monster behavior, loot, resting, scenario setup, level calculations), you MUST
+read and verify against `docs/GAME_RULES_REFERENCE.md`. Many bugs have been caused by
+inconsistencies with the actual Gloomhaven/Frosthaven rules.
+
+Key areas that require rules verification:
+- Condition behavior (especially regenerate+wound, poison+heal, ward+brittle interactions)
+- Attack modification order (bonuses -> modifier card -> shield -> ward/brittle)
+- Element cycle (infuse at end of turn, wane at end of round, consume from strong/waning)
+- Initiative ordering (character wins ties vs monsters, elites before normals)
+- Monster focus and movement rules
+- Scenario level derived values (trap damage, gold conversion, hazard damage, bonus XP)
+- Resting rules (short rest = random card loss, long rest = choice + heal 2 + recover items)
+- Exhaustion conditions and end-of-scenario rules
 
 ## Tech Stack
 - Server: Node.js, TypeScript, Express, ws, better-sqlite3

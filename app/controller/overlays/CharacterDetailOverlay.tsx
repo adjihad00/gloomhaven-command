@@ -15,9 +15,10 @@ interface CharacterDetailOverlayProps {
   availableConditions: ConditionName[];
   isDrawPhase: boolean;
   onClose: () => void;
+  onOpenSheet?: () => void;
 }
 
-export function CharacterDetailOverlay({ character, edition, availableConditions, isDrawPhase, onClose }: CharacterDetailOverlayProps) {
+export function CharacterDetailOverlay({ character, edition, availableConditions, isDrawPhase, onClose, onOpenSheet }: CharacterDetailOverlayProps) {
   const commands = useCommands();
   const { name, health, maxHealth, experience, loot, exhausted, absent, level, entityConditions, summons } = character;
   const ed = character.edition || edition;
@@ -60,7 +61,14 @@ export function CharacterDetailOverlay({ character, edition, availableConditions
                 <span class="char-detail__edit-hint">{'\u270E'}</span>
               </h2>
             )}
-            <span class="char-detail__level">Level {level}</span>
+            <span class="char-detail__level">
+              Level {level}
+              {onOpenSheet && (
+                <button class="char-detail__sheet-btn" onClick={onOpenSheet} aria-label="View character sheet">
+                  {'\uD83D\uDCCB'}
+                </button>
+              )}
+            </span>
           </div>
         </div>
 

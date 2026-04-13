@@ -66,7 +66,11 @@ export class Connection {
     this.manualDisconnect = false;
     this.setStatus('connecting');
 
-    const wsUrl = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/';
+    // Use saved server URL for PWA standalone mode, or detect from location
+    const savedHost = localStorage.getItem('gc_serverHost');
+    const host = savedHost || location.host;
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${host}/`;
     this.ws = new WebSocket(wsUrl);
 
     this.ws.onopen = () => {
@@ -207,6 +211,8 @@ export class Connection {
     localStorage.setItem('gc_gameCode', this.gameCode);
     localStorage.setItem('gc_sessionToken', this.sessionToken ?? '');
     localStorage.setItem('gc_lastRevision', String(this.lastRevision));
+    // Save server host for PWA standalone mode reconnection
+    localStorage.setItem('gc_serverHost', location.host);
   }
 
   private scheduleReconnect(): void {

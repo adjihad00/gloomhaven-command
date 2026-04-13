@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import type { AttackModifierDeckModel, LevelDerivedValues } from '@gloomhaven-command/shared';
+import type { AttackModifierDeckModel, LevelDerivedValues, LootDeck } from '@gloomhaven-command/shared';
 import { ModifierDeck } from './ModifierDeck';
 
 interface DoorInfo {
@@ -24,6 +24,8 @@ interface ScenarioFooterProps {
   onRemoveBless?: () => void;
   onAddCurse?: () => void;
   onRemoveCurse?: () => void;
+  lootDeck?: LootDeck;
+  onOpenLootDeck?: () => void;
   readonly?: boolean;
 }
 
@@ -32,6 +34,7 @@ export function ScenarioFooter({
   doors, onRevealRoom, levelValues,
   modifierDeck, onDrawModifier, onShuffleModifier,
   onAddBless, onRemoveBless, onAddCurse, onRemoveCurse,
+  lootDeck, onOpenLootDeck,
   readonly,
 }: ScenarioFooterProps) {
   return (
@@ -84,6 +87,13 @@ export function ScenarioFooter({
           <span class="derived-icon">{'\u2623'}</span>{levelValues.hazardousTerrain}
         </span>
       </div>
+
+      {/* Loot deck badge */}
+      {lootDeck && lootDeck.cards && lootDeck.cards.length > 0 && (
+        <button class="loot-deck-badge" onClick={onOpenLootDeck} aria-label="Loot Deck">
+          {'\uD83C\uDCCF'} {lootDeck.cards.length - lootDeck.current}/{lootDeck.cards.length}
+        </button>
+      )}
 
       {/* Right: modifier deck */}
       {modifierDeck && onDrawModifier && onShuffleModifier && (
