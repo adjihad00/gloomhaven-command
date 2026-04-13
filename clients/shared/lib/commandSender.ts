@@ -141,6 +141,10 @@ export class CommandSender {
     this.send({ action: 'toggleAbsent', payload: { characterName, edition } });
   }
 
+  toggleLongRest(characterName: string, edition: string): void {
+    this.send({ action: 'toggleLongRest', payload: { characterName, edition } });
+  }
+
   // ── Summons ──
 
   addSummon(characterName: string, edition: string, summonName: string, cardId: string, number: number, color: SummonColor): void {

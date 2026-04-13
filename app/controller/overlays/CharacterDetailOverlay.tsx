@@ -35,14 +35,6 @@ export function CharacterDetailOverlay({ character, edition, availableConditions
           </div>
         </div>
 
-        {/* Top-right: absent toggle */}
-        <button
-          class={`char-detail__absent-btn ${absent ? 'active' : ''}`}
-          onClick={() => commands.toggleAbsent(name, ed)}
-        >
-          {absent ? 'Mark Present' : 'Mark Absent'}
-        </button>
-
         {/* HP */}
         <div class="char-detail__section">
           <label class="char-detail__label">Health</label>
@@ -108,6 +100,16 @@ export function CharacterDetailOverlay({ character, edition, availableConditions
             ))}
           </div>
         )}
+
+        {/* Mark Absent — at bottom, clearly separated from close button */}
+        <div class="overlay-danger-zone">
+          <button
+            class={`absent-btn ${absent ? 'absent-btn--active' : ''}`}
+            onClick={() => commands.toggleAbsent(name, ed)}
+          >
+            {absent ? 'Return to Game' : 'Mark Absent'}
+          </button>
+        </div>
       </div>
     </OverlayBackdrop>
   );

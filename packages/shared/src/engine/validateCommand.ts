@@ -208,6 +208,12 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'toggleLongRest': {
+      const char = findCharacter(state, command.payload.characterName, command.payload.edition);
+      if (!char) return fail(`Character "${command.payload.characterName}" not found`);
+      return OK;
+    }
+
     // ── Deck commands ─────────────────────────────────────────────────────
     case 'drawLootCard':
       if (state.lootDeck.current >= state.lootDeck.cards.length) {

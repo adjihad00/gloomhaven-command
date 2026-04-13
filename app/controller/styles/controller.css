@@ -272,22 +272,6 @@
   color: var(--text-muted);
 }
 
-.char-detail__absent-btn {
-  align-self: flex-end;
-  margin-top: -48px;
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--accent-gold-dim);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.char-detail__absent-btn.active {
-  border-color: var(--negative-red);
-  color: var(--negative-red);
-}
 
 .char-detail__section {
   display: flex;

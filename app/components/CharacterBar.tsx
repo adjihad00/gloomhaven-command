@@ -6,6 +6,7 @@ import { useCommands } from '../hooks/useCommands';
 import { characterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
 import { InitiativeDisplay } from './InitiativeDisplay';
+import { InitiativeNumpad } from '../controller/overlays/InitiativeNumpad';
 import { ConditionIcons } from './ConditionIcons';
 import { HeartIcon, StarIcon, CoinIcon, PawIcon } from './Icons';
 
@@ -31,6 +32,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
   const commands = useCommands();
   const { name, health, maxHealth, initiative, experience, loot, exhausted, longRest, summons, entityConditions } = character;
   const ed = character.edition || edition;
+  const [showNumpad, setShowNumpad] = useState(false);
 
   const target = { type: 'character' as const, name, edition: ed };
 
@@ -75,12 +77,16 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
             title={isActive ? 'End turn' : isDone ? 'Turn complete' : 'Activate'}
           />
 
-          <InitiativeDisplay
-            value={initiative}
-            onSetInitiative={v => commands.setInitiative(name, ed, v)}
-            editable={isDrawPhase && !readonly}
-            longRest={longRest}
-          />
+          <div
+            class={`char-init-area ${isDrawPhase && !readonly ? 'char-init-area--editable' : ''}`}
+            onClick={() => isDrawPhase && !readonly && setShowNumpad(true)}
+          >
+            <InitiativeDisplay
+              value={initiative}
+              editable={false}
+              longRest={longRest}
+            />
+          </div>
 
           {!readonly && (
             <div class="char-hp-control">
@@ -129,6 +135,22 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
           />
         ))}
       </div>
+
+      {showNumpad && (
+        <InitiativeNumpad
+          characterName={name}
+          currentInitiative={initiative}
+          onSet={(value) => {
+            commands.setInitiative(name, ed, value);
+            setShowNumpad(false);
+          }}
+          onLongRest={() => {
+            commands.toggleLongRest(name, ed);
+            setShowNumpad(false);
+          }}
+          onClose={() => setShowNumpad(false)}
+        />
+      )}
     </div>
   );
 }

@@ -99,6 +99,9 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'toggleAbsent':
       handleToggleAbsent(after, command.payload);
       break;
+    case 'toggleLongRest':
+      handleToggleLongRest(after, command.payload);
+      break;
     case 'drawLootCard':
       handleDrawLootCard(after);
       break;
@@ -1055,6 +1058,21 @@ function handleToggleAbsent(
   }
 
   recalculateLevel(state);
+}
+
+function handleToggleLongRest(
+  state: GameState,
+  payload: { characterName: string; edition: string },
+): void {
+  const char = state.characters.find(
+    (c) => c.name === payload.characterName && c.edition === payload.edition,
+  );
+  if (!char) return;
+
+  char.longRest = !char.longRest;
+  if (char.longRest) {
+    char.initiative = 99;
+  }
 }
 
 function handleDrawLootCard(state: GameState): void {

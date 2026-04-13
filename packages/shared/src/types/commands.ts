@@ -49,6 +49,7 @@ export type CommandAction =
   | 'setMonsterLevel'
   | 'toggleExhausted'
   | 'toggleAbsent'
+  | 'toggleLongRest'
   | 'setRound'
   | 'addModifierCard'
   | 'removeModifierCard'
@@ -224,6 +225,11 @@ export interface ToggleAbsentCommand {
   payload: { characterName: string; edition: string };
 }
 
+export interface ToggleLongRestCommand {
+  action: 'toggleLongRest';
+  payload: { characterName: string; edition: string };
+}
+
 export interface SetRoundCommand {
   action: 'setRound';
   payload: { round: number };
@@ -288,6 +294,7 @@ export type Command =
   | SetMonsterLevelCommand
   | ToggleExhaustedCommand
   | ToggleAbsentCommand
+  | ToggleLongRestCommand
   | SetRoundCommand
   | AddModifierCardCommand
   | RemoveModifierCardCommand

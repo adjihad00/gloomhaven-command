@@ -27,6 +27,29 @@ See docs/PROJECT_CONTEXT.md for full tree.
 ## Current Phase
 Phase R COMPLETE. Next: Phone + Display views (Phase 3-4) or Phase T (Town mode).
 
+## Design Skills & Conventions
+
+For ALL UI/UX work, read these skill files before implementing:
+- `C:\Users\Kyle Diaz\.claude\plugins\marketplaces\ui-ux-pro-max-skill\` — UI/UX Pro Max skill (read all .md files)
+- `C:\Users\Kyle Diaz\.agents\skills\` — frontend agent skills (read all .md files)
+
+Priority when skills conflict: (1) app/CONVENTIONS.md, (2) UI/UX Pro Max,
+(3) agent skills.
+
+Aesthetic direction: Dark fantasy tabletop. Aged parchment, copper/gold metallics,
+deep browns, candlelight glow effects. NOT generic dashboard/SaaS aesthetics.
+
+Font stack: Cinzel (display/headings) + Crimson Pro (body). Self-hosted woff2.
+Color system: CSS variables in app/shared/styles/theme.css — accent-gold, accent-copper,
+health-green, negative-red, shield-blue, elite-gold.
+
+CSS conventions: BEM naming, spacing tokens, focus-visible accessibility.
+See app/CONVENTIONS.md for full CSS architecture docs.
+
+Component conventions: Preact functional components, useCommands() for interactions,
+GHS assets exclusively (no fallbacks), touch-action: manipulation on all interactive
+elements, aria-labels on all buttons.
+
 ## Prompt-Driven Workflow
 
 When the user provides an MD file prompt (or references one by name/location), follow this workflow **in order**:

@@ -1128,10 +1128,28 @@
     }
 }
 
-/* ── Touch: prevent double-tap zoom ───────────────────────────────────── */
+/* ── Touch: prevent double-tap zoom on all interactive elements ──────── */
 
-button, input, select, .counter, .char-portrait,
-.monster-header, .char-header, .door-btn, .element-btn {
+button,
+input,
+select,
+textarea,
+[role="button"],
+a,
+.counter,
+.char-portrait,
+.monster-header,
+.char-header,
+.door-btn,
+.element-btn,
+.cond-btn,
+.hp-btn,
+.numpad-key,
+.phase-btn,
+.menu-btn,
+.standee-num,
+.standee-row,
+.overlay-close {
     touch-action: manipulation;
 }
 
@@ -1288,6 +1306,207 @@ button, input, select, .counter, .char-portrait,
 
 .derived-icon {
     font-size: 0.7rem;
+}
+
+/* ── Initiative Numpad Overlay ────────────────────────────────────────── */
+
+.numpad-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    animation: fadeIn 0.15s ease;
+}
+
+.numpad-panel {
+    background: var(--bg-card);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-6);
+    width: 280px;
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.15), var(--shadow-heavy);
+    animation: numpad-scaleIn 0.2s ease;
+}
+
+@keyframes numpad-scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.numpad-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    text-align: center;
+    margin-bottom: var(--space-3);
+}
+
+.numpad-display {
+    background: var(--bg-primary);
+    border: 2px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.numpad-value {
+    font-family: 'Cinzel', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    min-height: 2.5rem;
+    display: block;
+}
+
+.numpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.numpad-key {
+    height: 56px;
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: 'Cinzel', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.numpad-key:active {
+    background: var(--accent-copper);
+    color: var(--bg-primary);
+    transform: scale(0.95);
+}
+
+.numpad-rest {
+    background: rgba(106, 135, 163, 0.15);
+    border-color: var(--shield-blue);
+    color: var(--shield-blue);
+}
+
+.numpad-rest:active {
+    background: var(--shield-blue);
+    color: var(--bg-primary);
+}
+
+.numpad-rest__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.numpad-rest__icon { font-size: 1rem; }
+.numpad-rest__label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.numpad-back {
+    color: var(--text-muted);
+    font-size: 1.4rem;
+}
+
+.numpad-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.numpad-cancel {
+    flex: 1;
+    padding: var(--space-3);
+    border: 1px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.numpad-confirm {
+    flex: 1;
+    padding: var(--space-3);
+    border: 2px solid var(--accent-copper);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: not-allowed;
+    transition: all var(--transition-fast);
+}
+
+.numpad-confirm--ready {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--bg-primary), rgba(212, 175, 55, 0.1));
+}
+
+.numpad-confirm--ready:active {
+    transform: scale(0.95);
+}
+
+/* ── Initiative tap area ─────────────────────────────────────────────── */
+
+.char-init-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.char-init-area--editable {
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.char-init-area--editable:active {
+    background: var(--bg-elevated);
+}
+
+/* ── Mark Absent (danger zone at bottom of overlay) ──────────────────── */
+
+.overlay-danger-zone {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid rgba(197, 48, 48, 0.2);
+}
+
+.absent-btn {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--text-muted);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.absent-btn:active {
+    background: var(--negative-red);
+    color: var(--text-primary);
+}
+
+.absent-btn--active {
+    border-color: var(--health-green);
+    color: var(--health-green);
 }
 
 /* ── ErrorBoundary ────────────────────────────────────────────────────── */
