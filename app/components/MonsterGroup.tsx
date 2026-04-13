@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { useState, useRef } from 'preact/hooks';
 import type { Monster, MonsterEntity, MonsterLevelStats, MonsterAbilityCard, MonsterAbilityAction, ConditionName, EntityCondition } from '@gloomhaven-command/shared';
-import { NEGATIVE_CONDITIONS, isNegativeCondition } from '@gloomhaven-command/shared';
+import { isNegativeCondition, getConditionsForEdition } from '@gloomhaven-command/shared';
 import { useCommands } from '../hooks/useCommands';
 import { monsterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
@@ -159,8 +159,9 @@ function StandeeConditionAdder({ target, existingConditions }: {
   const btnRef = useRef<HTMLButtonElement>(null);
   const commands = useCommands();
 
-  const conditionsToShow = NEGATIVE_CONDITIONS.filter(
-    name => !existingConditions.some(c => c.name === name)
+  const AM_DECK_ONLY = new Set(['bless', 'curse', 'empower', 'enfeeble']);
+  const conditionsToShow = getConditionsForEdition(target.edition).filter(
+    name => !AM_DECK_ONLY.has(name) && !existingConditions.some(c => c.name === name)
   );
 
   if (conditionsToShow.length === 0) return null;

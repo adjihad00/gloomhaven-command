@@ -1,12 +1,10 @@
 import { h } from 'preact';
-import { useState } from 'preact/hooks';
 import type { Character, EntityCondition, ConditionName } from '@gloomhaven-command/shared';
 import { isNegativeCondition } from '@gloomhaven-command/shared';
 import { useCommands } from '../hooks/useCommands';
 import { characterThumbnail, conditionIcon } from '../shared/assets';
 import { formatName } from '../shared/formatName';
 import { InitiativeDisplay } from './InitiativeDisplay';
-import { InitiativeNumpad } from '../controller/overlays/InitiativeNumpad';
 import { ConditionIcons } from './ConditionIcons';
 import { HealthIcon, XPIcon, LootIcon, PawIcon } from './Icons';
 
@@ -20,6 +18,7 @@ interface CharacterBarProps {
   readonly?: boolean;
   characterColor?: string;
   onOpenDetail?: () => void;
+  onOpenNumpad?: () => void;
 }
 
 function isConditionActive(conditions: EntityCondition[], name: string): boolean {
@@ -28,12 +27,11 @@ function isConditionActive(conditions: EntityCondition[], name: string): boolean
   );
 }
 
-export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, availableConditions, readonly, characterColor, onOpenDetail }: CharacterBarProps) {
+export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase, availableConditions, readonly, characterColor, onOpenDetail, onOpenNumpad }: CharacterBarProps) {
   const commands = useCommands();
   const { name, health, maxHealth, initiative, experience, loot, exhausted, longRest, summons, entityConditions } = character;
   const ed = character.edition || edition;
   const displayName = character.title || formatName(name);
-  const [showNumpad, setShowNumpad] = useState(false);
 
   const target = { type: 'character' as const, name, edition: ed };
 
@@ -80,7 +78,7 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
 
           <div
             class={`char-init-area ${isDrawPhase && !readonly ? 'char-init-area--editable' : ''}`}
-            onClick={() => isDrawPhase && !readonly && setShowNumpad(true)}
+            onClick={() => isDrawPhase && !readonly && onOpenNumpad?.()}
           >
             <InitiativeDisplay
               value={initiative}
@@ -141,21 +139,6 @@ export function CharacterBar({ character, edition, isActive, isDone, isDrawPhase
         ))}
       </div>
 
-      {showNumpad && (
-        <InitiativeNumpad
-          characterName={name}
-          currentInitiative={initiative}
-          onSet={(value) => {
-            commands.setInitiative(name, ed, value);
-            setShowNumpad(false);
-          }}
-          onLongRest={() => {
-            commands.toggleLongRest(name, ed);
-            setShowNumpad(false);
-          }}
-          onClose={() => setShowNumpad(false)}
-        />
-      )}
     </div>
   );
 }

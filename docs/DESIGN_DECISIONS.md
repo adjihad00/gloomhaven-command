@@ -126,6 +126,35 @@ but the scenario-end gold conversion only handled the FH path. Conditional branc
 on `state.lootDeck?.cards?.length > 0` cleanly separates the two systems without
 breaking either.
 
+### 2026-04-13 — Heartbeat keep-alive vs application-level health check
+**Decision:** The 30-second heartbeat monitor sends a keep-alive pong but does NOT
+wait for a server response. The more aggressive `checkConnectionHealth()` (send pong,
+wait 5s for any server reply) is reserved for `visibilitychange` only.
+**Rationale:** The server uses protocol-level WebSocket pings (`ws.ping()`), which
+are invisible to the browser's `onmessage` handler. Application-level pong messages
+are received by the server but not echoed back. If the heartbeat used
+`checkConnectionHealth()`, it would timeout every 30 seconds and force constant
+reconnections during idle periods. The keep-alive pong prevents the server's 20s
+stale timeout, while `readyState` catches dead sockets. The aggressive health check
+is appropriate for `visibilitychange` where the socket may have died during sleep.
+
+### 2026-04-13 — InitiativeNumpad lifted to ScenarioView level
+**Decision:** Numpad renders at `ScenarioView` level, outside `.scenario-content`,
+instead of inline in `CharacterBar`.
+**Rationale:** `-webkit-overflow-scrolling: touch` on `.scenario-content` creates
+a new stacking context on iOS Safari. Fixed elements inside cannot escape it, so
+elements rendered later in the DOM (like the bench strip) paint over the numpad.
+Lifting the numpad outside the scroll container eliminates this entirely. Callback
+prop (`onOpenNumpad`) threads through `FigureList` to `CharacterBar`.
+
+### 2026-04-13 — Scenario summary overlay before reward application
+**Decision:** Victory/Defeat buttons show a summary overlay instead of firing
+`completeScenario` directly. Rewards are only applied after explicit confirmation.
+**Rationale:** Players need to see what each character earned before it's committed.
+The summary calculates and previews XP (scenario + bonus), gold (coins × conversion),
+and FH resources per character. This also prevents accidental taps from completing
+a scenario prematurely.
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are

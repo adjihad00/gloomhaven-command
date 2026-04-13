@@ -70,7 +70,7 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Client command: `{ type: "command", action: "changeHealth", ... }`
 - Server broadcast: `{ type: "diff", revision, changes: [...] }`
 - Reconnect: client sends token + lastRevision, server replays missed diffs
-- Heartbeat: server pings every 15s, client pongs, 5s timeout = disconnect
+- Heartbeat: server pings every 15s (protocol-level), client auto-pongs. Client sends 30s keep-alive pong (application-level). visibilitychange triggers aggressive health check (5s timeout)
 
 ## Asset Sources (gitignored, populated locally)
 - `assets/ghs/` — GHS client release (images, data JSONs)

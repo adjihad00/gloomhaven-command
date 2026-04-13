@@ -13,9 +13,10 @@ interface FigureListProps {
   isDrawPhase: boolean;
   readonly?: boolean;
   onCharacterDetail?: (name: string) => void;
+  onOpenNumpad?: (characterName: string, edition: string) => void;
 }
 
-export function FigureList({ state, monsterStats, monsterAbilities, availableConditions, isDrawPhase, readonly, onCharacterDetail }: FigureListProps) {
+export function FigureList({ state, monsterStats, monsterAbilities, availableConditions, isDrawPhase, readonly, onCharacterDetail, onOpenNumpad }: FigureListProps) {
   const figures = getInitiativeOrder(state);
 
   return (
@@ -37,6 +38,7 @@ export function FigureList({ state, monsterStats, monsterAbilities, availableCon
               availableConditions={availableConditions}
               readonly={readonly}
               onOpenDetail={onCharacterDetail ? () => onCharacterDetail(character.name) : undefined}
+              onOpenNumpad={onOpenNumpad ? () => onOpenNumpad(character.name, character.edition || state.party?.edition || '') : undefined}
             />
           );
         }

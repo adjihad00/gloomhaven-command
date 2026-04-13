@@ -28,6 +28,7 @@ export class Connection {
   private manualDisconnect: boolean = false;
   private healthCheckTimeout: ReturnType<typeof setTimeout> | null = null;
   private awaitingHealthCheck: boolean = false;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private options: ConnectionOptions;
 
   constructor(options: ConnectionOptions) {
@@ -113,6 +114,7 @@ export class Connection {
           this.persistToStorage();
           this.setStatus('connected');
           this.reconnectAttempts = 0;
+          this.startHeartbeatMonitor();
           this.options.onStateUpdate(this.state);
           break;
         }
@@ -128,6 +130,7 @@ export class Connection {
           this.persistToStorage();
           this.setStatus('connected');
           this.reconnectAttempts = 0;
+          this.startHeartbeatMonitor();
           if (this.state) {
             this.options.onStateUpdate(this.state);
           }
@@ -158,6 +161,7 @@ export class Connection {
     };
 
     this.ws.onclose = () => {
+      this.stopHeartbeatMonitor();
       if (!this.manualDisconnect) {
         this.setStatus('reconnecting');
         this.scheduleReconnect();
@@ -172,6 +176,7 @@ export class Connection {
 
   disconnect(): void {
     this.manualDisconnect = true;
+    this.stopHeartbeatMonitor();
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -247,6 +252,36 @@ export class Connection {
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 15000);
     this.reconnectTimeout = setTimeout(() => this.connect(), delay);
+  }
+
+  private startHeartbeatMonitor(): void {
+    this.stopHeartbeatMonitor();
+    this.heartbeatInterval = setInterval(() => {
+      if (this.status !== 'connected' || this.manualDisconnect) return;
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        // WebSocket already dead — reconnect immediately
+        this.reconnectAttempts = 0;
+        this.connect();
+        return;
+      }
+      // Send keep-alive pong to prevent server-side stale timeout.
+      // Don't use checkConnectionHealth() here — the server uses
+      // protocol-level pings (invisible to JS onmessage) and won't
+      // reply to application-level pongs.
+      try {
+        this.ws.send(JSON.stringify({ type: 'pong' }));
+      } catch {
+        this.reconnectAttempts = 0;
+        this.connect();
+      }
+    }, 30000);
+  }
+
+  private stopHeartbeatMonitor(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 
   private checkConnectionHealth(): void {

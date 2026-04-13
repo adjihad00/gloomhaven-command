@@ -46,6 +46,8 @@
 - [x] R11: PWA + reconnect + setup wizard + FH loot deck
 - [x] R12: Game logic — long rest heal, bless/curse removal, scenario cleanup, GH gold
 
+- [x] R13: UX + connection — heartbeat, resources, conditions, z-index, summary
+
 ## Phase R: Controller Rebuild — COMPLETE
 
 ## Phase 3: Phone Client

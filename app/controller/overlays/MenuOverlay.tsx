@@ -8,9 +8,10 @@ interface MenuOverlayProps {
   onClose: () => void;
   onDisconnect: () => void;
   onOpenSetup: () => void;
+  onScenarioEnd?: (outcome: 'victory' | 'defeat') => void;
 }
 
-export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOpenSetup }: MenuOverlayProps) {
+export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOpenSetup, onScenarioEnd }: MenuOverlayProps) {
   const commands = useCommands();
 
   return (
@@ -37,11 +38,11 @@ export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOp
           <div class="menu-overlay__section">
             <h3 class="menu-overlay__section-title">End Scenario</h3>
             <button class="menu-overlay__item menu-overlay__item--victory"
-              onClick={() => { commands.completeScenario('victory'); onClose(); }}>
+              onClick={() => onScenarioEnd?.('victory')}>
               Scenario Complete (Victory)
             </button>
             <button class="menu-overlay__item menu-overlay__item--defeat"
-              onClick={() => { commands.completeScenario('defeat'); onClose(); }}>
+              onClick={() => onScenarioEnd?.('defeat')}>
               Scenario Failed (Defeat)
             </button>
           </div>

@@ -133,6 +133,34 @@ function StatsTab({ character, classData }: { character: Character; classData: a
           </span>
         </div>
       )}
+
+      {/* FH Resources */}
+      {(() => {
+        const resources = (character.progress as any)?.loot;
+        if (!resources) return null;
+        const entries = Object.entries(resources).filter(([, v]) => v && (v as number) > 0);
+        if (entries.length === 0) return null;
+
+        const resourceLabels: Record<string, string> = {
+          lumber: 'Lumber', metal: 'Metal', hide: 'Hide',
+          arrowvine: 'Arrowvine', axenut: 'Axenut', corpsecap: 'Corpsecap',
+          flamefruit: 'Flamefruit', rockroot: 'Rockroot', snowthistle: 'Snowthistle',
+        };
+
+        return (
+          <div class="sheet__resources">
+            <span class="sheet__stat-label">Resources</span>
+            <div class="sheet__resource-grid">
+              {entries.map(([type, count]) => (
+                <div key={type} class="sheet__resource-pill">
+                  <span class="sheet__resource-name">{resourceLabels[type] || type}</span>
+                  <span class="sheet__resource-count">{count as number}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

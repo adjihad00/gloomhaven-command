@@ -64,3 +64,32 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 **Symptom:** GH scenarios always show 0 gold earned on scenario completion, even when characters looted coins during play.
 **Root cause:** `handleCompleteScenario()` derived gold exclusively from `char.lootCards` + `state.lootDeck.cards` (the FH loot card system). GH scenarios have no loot deck — `state.lootDeck.cards` is empty, so `char.lootCards` is always empty. The simple `char.loot` coin counter (incremented by the gold icon tap) was never consulted.
 **Fix:** Added conditional: if `char.lootCards` has entries AND `state.lootDeck` has cards, use FH loot card system. Otherwise fall back to `char.loot` as a simple coin count. Both paths feed into the same `totalCoins * goldConversion` calculation.
+
+---
+
+## 2026-04-13 — Batch 13: UX + Connection Fixes
+
+### B13.1: Safari standalone loses WebSocket on background
+**Symptom:** iPad PWA (standalone mode) silently loses WebSocket during sleep. `visibilitychange` doesn't always fire on iOS Safari standalone, leaving the app stuck with a dead connection.
+**Root cause:** The `visibilitychange` handler was the only mechanism for detecting dead connections after backgrounding. Safari standalone mode doesn't reliably fire this event.
+**Fix:** Added a 30-second heartbeat monitor to the `Connection` class. Checks `ws.readyState` and sends a keep-alive pong to prevent server-side stale timeout. If the socket is dead (readyState !== OPEN), forces immediate reconnection. Starts on `connected`/`reconnected`, stops on `disconnect`/`onclose`. Does NOT use `checkConnectionHealth()` (which waits for server response) — the server uses protocol-level pings invisible to JS `onmessage`.
+
+### B13.2: FH loot resources not shown on character sheet
+**Symptom:** After `completeScenario`, FH resources (lumber, metal, hide, herbs) are written to `character.progress.loot` but never displayed anywhere.
+**Root cause:** `StatsTab` in `CharacterSheetOverlay.tsx` only showed Total Gold — no section for FH resources.
+**Fix:** Added resource pills section to `StatsTab` after the gold row. Reads `character.progress.loot`, filters for non-zero entries, and renders as styled pills with resource name and count.
+
+### B13.3: Monster condition picker missing positive conditions
+**Symptom:** `StandeeConditionAdder` only showed `NEGATIVE_CONDITIONS`. Positive conditions (strengthen, invisible, regenerate, ward) were unavailable for monsters.
+**Root cause:** Hardcoded `NEGATIVE_CONDITIONS` filter instead of edition-aware condition list.
+**Fix:** Replaced with `getConditionsForEdition(target.edition)`, excluding AM deck-only conditions (bless, curse, empower, enfeeble). Widened popup from 200px to 280px. Increased mini button size from 22px to 28px for easier tapping.
+
+### B13.4: Bench strip covers InitiativeNumpad overlay
+**Symptom:** On iOS Safari, the numpad overlay could be painted behind the bench strip due to `-webkit-overflow-scrolling: touch` creating a new stacking context.
+**Root cause:** `InitiativeNumpad` rendered inside `CharacterBar`, which is inside `.scenario-content` (the scroll container with `-webkit-overflow-scrolling: touch`). Fixed elements with z-index inside this container cannot escape the stacking context on iOS.
+**Fix:** Lifted `InitiativeNumpad` from `CharacterBar` to `ScenarioView` level. Added `onOpenNumpad` callback prop threaded through `FigureList` → `CharacterBar`. Numpad now renders outside `.scenario-content`, eliminating the stacking context issue.
+
+### B13.5: Scenario completion has no reward preview
+**Symptom:** Clicking Victory/Defeat immediately processed rewards with no visual feedback showing what each character received.
+**Root cause:** `MenuOverlay` called `commands.completeScenario()` directly with no intermediate confirmation step.
+**Fix:** Added `ScenarioSummaryOverlay` showing per-character XP (scenario + bonus), coins × gold conversion, and FH resources before the command fires. "Claim Rewards" / "Accept Defeat" confirms; "Cancel" returns to game. `MenuOverlay` victory/defeat buttons now call `onScenarioEnd` callback instead of the command directly.

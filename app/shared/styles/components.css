@@ -656,7 +656,8 @@
     object-fit: contain;
 }
 
-.cond-btn.mini { width: 22px; height: 22px; padding: 2px; }
+.cond-btn.mini { width: 28px; height: 28px; padding: 3px; }
+.cond-icon.mini { width: 20px; height: 20px; }
 
 /* Counters */
 .char-counters {
@@ -942,7 +943,7 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-heavy);
     z-index: 61;
-    max-width: 200px;
+    max-width: 280px;
 }
 
 /* Dead standees */

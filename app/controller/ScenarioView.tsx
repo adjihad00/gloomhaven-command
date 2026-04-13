@@ -16,6 +16,8 @@ import { CharacterSheetOverlay } from './overlays/CharacterSheetOverlay';
 import { ScenarioSetupOverlay } from './overlays/ScenarioSetupOverlay';
 import { MenuOverlay } from './overlays/MenuOverlay';
 import { LootDeckOverlay } from './overlays/LootDeckOverlay';
+import { ScenarioSummaryOverlay } from './overlays/ScenarioSummaryOverlay';
+import { InitiativeNumpad } from './overlays/InitiativeNumpad';
 import { characterThumbnail } from '../shared/assets';
 import { formatName } from '../shared/formatName';
 
@@ -25,7 +27,8 @@ type OverlayState =
   | { type: 'characterSheet'; characterName: string }
   | { type: 'scenarioSetup' }
   | { type: 'menu' }
-  | { type: 'lootDeck' };
+  | { type: 'lootDeck' }
+  | { type: 'scenarioSummary'; outcome: 'victory' | 'defeat' };
 
 export function ScenarioView() {
   const { gameCode, disconnect } = useContext(AppContext);
@@ -34,6 +37,7 @@ export function ScenarioView() {
   const { state, characters, monsters, elementBoard, round, phase, level, edition } = gameState;
 
   const [activeOverlay, setActiveOverlay] = useState<OverlayState>({ type: 'none' });
+  const [numpadTarget, setNumpadTarget] = useState<{ name: string; edition: string } | null>(null);
   const [pendingLootCard, setPendingLootCard] = useState<number | null>(null);
 
   // Draw loot card — auto-assigns to active character server-side.
@@ -149,6 +153,7 @@ export function ScenarioView() {
           availableConditions={availableConditions}
           isDrawPhase={phase === 'draw'}
           onCharacterDetail={name => setActiveOverlay({ type: 'characterDetail', characterName: name })}
+          onOpenNumpad={(name, ed) => setNumpadTarget({ name, edition: ed })}
         />
       </div>
 
@@ -212,6 +217,19 @@ export function ScenarioView() {
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
           onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}
+          onScenarioEnd={(outcome) => setActiveOverlay({ type: 'scenarioSummary', outcome })}
+        />
+      )}
+
+      {activeOverlay.type === 'scenarioSummary' && (
+        <ScenarioSummaryOverlay
+          state={state}
+          outcome={activeOverlay.outcome}
+          onConfirm={() => {
+            commands.completeScenario(activeOverlay.outcome);
+            setActiveOverlay({ type: 'none' });
+          }}
+          onCancel={() => setActiveOverlay({ type: 'none' })}
         />
       )}
 
@@ -223,6 +241,28 @@ export function ScenarioView() {
           onClose={() => setActiveOverlay({ type: 'none' })}
         />
       )}
+
+      {/* Initiative numpad — rendered at top level to avoid stacking context issues */}
+      {numpadTarget && (() => {
+        const char = characters.find(c => c.name === numpadTarget.name && (c.edition || edition) === numpadTarget.edition);
+        if (!char) return null;
+        const ed = char.edition || edition;
+        return (
+          <InitiativeNumpad
+            characterName={char.name}
+            currentInitiative={char.initiative}
+            onSet={(value) => {
+              commands.setInitiative(numpadTarget.name, ed, value);
+              setNumpadTarget(null);
+            }}
+            onLongRest={() => {
+              commands.toggleLongRest(numpadTarget.name, ed);
+              setNumpadTarget(null);
+            }}
+            onClose={() => setNumpadTarget(null)}
+          />
+        );
+      })()}
 
       {/* Floating loot assignment picker — shown when card drawn with no active character */}
       {pendingLootCard !== null && (
