@@ -90,6 +90,8 @@ export interface AttackModifierDeckModel {
   discarded: number[];
   active: boolean;
   lastVisible: number;
+  /** Card ID of the last drawn card (for UI display, especially after bless/curse removal) */
+  lastDrawn?: string;
   state?: 'advantage' | 'disadvantage';
   bb: boolean;
   /** Migration field — GHS typo preserved for compat */

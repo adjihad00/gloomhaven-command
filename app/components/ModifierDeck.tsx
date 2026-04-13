@@ -45,9 +45,8 @@ export function ModifierDeck({
   const remaining = deck.cards.length - deck.current;
   const total = deck.cards.length;
 
-  // Last drawn card
-  const lastDrawnIndex = deck.current - 1;
-  const lastDrawnCard = lastDrawnIndex >= 0 ? deck.cards[lastDrawnIndex] : null;
+  // Last drawn card — use lastDrawn field (handles bless/curse removal correctly)
+  const lastDrawnCard = deck.lastDrawn ?? (deck.current > 0 ? deck.cards[deck.current - 1] : null);
   const lastDrawnDisplay = lastDrawnCard
     ? (modifierDisplay[parseCardType(lastDrawnCard)] || { label: lastDrawnCard, color: 'var(--text-muted)' })
     : null;

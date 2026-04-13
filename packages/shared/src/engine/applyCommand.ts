@@ -659,7 +659,27 @@ function activateFigure(
 
   if (type === 'character') {
     const c = figure as Character;
-    // Turn start: wound damage
+
+    // Long rest: Heal 2, self (per rules §3) — fires BEFORE wound/regenerate
+    if (c.longRest) {
+      const healBlockerNames = ['wound', 'wound_x', 'poison', 'poison_x', 'bane', 'brittle'];
+      const hasHealBlocker = c.entityConditions.some(
+        (cond) => healBlockerNames.includes(cond.name)
+          && !cond.expired && cond.state !== 'expire' && cond.state !== 'removed',
+      );
+      if (hasHealBlocker) {
+        // Heal consumed by removing conditions — no HP gained
+        c.entityConditions = c.entityConditions.filter(
+          (cond) => !(healBlockerNames.includes(cond.name)
+            && !cond.expired && cond.state !== 'expire' && cond.state !== 'removed'),
+        );
+      } else {
+        c.health = Math.min(c.maxHealth, c.health + 2);
+      }
+      c.longRest = false;
+    }
+
+    // Turn start: wound/regenerate processing
     applyTurnStartConditions(c);
     for (const summon of c.summons) {
       if (!summon.dead) {
@@ -1202,9 +1222,17 @@ function handleDrawModifierCard(
   const deck = resolveModifierDeck(state, payload.deck);
   if (!deck || deck.current >= deck.cards.length) return;
 
-  // The drawn card is at cards[current], then advance
-  deck.discarded.push(deck.current);
-  deck.current += 1;
+  const drawnCard = deck.cards[deck.current];
+  deck.lastDrawn = drawnCard;
+
+  if (drawnCard === 'bless' || drawnCard === 'curse') {
+    // Bless/curse: remove from deck (returned to supply per rules §5)
+    deck.cards.splice(deck.current, 1);
+    // deck.current unchanged — next card shifted into this position
+  } else {
+    // Normal card: advance past it
+    deck.current += 1;
+  }
   deck.lastVisible = deck.current - 1;
 }
 
@@ -1434,24 +1462,28 @@ function handleCompleteScenario(
     const scenarioXP = char.experience || 0;
     char.progress.experience += scenarioXP + bonusXP;
 
-    // Transfer loot cards → gold and resources (derived from lootCards, not char.loot)
+    // Transfer loot → gold and resources
     let totalCoins = 0;
     if (!char.progress.loot) char.progress.loot = {};
 
-    for (const cardIndex of char.lootCards) {
-      const card = state.lootDeck.cards[cardIndex];
-      if (!card) continue;
+    if (char.lootCards && char.lootCards.length > 0 && state.lootDeck?.cards?.length > 0) {
+      // FH system: derive gold and resources from loot cards
+      for (const cardIndex of char.lootCards) {
+        const card = state.lootDeck.cards[cardIndex];
+        if (!card) continue;
 
-      if (card.type === 'money') {
-        // Sum raw coin values — conversion applied once below
-        const coinValue = playerCount <= 2 ? card.value2P
-          : playerCount === 3 ? card.value3P
-          : card.value4P;
-        totalCoins += coinValue;
-      } else {
-        // Resources: add to campaign inventory
-        char.progress.loot[card.type] = (char.progress.loot[card.type] || 0) + 1;
+        if (card.type === 'money') {
+          const coinValue = playerCount <= 2 ? card.value2P
+            : playerCount === 3 ? card.value3P
+            : card.value4P;
+          totalCoins += coinValue;
+        } else {
+          char.progress.loot[card.type] = (char.progress.loot[card.type] || 0) + 1;
+        }
       }
+    } else {
+      // GH system: char.loot is a simple coin count (each = 1 coin)
+      totalCoins = char.loot || 0;
     }
 
     // Convert total coins to gold at scenario level rate
@@ -1481,6 +1513,36 @@ function handleCompleteScenario(
         isCustom: false,
         custom: '',
       } as any);
+    }
+  }
+
+  // Clear scenario state — monsters, objectives, figures list
+  state.monsters = [];
+  state.objectiveContainers = [];
+  state.figures = state.figures.filter((figStr) =>
+    state.characters.some((c) => `${c.edition}-${c.name}` === figStr),
+  );
+
+  // Reset character combat state (preserve campaign progress)
+  for (const char of state.characters) {
+    char.initiative = 0;
+    char.health = char.maxHealth;
+    char.exhausted = false;
+    char.longRest = false;
+    char.entityConditions = [];
+    char.summons = [];
+    char.active = false;
+    char.off = false;
+  }
+
+  // Reset round and phase
+  state.state = 'draw';
+  state.round = 0;
+
+  // Clear element board
+  if (state.elementBoard) {
+    for (const el of state.elementBoard) {
+      el.state = 'inert';
     }
   }
 
