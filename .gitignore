@@ -14,5 +14,6 @@ data/
 *.jar
 .env
 .claude/
+!.claude/commands/
 .DS_Store
 Thumbs.db
