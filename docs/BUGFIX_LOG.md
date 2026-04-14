@@ -127,15 +127,10 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 **Root cause:** Stale `tsconfig.tsbuildinfo` files in `packages/shared/` and `server/` retained old type signatures that conflicted with the new type definitions added in Batch 16.
 **Fix:** Deleted stale `.tsbuildinfo` files and rebuilt. These incremental compilation caches are regenerated automatically by `tsc`.
 
----
-
-## 2026-04-14 — Known Issue: Session Role Confusion
-
-### OPEN: Controller registered as phone profile
-**Symptom:** Controller commands (e.g., `completeTownPhase`, `advancePhase`) are rejected by the server with a permission error. The server treats the controller connection as a phone client.
-**Root cause:** Under investigation. The `wsHub.ts` session/role tracking may incorrectly associate a controller WebSocket with a phone session, possibly due to session token reuse across browser tabs or stale localStorage entries.
-**Workaround:** Reconnect with a new game code or clear browser storage.
-**Status:** Must fix. Needs investigation in `wsHub.ts` `handleRegister()` and session token management.
+### B16.4: Controller registered as phone profile when both open in same browser
+**Symptom:** Controller commands (e.g., `completeTownPhase`, `advancePhase`) are rejected by the server with "Phone cannot perform X" error. Happens when controller and phone tabs are open in the same browser.
+**Root cause:** Both tabs share `localStorage`, so both send the same `gc_sessionToken` on connect. The server reuses the same session for both WebSocket connections. When the phone tab sends a `register` message with `role='phone'`, it overwrites `session.role` — now the controller's commands are checked against the phone whitelist and rejected.
+**Fix:** Moved role and characterName tracking from the per-session object to the per-WebSocket `ClientInfo` in `wsHub.ts`. Each WebSocket connection now has its own role, independent of the session. The `handleRegister` method sets `info.role` on the `ClientInfo` (keyed by WebSocket instance), and `handleCommand` checks `info.role` instead of `session.role`. Multiple tabs sharing a session token can now have different roles simultaneously.
 
 ---
 

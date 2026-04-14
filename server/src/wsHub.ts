@@ -66,6 +66,8 @@ function getCommandCharacterName(cmd: Command): string | null {
 interface ClientInfo {
   sessionToken: string;
   gameCode: string;
+  role?: 'display' | 'controller' | 'phone';
+  characterName?: string;
 }
 
 export class WsHub {
@@ -236,12 +238,11 @@ export class WsHub {
       return;
     }
 
-    const session = this.sessionManager.getSession(info.sessionToken);
-    if (session) {
-      session.role = msg.role as 'display' | 'controller' | 'phone';
-      session.characterName = msg.characterName;
-      console.log(`Client registered: ${info.sessionToken.slice(0, 8)}... role=${msg.role}`);
-    }
+    // Store role per-WebSocket (not per-session) so multiple tabs
+    // on the same browser don't overwrite each other's roles
+    info.role = msg.role as 'display' | 'controller' | 'phone';
+    info.characterName = msg.characterName;
+    console.log(`Client registered: ${info.sessionToken.slice(0, 8)}... role=${msg.role}${msg.characterName ? ` char=${msg.characterName}` : ''}`);
   }
 
   private handleCommand(ws: WebSocket, msg: CommandMessage): void {
@@ -253,9 +254,8 @@ export class WsHub {
 
     const command = { action: msg.action, payload: msg.payload } as Command;
 
-    // Phone permission enforcement
-    const session = this.sessionManager.getSession(info.sessionToken);
-    if (session?.role === 'phone' && session.characterName) {
+    // Phone permission enforcement — uses per-WebSocket role, not per-session
+    if (info.role === 'phone' && info.characterName) {
       if (!PHONE_ALLOWED_ACTIONS.has(command.action)) {
         console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action}`);
         this.sendTo(ws, { type: 'error', message: `Phone cannot perform ${command.action}` });
@@ -265,8 +265,8 @@ export class WsHub {
       // Global actions (moveElement, drawLootCard) skip character-name check
       if (!PHONE_GLOBAL_ACTIONS.has(command.action)) {
         const targetName = getCommandCharacterName(command);
-        if (targetName !== session.characterName) {
-          console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action} target=${targetName} registered=${session.characterName}`);
+        if (targetName !== info.characterName) {
+          console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action} target=${targetName} registered=${info.characterName}`);
           this.sendTo(ws, { type: 'error', message: 'Phone can only control registered character' });
           return;
         }
