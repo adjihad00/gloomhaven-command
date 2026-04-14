@@ -1,7 +1,8 @@
 import express from 'express';
 import { createServer } from 'http';
+import { createServer as createHttpsServer } from 'https';
 import { resolve, join } from 'path';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { networkInterfaces } from 'os';
 import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
@@ -150,9 +151,62 @@ app.get('/api/data/level-calc', (req, res) => {
   res.json({ ...deriveLevelValues(level), characterLevels: levels, adjustment: adj });
 });
 
-// ── HTTP server ───────────────────────────────────────────────────────────────
+// ── HTTP/HTTPS server ────────────────────────────────────────────────────────
 
-const httpServer = createServer(app);
+// Certificate search order:
+// 1. Let's Encrypt (certbot): SSL_CERT_PATH + SSL_KEY_PATH env vars
+// 2. Let's Encrypt default: /etc/letsencrypt/live/ or C:\Certbot\live\ (first match)
+// 3. Local mkcert: certs/ directory in project root
+// 4. No certs found → plain HTTP
+
+function findCerts(): { cert: string; key: string } | null {
+  // Env vars (highest priority)
+  if (process.env.SSL_CERT_PATH && process.env.SSL_KEY_PATH) {
+    if (existsSync(process.env.SSL_CERT_PATH) && existsSync(process.env.SSL_KEY_PATH)) {
+      return { cert: process.env.SSL_CERT_PATH, key: process.env.SSL_KEY_PATH };
+    }
+  }
+
+  // Certbot default paths (scan for first domain)
+  const certbotDirs = [
+    'C:\\Certbot\\live',
+    '/etc/letsencrypt/live',
+  ];
+  for (const base of certbotDirs) {
+    if (existsSync(base)) {
+      const dirs = readdirSync(base, { withFileTypes: true })
+        .filter(d => d.isDirectory() && d.name !== 'README')
+        .map(d => d.name);
+      for (const dir of dirs) {
+        const cert = join(base, dir, 'fullchain.pem');
+        const key = join(base, dir, 'privkey.pem');
+        if (existsSync(cert) && existsSync(key)) {
+          return { cert, key };
+        }
+      }
+    }
+  }
+
+  // Local mkcert certs
+  const localCert = resolve(rootDir, 'certs');
+  if (existsSync(localCert)) {
+    const files = readdirSync(localCert);
+    const certFile = files.find(f => f.endsWith('.pem') && !f.includes('-key') && !f.includes('rootCA'));
+    const keyFile = files.find(f => f.endsWith('-key.pem'));
+    if (certFile && keyFile) {
+      return { cert: join(localCert, certFile), key: join(localCert, keyFile) };
+    }
+  }
+
+  return null;
+}
+
+const certs = findCerts();
+const useHttps = !!certs;
+
+const httpServer = certs
+  ? createHttpsServer({ cert: readFileSync(certs.cert), key: readFileSync(certs.key) }, app)
+  : createServer(app);
 
 // Services
 const gameStore = new GameStore(resolve(rootDir, 'data/ghs.sqlite'));
@@ -171,15 +225,19 @@ wsHub.onCommand = (ws, gameCode, command) => {
 
 // Start listening (load editions first)
 loadEditions().then(() => {
+  const proto = useHttps ? 'https' : 'http';
   httpServer.listen(PORT, () => {
-    console.log(`Gloomhaven Command server running on port ${PORT}`);
-    console.log(`  Controller: http://localhost:${PORT}/controller`);
-    console.log(`  Phone:      http://localhost:${PORT}/phone`);
-    console.log(`  Display:    http://localhost:${PORT}/display`);
+    console.log(`Gloomhaven Command server running on port ${PORT} (${useHttps ? 'HTTPS' : 'HTTP'})`);
+    console.log(`  Controller: ${proto}://localhost:${PORT}/controller`);
+    console.log(`  Phone:      ${proto}://localhost:${PORT}/phone`);
+    console.log(`  Display:    ${proto}://localhost:${PORT}/display`);
 
     const lanIp = getLanIp();
     if (lanIp) {
-      console.log(`  LAN:        http://${lanIp}:${PORT}`);
+      console.log(`  LAN:        ${proto}://${lanIp}:${PORT}`);
+    }
+    if (certs) {
+      console.log(`  Cert:       ${certs.cert}`);
     }
   });
 });

@@ -50,13 +50,19 @@
 
 ## Phase R: Controller Rebuild — COMPLETE
 
-## Phase 3: Phone Client
-- [ ] Scaffold phone HTML + TypeScript entry
-- [ ] Character selection/registration on connect
-- [ ] Character-scoped view — health, XP, conditions, gold, items
-- [ ] Initiative input with phase-aware locking
-- [ ] Turn actions — end turn, long rest
-- [ ] Loot interaction — view drawn cards, assign
+## Phase 3: Phone Client — Scenario View
+- [x] Scaffold phone HTML + TypeScript entry (Phase R2)
+- [x] Character selection/registration on connect (Phase R2)
+- [x] Character-scoped ScenarioView — health bar, initiative, conditions, XP, loot, summons
+- [x] Initiative input with phase-aware numpad overlay
+- [x] Turn banner with active/waiting/done states
+- [x] Action bar — end turn, long rest toggle, exhaust with confirmation
+- [x] Condition strip + condition picker overlay (edition-aware)
+- [x] XP + Loot counter row
+- [x] Summon section with expandable HP controls
+- [x] Character detail overlay (full controls, XP progress, condition grid)
+- [x] Dark fantasy CSS styling — stone buttons, carved health bar, candlelight glow
+- [ ] Loot interaction — view drawn cards, assign (FH loot deck)
 - [ ] Server-side permission enforcement per character
 
 ## Phase 4: Display Client

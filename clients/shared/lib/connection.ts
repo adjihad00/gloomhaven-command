@@ -45,19 +45,43 @@ export class Connection {
       }
     }
 
-    // Reconnect when returning from background
+    // Pause reconnect attempts while backgrounded (prevents stalled WS on iOS)
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) return;
+      if (document.hidden) {
+        // Cancel any pending reconnect — it will stall on iOS
+        if (this.reconnectTimeout) {
+          clearTimeout(this.reconnectTimeout);
+          this.reconnectTimeout = null;
+        }
+        return;
+      }
+
       if (this.manualDisconnect) return;
 
-      if (this.status !== 'connected') {
+      // Returning from background — force a clean reconnect
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        // Kill any stalled socket attempt
+        if (this.ws) {
+          this.ws.onclose = null;
+          this.ws.onerror = null;
+          this.ws.close();
+          this.ws = null;
+        }
         this.reconnectAttempts = 0;
         this.connect();
         return;
       }
 
-      // Status says connected, but WS may be silently dead (iOS background kill)
+      // Socket thinks it's open — verify it's actually alive
       this.checkConnectionHealth();
+    });
+
+    // pageshow catches bfcache restoration on iOS (visibilitychange may not fire)
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted && !this.manualDisconnect) {
+        this.reconnectAttempts = 0;
+        this.connect();
+      }
     });
   }
 
@@ -249,6 +273,10 @@ export class Connection {
       this.options.onError('Connection lost. Please reconnect manually.');
       return;
     }
+    // Don't schedule reconnects while hidden — they stall on iOS
+    // visibilitychange handler will reconnect when user returns
+    if (document.hidden) return;
+
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 15000);
     this.reconnectTimeout = setTimeout(() => this.connect(), delay);

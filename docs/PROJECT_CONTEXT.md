@@ -88,8 +88,11 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Persistence: SQLite via better-sqlite3
 
 ## Current Phase
-Phase R COMPLETE (13 fix batches). Next: Phase 3 (Phone Client).
+Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView COMPLETE.
 Controller is feature-complete for scenario play.
+Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
+condition strip/picker, XP/loot counters, summon section, character detail overlay,
+action bar. Remaining: FH loot card interaction, server permission enforcement.
 
 ## Documentation Policy
 All project documents MUST be updated to reflect any code changes before committing

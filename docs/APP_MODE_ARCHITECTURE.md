@@ -43,9 +43,17 @@ app/
 │   └── overlays/
 ├── phone/                # Player — portrait, character-scoped
 │   ├── main.tsx, index.html
-│   ├── ScenarioView.tsx  # health, initiative, conditions, turn
-│   ├── TownView.tsx      # tabbed character sheet
-│   └── styles/
+│   ├── App.tsx           # connection → picker → mode routing
+│   ├── ConnectionScreen.tsx, CharacterPicker.tsx
+│   ├── ScenarioView.tsx  # main scenario screen + overlay state machine
+│   ├── TownView.tsx      # tabbed character sheet (placeholder)
+│   ├── components/       # PhoneCharacterHeader, PhoneHealthBar,
+│   │                       PhoneInitiativeSection, PhoneTurnBanner,
+│   │                       PhoneActionBar, PhoneConditionStrip,
+│   │                       PhoneCounterRow, PhoneSummonSection
+│   ├── overlays/         # PhoneInitiativeNumpad, PhoneConditionPicker,
+│   │                       PhoneCharacterDetail
+│   └── styles/phone.css
 └── display/              # Monitor — portrait, read-only
     ├── main.tsx, index.html
     ├── ScenarioView.tsx  # vertical tower layout
@@ -80,13 +88,31 @@ Overlays:
 - OverlayBackdrop — shared backdrop for all overlays
 
 ### Phone (portrait)
-Scaffold complete (App, ConnectionScreen, CharacterPicker, ScenarioView placeholder,
-TownView placeholder, main entry point). Character-scoped scenario view not yet built.
+Character-scoped scenario view. Shows ONLY the selected player's data.
 
-Target design: Health bar, initiative input (numpad overlay), active conditions
-(inline icons), XP counter, loot/gold counter, summon cards, turn indicator,
-long rest button. Does NOT show: monster details, other characters, modifier decks,
-element board.
+Layout (top to bottom):
+- **CharacterHeader** — class thumbnail, name (Cinzel), level, class color accent bar.
+  Tap opens CharacterDetail overlay.
+- **TurnBanner** — "Your Turn" (gold glow pulse), "Waiting" (with position), "Done"
+  (checkmark). Hidden during draw phase.
+- **HealthBar** — Full-width bar with current/max numerals, blood drop icon, +/- buttons.
+  Color: green >50%, gold >25%, red. Carved stone visual with layered shadows.
+- **InitiativeSection** — Large initiative circle or LongRestIcon. Phase-aware states:
+  draw (tappable → numpad), active (gold glow), queued, done (dimmed).
+- **ConditionStrip** — Horizontal scrollable row of active condition icons (36px).
+  Tap to remove, "+" button opens ConditionPicker overlay.
+- **CounterRow** — Side-by-side XP (star) and Loot (coin) with +/- controls.
+- **SummonSection** — Conditional. Compact cards with mini HP bar, tap to expand.
+- **ActionBar** — Fixed bottom toolbar: Long Rest (draw phase), End Turn (active turn),
+  Exhaust (with confirmation).
+
+Overlays:
+- **PhoneInitiativeNumpad** — 3×4 grid numpad, stone-tile keys, Long Rest button.
+- **PhoneConditionPicker** — Edition-aware grid split Positive/Negative.
+- **PhoneCharacterDetail** — Bottom sheet: HP, XP (with career total + progress bar),
+  loot, full condition grid, Long Rest/Absent/Exhaust toggles.
+
+Does NOT show: monsters, other characters, modifier decks, element board, doors.
 
 ### Monitor (portrait, vertical tower)
 Read-only: Initiative timeline (vertical), character summary bars, monster groups

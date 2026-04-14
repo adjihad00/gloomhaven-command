@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { AppContext } from '../shared/context';
 import { ErrorBoundary } from '../shared/ErrorBoundary';
 import { useConnection } from '../hooks/useConnection';
@@ -14,6 +14,26 @@ export function App() {
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
     localStorage.getItem('gc_selectedCharacter')
   );
+  const autoConnectAttempted = useRef(false);
+
+  // Auto-reconnect on startup if we have a saved game code + session token
+  useEffect(() => {
+    if (autoConnectAttempted.current) return;
+    autoConnectAttempted.current = true;
+
+    const savedCode = localStorage.getItem('gc_gameCode');
+    const savedToken = localStorage.getItem('gc_sessionToken');
+    if (savedCode && savedToken && status === 'disconnected') {
+      connect(savedCode);
+    }
+  }, []);
+
+  // Re-register character after reconnection if we have a saved selection
+  useEffect(() => {
+    if (status === 'connected' && selectedCharacter && connection) {
+      connection.register('phone', selectedCharacter);
+    }
+  }, [status, selectedCharacter, connection]);
 
   const handleConnect = (code: string) => {
     setGameCode(code);
@@ -70,7 +90,7 @@ export function App() {
         <div class="app-shell">
           {mode === 'town'
             ? <TownView />
-            : <ScenarioView />
+            : <ScenarioView selectedCharacter={selectedCharacter} />
           }
         </div>
       </AppContext.Provider>

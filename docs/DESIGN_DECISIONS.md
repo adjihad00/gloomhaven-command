@@ -216,6 +216,40 @@ to visually distinguish absent from active characters.
 The scenario XP dial needs to reset to 0 at scenario start while career XP accumulates.
 The transfer happens in `handleCompleteScenario()` before resetting combat state.
 
+### 2026-04-13 — Phone ScenarioView: overlay state machine pattern
+**Decision:** Phone ScenarioView uses a discriminated union `OverlayState` for overlay
+management, identical pattern to the controller's ScenarioView.
+**Rationale:** The controller established this pattern (batch 13) and it works well:
+a single `activeOverlay` state prevents multiple overlays from fighting for z-index,
+makes close-on-backdrop-tap trivial, and keeps the component tree flat. The phone
+has three overlays (numpad, condition picker, character detail) managed by one state.
+
+### 2026-04-13 — Phone components as phone-specific, not shared
+**Decision:** Phone components (`PhoneHealthBar`, `PhoneInitiativeSection`, etc.) are
+phone-specific in `app/phone/components/`, not added to the shared `app/components/`.
+**Rationale:** Phone components have fundamentally different layouts, touch targets,
+and visual weight than their controller counterparts. The controller's `CharacterBar`
+packs HP, initiative, conditions, XP, and loot into a single card row. The phone
+spreads them across the full viewport. Forcing shared components to handle both
+layouts would add complexity with no benefit — they share logic patterns but not UI.
+
+### 2026-04-13 — Character color from data API, not stored on Character model
+**Decision:** Phone fetches character class color via `useDataApi(\`edition/character/name\`)`.
+The color is not part of the `Character` type in `GameState`.
+**Rationale:** Character color is edition data (static), not game state (mutable).
+Storing it on the Character model would mean duplicating edition data into the game
+state. The controller passes it as a prop from edition data lookups; the phone
+fetches it directly via the data API hook.
+
+### 2026-04-13 — Phone CSS: layered shadows for carved/stone aesthetic
+**Decision:** Phone health bar, numpad keys, and action buttons use layered
+`box-shadow` (inset + outer) with subtle gradients to create a carved/embossed feel.
+**Rationale:** The controller got "good enough" flat styling during the rapid fix
+batches. The phone is the first client built with visual polish as a primary goal.
+Layered shadows create the illusion of physical depth — stone tiles, carved bars,
+embossed buttons — that fits the dark fantasy tabletop aesthetic without images or
+additional assets. All effects use CSS only (no textures, no SVG backgrounds).
+
 ### 2025-03-24 — Assets gitignored, populated locally
 **Decision:** Game images/data live in assets/ but are not committed to git.
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are
