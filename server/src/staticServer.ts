@@ -14,27 +14,35 @@ export function configureStaticRoutes(app: Express, rootDir: string): void {
   app.use(express.json({ limit: '10mb' }));
 
   // Service workers — must be served BEFORE static middleware with correct scope header
+  // Prefer generated SW from dist/ (production) over source SW (dev)
   app.get('/app/controller/sw.js', (_req, res) => {
     res.setHeader('Service-Worker-Allowed', '/controller');
-    res.sendFile(join(rootDir, 'app/controller/sw.js'));
+    res.setHeader('Cache-Control', 'no-cache');
+    const distSw = join(rootDir, 'app/controller/dist/sw.js');
+    res.sendFile(existsSync(distSw) ? distSw : join(rootDir, 'app/controller/sw.js'));
   });
   app.get('/app/phone/sw.js', (_req, res) => {
     res.setHeader('Service-Worker-Allowed', '/phone');
-    res.sendFile(join(rootDir, 'app/phone/sw.js'));
+    res.setHeader('Cache-Control', 'no-cache');
+    const distSw = join(rootDir, 'app/phone/dist/sw.js');
+    res.sendFile(existsSync(distSw) ? distSw : join(rootDir, 'app/phone/sw.js'));
   });
 
   // New Preact app — static files from app/
-  app.use('/app', express.static(join(rootDir, 'app'), { maxAge: '1h', setHeaders: setHtmlNoCache }));
+  app.use('/app', express.static(join(rootDir, 'app'), { maxAge: '1h', setHeaders: setCacheHeaders }));
 
-  // Preact app routes — serve index.html for each role
+  // Preact app routes — prefer generated HTML from dist/ (production) over source (dev)
   app.get('/controller', (_req, res) => {
-    res.sendFile(join(rootDir, 'app/controller/index.html'));
+    const distHtml = join(rootDir, 'app/controller/dist/index.html');
+    res.sendFile(existsSync(distHtml) ? distHtml : join(rootDir, 'app/controller/index.html'));
   });
   app.get('/phone', (_req, res) => {
-    res.sendFile(join(rootDir, 'app/phone/index.html'));
+    const distHtml = join(rootDir, 'app/phone/dist/index.html');
+    res.sendFile(existsSync(distHtml) ? distHtml : join(rootDir, 'app/phone/index.html'));
   });
   app.get('/display', (_req, res) => {
-    res.sendFile(join(rootDir, 'app/display/index.html'));
+    const distHtml = join(rootDir, 'app/display/dist/index.html');
+    res.sendFile(existsSync(distHtml) ? distHtml : join(rootDir, 'app/display/index.html'));
   });
 
   // Game assets — long cache
@@ -58,8 +66,11 @@ export function configureStaticRoutes(app: Express, rootDir: string): void {
   });
 }
 
-function setHtmlNoCache(res: express.Response, path: string): void {
+function setCacheHeaders(res: express.Response, path: string): void {
   if (path.endsWith('.html')) {
     res.setHeader('Cache-Control', 'no-cache');
+  } else if (/main-[a-z0-9]+\.js$/i.test(path)) {
+    // Content-hashed bundles are immutable — cache forever
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
 }

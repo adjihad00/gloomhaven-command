@@ -63,7 +63,7 @@
 - [x] Character detail overlay (full controls, XP progress, condition grid)
 - [x] Dark fantasy CSS styling — stone buttons, carved health bar, candlelight glow
 - [ ] Loot interaction — view drawn cards, assign (FH loot deck)
-- [ ] Server-side permission enforcement per character
+- [x] Server-side permission enforcement per character
 
 ## Phase 4: Display Client
 - [ ] Scaffold display HTML + TypeScript entry
@@ -82,5 +82,6 @@
 - [x] Scenario setup wizard in controller (batch 11)
 - [ ] Monster stat reference overlay
 - [x] PWA manifests for phone + controller (batch 11)
+- [x] Content-hashed JS bundles + auto-generated SW precache (batch 14)
 - [ ] Docker image for server deployment
 - [ ] README with setup instructions

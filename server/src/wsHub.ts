@@ -4,9 +4,55 @@ import type {
   ClientMessage, ServerMessage, ConnectMessage,
   CommandMessage, DiffMessage, GameState,
 } from '@gloomhaven-command/shared';
-import { Command, createEmptyGameState } from '@gloomhaven-command/shared';
+import { Command, CommandAction, createEmptyGameState } from '@gloomhaven-command/shared';
 import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
+
+// ── Phone permission enforcement ────────────────────────────────────────────
+
+/** Commands a phone client may send (must target their registered character). */
+const PHONE_ALLOWED_ACTIONS: ReadonlySet<CommandAction> = new Set([
+  'setInitiative',
+  'toggleLongRest',
+  'changeHealth',
+  'toggleCondition',
+  'setExperience',
+  'setLoot',
+  'toggleExhausted',
+  'toggleAbsent',
+  'addSummon',
+  'removeSummon',
+  'toggleTurn',
+  'renameCharacter',
+]);
+
+/**
+ * Extract the character name a command targets.
+ * Returns the name if the command is character-scoped, or null if it targets
+ * something a phone should not control (monsters, objectives, global actions).
+ */
+function getCommandCharacterName(cmd: Command): string | null {
+  const p = cmd.payload as Record<string, unknown>;
+
+  // Commands using payload.target (CommandTarget)
+  if (cmd.action === 'changeHealth' || cmd.action === 'toggleCondition') {
+    const target = p.target as { type: string; name?: string; characterName?: string } | undefined;
+    if (!target) return null;
+    if (target.type === 'character') return target.name ?? null;
+    if (target.type === 'summon') return target.characterName ?? null;
+    return null; // monster or objective — blocked
+  }
+
+  // toggleTurn uses payload.figure (FigureIdentifier)
+  if (cmd.action === 'toggleTurn') {
+    const fig = p.figure as { type: string; name?: string } | undefined;
+    if (fig?.type === 'character') return fig.name ?? null;
+    return null; // monster or objectiveContainer — blocked
+  }
+
+  // All other allowed commands use payload.characterName
+  return (p.characterName as string) ?? null;
+}
 
 interface ClientInfo {
   sessionToken: string;
@@ -196,8 +242,27 @@ export class WsHub {
       return;
     }
 
+    const command = { action: msg.action, payload: msg.payload } as Command;
+
+    // Phone permission enforcement
+    const session = this.sessionManager.getSession(info.sessionToken);
+    if (session?.role === 'phone' && session.characterName) {
+      if (!PHONE_ALLOWED_ACTIONS.has(command.action)) {
+        console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action}`);
+        this.sendTo(ws, { type: 'error', message: `Phone cannot perform ${command.action}` });
+        return;
+      }
+
+      const targetName = getCommandCharacterName(command);
+      if (targetName !== session.characterName) {
+        console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action} target=${targetName} registered=${session.characterName}`);
+        this.sendTo(ws, { type: 'error', message: 'Phone can only control registered character' });
+        return;
+      }
+    }
+
     if (this.onCommand) {
-      this.onCommand(ws, info.gameCode, { action: msg.action, payload: msg.payload } as Command);
+      this.onCommand(ws, info.gameCode, command);
     } else {
       this.sendTo(ws, { type: 'error', message: 'Command handler not ready', code: 'NOT_READY' });
     }

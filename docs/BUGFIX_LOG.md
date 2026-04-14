@@ -93,3 +93,17 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 **Symptom:** Clicking Victory/Defeat immediately processed rewards with no visual feedback showing what each character received.
 **Root cause:** `MenuOverlay` called `commands.completeScenario()` directly with no intermediate confirmation step.
 **Fix:** Added `ScenarioSummaryOverlay` showing per-character XP (scenario + bonus), coins × gold conversion, and FH resources before the command fires. "Claim Rewards" / "Accept Defeat" confirms; "Cancel" returns to game. `MenuOverlay` victory/defeat buttons now call `onScenarioEnd` callback instead of the command directly.
+
+---
+
+## 2026-04-14 — Batch 14: SW Cache Busting + Phone Permissions
+
+### B14.1: Stale cached JavaScript on phones after deploy
+**Symptom:** Phone service worker uses manually-bumped `CACHE_VERSION`. Forgetting to bump it causes Android to serve stale cached JS. Commands silently fail because the browser runs old code.
+**Root cause:** Manual `CACHE_VERSION` string (`gc-phone-v4`) in `app/phone/sw.js` must be updated on every code change — easy to forget.
+**Fix:** Build script (`app/build.mjs`) now generates content-hashed JS filenames via esbuild (`main-[hash].js`). HTML and SW files are auto-generated into `dist/` at build time with correct hashed references. SW cache name is derived from a SHA-256 of all precached file contents. No manual version bumping needed — any code or CSS change produces new hashes automatically. Dev/watch mode keeps plain `main.js` for simplicity.
+
+### B14.2: Phone clients can control any character
+**Symptom:** Any phone can send commands for any character. No server-side enforcement of the `characterName` registered via the `register` message.
+**Root cause:** `handleCommand()` in `wsHub.ts` passed all commands through to `onCommand` without checking the connection's role or registered character.
+**Fix:** Added permission enforcement in `handleCommand()`. Phone clients (`session.role === 'phone'`) are restricted to a whitelist of 12 character-scoped commands (`setInitiative`, `changeHealth`, `toggleCondition`, etc.). Each command's target character name is extracted and verified against `session.characterName`. Commands targeting other characters, monsters, or global actions are rejected with an error message. Controller and display roles are unrestricted.

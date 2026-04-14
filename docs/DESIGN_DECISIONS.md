@@ -255,3 +255,29 @@ additional assets. All effects use CSS only (no textures, no SVG backgrounds).
 **Rationale:** GHS images, Worldhaven, Creator Pack, and Nerdhaven assets are
 licensed or third-party. The repo contains only code. assets/README.md documents
 how to populate the directory from local downloads.
+
+### 2026-04-14 — Content-hashed JS bundles with build-time SW generation
+**Decision:** esbuild produces `main-[hash].js` in production. Build script
+generates `dist/index.html` (with hashed script reference) and `dist/sw.js`
+(with baked-in precache list and content-derived cache name) per app role.
+Dev/watch mode uses plain `main.js` with source HTML/SW files unchanged.
+**Rationale:** The manual `CACHE_VERSION` bump required remembering to update
+it on every deploy. Forgetting caused phones to serve stale cached JS (happened
+in Phase 3). Content hashing makes cache invalidation automatic — any code or
+CSS change produces new hashes, the SW precache list updates, and the SW cache
+name changes. Generated files go to gitignored `dist/` dirs so source files
+stay clean. Static server prefers `dist/` files when present (production) and
+falls back to source files (dev). Hashed JS gets `immutable` cache headers.
+
+### 2026-04-14 — Phone command permission enforcement model
+**Decision:** Server enforces a whitelist of 12 commands that phone clients may
+send. Each command's character target is extracted and verified against the
+phone's registered `characterName`. Non-whitelisted or wrong-target commands
+are rejected with an error (not a disconnect).
+**Rationale:** Without enforcement, any phone could send commands for any
+character or trigger GM actions (advance phase, reveal room, complete scenario).
+The whitelist approach is explicit: only character-scoped actions are allowed,
+and the target must match. Commands targeting the phone's own summons are
+permitted (summon owner = registered character). The extraction logic handles
+three payload shapes: `payload.characterName`, `payload.target` (CommandTarget),
+and `payload.figure` (FigureIdentifier).

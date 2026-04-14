@@ -116,8 +116,22 @@ Clients apply changes to their local state copy via JSON path.
   "characterName": "brute"
 }
 ```
-Server enforces: phone clients can only send commands targeting their character.
-Controller and display clients have no role restriction.
+Server stores `role` and `characterName` on the session for permission enforcement.
+
+### Phone Permission Enforcement
+Phone clients (`role: "phone"`) are restricted to these commands:
+- `setInitiative`, `toggleLongRest`, `changeHealth`, `toggleCondition`
+- `setExperience`, `setLoot`, `toggleExhausted`, `toggleAbsent`
+- `addSummon`, `removeSummon`, `toggleTurn`, `renameCharacter`
+
+Each command's target character must match the registered `characterName`.
+For `changeHealth`/`toggleCondition`: summon targets are allowed if the summon
+owner (`target.characterName`) matches. Monster/objective targets are blocked.
+For `toggleTurn`: only `figure.type === 'character'` with matching name.
+All other commands (advancePhase, revealRoom, completeScenario, etc.) are blocked.
+Rejected commands receive an error response; the client is NOT disconnected.
+
+Controller and display clients have no command restrictions.
 
 ## Error Response (S→C)
 ```json

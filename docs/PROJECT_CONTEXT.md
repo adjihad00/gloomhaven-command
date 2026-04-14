@@ -82,7 +82,7 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Runtime: Node.js 20+
 - Language: TypeScript 5.x throughout
 - Server: Express 4, ws 8, better-sqlite3
-- Build: esbuild for clients, tsc for shared/server
+- Build: esbuild for clients (content-hashed in production), tsc for shared/server
 - CSS: Vanilla CSS with custom properties (no framework)
 - Fonts: Cinzel (headings), Crimson Pro (body)
 - Persistence: SQLite via better-sqlite3
@@ -92,7 +92,8 @@ Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView COMPLETE.
 Controller is feature-complete for scenario play.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
 condition strip/picker, XP/loot counters, summon section, character detail overlay,
-action bar. Remaining: FH loot card interaction, server permission enforcement.
+action bar. Server enforces phone command permissions (whitelist + character match).
+Remaining: FH loot card interaction.
 
 ## Documentation Policy
 All project documents MUST be updated to reflect any code changes before committing
@@ -129,3 +130,18 @@ setMonsterLevel, importGhsState, updateCampaign, completeScenario
   sets elements inert. GH uses `char.loot` for gold; FH uses loot card system.
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
+
+### Phone Command Permissions
+Phone clients are restricted server-side to 12 character-scoped commands
+(setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
+toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
+toggleTurn, renameCharacter). Each command's target must match the phone's
+registered characterName. Commands targeting summons are allowed if the summon
+owner matches. All other commands are rejected with an error.
+
+## Build Process
+- `app/build.mjs` — builds all three Preact client apps via esbuild
+- **Production** (`npm run build`): content-hashed filenames (`main-[hash].js`),
+  auto-generates `dist/index.html` + `dist/sw.js` per app with baked-in precache lists
+- **Dev** (`npm run dev`): plain `main.js`, source HTML/SW files served directly
+- Static server prefers `dist/` files when present, falls back to source for dev
