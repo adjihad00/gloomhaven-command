@@ -57,6 +57,8 @@ export type CommandAction =
   | 'removeModifierCard'
   | 'importGhsState'
   | 'updateCampaign'
+  | 'prepareScenarioEnd'
+  | 'cancelScenarioEnd'
   | 'completeScenario';
 
 // ── Individual command payloads ─────────────────────────────────────────────
@@ -274,6 +276,16 @@ export interface UpdateCampaignCommand {
   payload: { field: string; value: string | number | boolean };
 }
 
+export interface PrepareScenarioEndCommand {
+  action: 'prepareScenarioEnd';
+  payload: { outcome: 'victory' | 'defeat' };
+}
+
+export interface CancelScenarioEndCommand {
+  action: 'cancelScenarioEnd';
+  payload: Record<string, never>;
+}
+
 export interface CompleteScenarioCommand {
   action: 'completeScenario';
   payload: { outcome: 'victory' | 'defeat' };
@@ -320,6 +332,8 @@ export type Command =
   | RemoveModifierCardCommand
   | ImportGhsStateCommand
   | UpdateCampaignCommand
+  | PrepareScenarioEndCommand
+  | CancelScenarioEndCommand
   | CompleteScenarioCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────

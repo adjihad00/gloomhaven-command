@@ -72,5 +72,8 @@ function setCacheHeaders(res: express.Response, path: string): void {
   } else if (/main-[a-z0-9]+\.js$/i.test(path)) {
     // Content-hashed bundles are immutable — cache forever
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } else if (path.endsWith('.css')) {
+    // CSS is not content-hashed — always revalidate
+    res.setHeader('Cache-Control', 'no-cache');
   }
 }

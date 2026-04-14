@@ -1,68 +1,63 @@
 import { h } from 'preact';
-import { useState } from 'preact/hooks';
-import { LongRestIcon } from '../../components/Icons';
+import { XPIcon, GoldIcon } from '../../components/Icons';
 
 interface PhoneActionBarProps {
   phase: string;
   isActive: boolean;
   isDone: boolean;
-  longRest: boolean;
+  xp: number;
+  loot: number;
   onEndTurn: () => void;
-  onToggleLongRest: () => void;
-  onExhaust: () => void;
+  onSetXP: (value: number) => void;
+  hasLootDeck?: boolean;
+  canDrawLoot?: boolean;
+  onDrawLoot?: () => void;
 }
 
 export function PhoneActionBar({
-  phase, isActive, isDone, longRest, onEndTurn, onToggleLongRest, onExhaust,
+  xp, loot, onSetXP, hasLootDeck, canDrawLoot, onDrawLoot,
 }: PhoneActionBarProps) {
-  const [confirmExhaust, setConfirmExhaust] = useState(false);
-  const isDrawPhase = phase === 'draw';
-  const isPlayPhase = phase === 'play';
-
-  const handleExhaust = () => {
-    if (confirmExhaust) {
-      onExhaust();
-      setConfirmExhaust(false);
-    } else {
-      setConfirmExhaust(true);
-    }
-  };
-
   return (
     <div class="phone-actions">
-      {/* Long Rest toggle — draw phase only */}
-      {isDrawPhase && (
+      {/* XP counter with +/- */}
+      <div class="phone-actions__counter">
+        <XPIcon size={16} />
         <button
-          class={`phone-actions__btn phone-actions__btn--rest ${longRest ? 'phone-actions__btn--active' : ''}`}
-          onClick={onToggleLongRest}
-          aria-label={longRest ? 'Cancel Long Rest' : 'Declare Long Rest'}
-          aria-pressed={longRest}
+          class="phone-actions__counter-btn"
+          onClick={() => onSetXP(Math.max(0, xp - 1))}
+          disabled={xp <= 0}
+          aria-label="Decrease XP"
         >
-          <LongRestIcon size={20} />
-          <span>{longRest ? 'Cancel Rest' : 'Long Rest'}</span>
+          &minus;
         </button>
-      )}
-
-      {/* End Turn — play phase, active turn only */}
-      {isPlayPhase && isActive && !isDone && (
+        <span class="phone-actions__counter-val">{xp}</span>
         <button
-          class="phone-actions__btn phone-actions__btn--end-turn"
-          onClick={onEndTurn}
-          aria-label="End Turn"
+          class="phone-actions__counter-btn"
+          onClick={() => onSetXP(xp + 1)}
+          aria-label="Increase XP"
         >
-          <span>End Turn</span>
+          +
         </button>
-      )}
+      </div>
 
-      {/* Exhaust — always available, needs confirmation */}
-      <button
-        class={`phone-actions__btn phone-actions__btn--exhaust ${confirmExhaust ? 'phone-actions__btn--danger' : ''}`}
-        onClick={handleExhaust}
-        onBlur={() => setConfirmExhaust(false)}
-        aria-label={confirmExhaust ? 'Confirm Exhaust' : 'Exhaust'}
-      >
-        <span>{confirmExhaust ? 'Confirm Exhaust?' : 'Exhaust'}</span>
-      </button>
+      {/* Spacer */}
+      <div class="phone-actions__spacer" />
+
+      {/* Loot counter (read-only) + optional draw button */}
+      <div class="phone-actions__counter">
+        <GoldIcon size={16} />
+        <span class="phone-actions__counter-val">{loot}</span>
+        {hasLootDeck && onDrawLoot && (
+          <button
+            class="phone-actions__counter-btn phone-actions__counter-btn--draw"
+            onClick={onDrawLoot}
+            disabled={!canDrawLoot}
+            aria-label="Draw Loot Card"
+          >
+            Draw
+          </button>
+        )}
+      </div>
     </div>
   );
 }

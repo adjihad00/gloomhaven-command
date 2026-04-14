@@ -164,6 +164,12 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'updateCampaign':
       handleUpdateCampaign(after, command.payload);
       break;
+    case 'prepareScenarioEnd':
+      after.finish = `pending:${command.payload.outcome}` as any;
+      break;
+    case 'cancelScenarioEnd':
+      after.finish = undefined;
+      break;
     case 'completeScenario':
       handleCompleteScenario(after, command.payload);
       break;

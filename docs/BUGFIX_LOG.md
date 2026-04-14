@@ -107,3 +107,13 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 **Symptom:** Any phone can send commands for any character. No server-side enforcement of the `characterName` registered via the `register` message.
 **Root cause:** `handleCommand()` in `wsHub.ts` passed all commands through to `onCommand` without checking the connection's role or registered character.
 **Fix:** Added permission enforcement in `handleCommand()`. Phone clients (`session.role === 'phone'`) are restricted to a whitelist of 12 character-scoped commands (`setInitiative`, `changeHealth`, `toggleCondition`, etc.). Each command's target character name is extracted and verified against `session.characterName`. Commands targeting other characters, monsters, or global actions are rejected with an error message. Controller and display roles are unrestricted.
+
+---
+
+## 2026-04-14 — Batch 15: Phone View Adjustments (UX improvements, no bug fixes)
+
+*No bugs fixed in this batch.* Notable UX change: removed manual Exhaust button
+from `PhoneActionBar`, replaced by `PhoneExhaustPopup` that auto-triggers when
+HP reaches 0. This prevents accidental exhaustion and provides a dramatic
+confirmation flow (skull icon, deep red accents). Not a bug fix — the old button
+worked correctly, but the auto-detect pattern is more ergonomic and less error-prone.

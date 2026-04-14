@@ -62,8 +62,23 @@
 - [x] Summon section with expandable HP controls
 - [x] Character detail overlay (full controls, XP progress, condition grid)
 - [x] Dark fantasy CSS styling — stone buttons, carved health bar, candlelight glow
-- [ ] Loot interaction — view drawn cards, assign (FH loot deck)
+- [x] Loot interaction — FH loot deck draw via PhoneLootDeckPopup, loot counter read-only
 - [x] Server-side permission enforcement per character
+- [x] Batch 15: Phone view adjustments
+  - [x] Element board (PhoneElementRow) — interactive during active turn only
+  - [x] Initiative timeline (PhoneInitiativeTimeline) — auto-show/dismiss lifecycle
+  - [x] Condition splash (PhoneConditionSplash) — priority queue, per-condition CSS effects
+  - [x] Exhaust auto-popup (PhoneExhaustPopup) — replaces manual exhaust button
+  - [x] Loot deck draw popup (PhoneLootDeckPopup) — FH loot card draw/assign
+  - [x] Per-character accent theming — CSS custom properties from edition data
+  - [x] Landscape two-column layout — CSS Grid at max-height 500px
+  - [x] Swipe-to-close on character detail overlay
+  - [x] Phone global commands (moveElement, drawLootCard) — bypass character-name check
+  - [x] Summon section stubbed (deferred for joint controller development)
+  - [x] Two-phase scenario end (prepareScenarioEnd/cancelScenarioEnd/completeScenario)
+  - [x] Phone rewards overlay — auto-triggered on all phones, shows XP/gold/resources preview
+  - [x] FH loot card viewer in character detail overlay
+  - [x] Character switch button in detail overlay
 
 ## Phase 4: Display Client
 - [ ] Scaffold display HTML + TypeScript entry

@@ -197,6 +197,14 @@ export class CommandSender {
 
   // ── Scenario end ──
 
+  prepareScenarioEnd(outcome: 'victory' | 'defeat'): void {
+    this.send({ action: 'prepareScenarioEnd', payload: { outcome } });
+  }
+
+  cancelScenarioEnd(): void {
+    this.send({ action: 'cancelScenarioEnd', payload: {} as Record<string, never> });
+  }
+
   completeScenario(outcome: 'victory' | 'defeat'): void {
     this.send({ action: 'completeScenario', payload: { outcome } });
   }

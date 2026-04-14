@@ -4,38 +4,36 @@ import { XPIcon, GoldIcon } from '../../components/Icons';
 interface PhoneCounterRowProps {
   xp: number;
   loot: number;
+  lootCards?: number[];
   onSetXP: (value: number) => void;
-  onSetLoot: (value: number) => void;
-  readonly?: boolean;
+  onDrawLoot?: () => void;
+  hasLootDeck?: boolean;
+  canDrawLoot?: boolean;
 }
 
-export function PhoneCounterRow({ xp, loot, onSetXP, onSetLoot, readonly }: PhoneCounterRowProps) {
+export function PhoneCounterRow({ xp, loot, lootCards, onSetXP, onDrawLoot, hasLootDeck, canDrawLoot }: PhoneCounterRowProps) {
   return (
     <div class="phone-counters">
       <div class="phone-counters__item">
         <XPIcon size={20} class="phone-counters__icon" />
         <span class="phone-counters__label">XP</span>
         <div class="phone-counters__controls">
-          {!readonly && (
-            <button
-              class="phone-counters__btn"
-              onClick={() => onSetXP(Math.max(0, xp - 1))}
-              disabled={xp <= 0}
-              aria-label="Decrease XP"
-            >
-              &minus;
-            </button>
-          )}
+          <button
+            class="phone-counters__btn"
+            onClick={() => onSetXP(Math.max(0, xp - 1))}
+            disabled={xp <= 0}
+            aria-label="Decrease XP"
+          >
+            &minus;
+          </button>
           <span class="phone-counters__value">{xp}</span>
-          {!readonly && (
-            <button
-              class="phone-counters__btn"
-              onClick={() => onSetXP(xp + 1)}
-              aria-label="Increase XP"
-            >
-              +
-            </button>
-          )}
+          <button
+            class="phone-counters__btn"
+            onClick={() => onSetXP(xp + 1)}
+            aria-label="Increase XP"
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -45,24 +43,16 @@ export function PhoneCounterRow({ xp, loot, onSetXP, onSetLoot, readonly }: Phon
         <GoldIcon size={20} class="phone-counters__icon" />
         <span class="phone-counters__label">Loot</span>
         <div class="phone-counters__controls">
-          {!readonly && (
-            <button
-              class="phone-counters__btn"
-              onClick={() => onSetLoot(Math.max(0, loot - 1))}
-              disabled={loot <= 0}
-              aria-label="Decrease Loot"
-            >
-              &minus;
-            </button>
-          )}
           <span class="phone-counters__value">{loot}</span>
-          {!readonly && (
+          {hasLootDeck && onDrawLoot && (
             <button
-              class="phone-counters__btn"
-              onClick={() => onSetLoot(loot + 1)}
-              aria-label="Increase Loot"
+              class="phone-counters__btn phone-counters__btn--draw"
+              onClick={onDrawLoot}
+              disabled={!canDrawLoot}
+              aria-label="Draw Loot Card"
+              title="Draw Loot Card"
             >
-              +
+              Draw
             </button>
           )}
         </div>

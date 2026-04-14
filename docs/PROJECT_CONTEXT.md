@@ -20,8 +20,10 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
 - **Controller Client** (`app/controller/`): iPad landscape. Single-screen
   ScenarioView with overlays. Setup wizard (edition → characters → scenario).
   Initiative numpad, modifier deck controls, door reveals.
-- **Phone Client** (`app/phone/`): Player phone, portrait. Scoped to one
-  character. Initiative input, health, conditions, turn actions, loot.
+- **Phone Client** (`app/phone/`): Player phone, portrait + landscape. Scoped
+  to one character. Initiative input, health, conditions, turn actions, loot,
+  element board, initiative timeline, condition splash, exhaust/loot popups.
+  Per-character accent theming. Landscape two-column layout.
 - **Display Client** (`app/display/`): Portrait-oriented TV/monitor.
   Read-only. Vertical tower layout: initiative timeline → characters → monsters.
 
@@ -88,12 +90,16 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Persistence: SQLite via better-sqlite3
 
 ## Current Phase
-Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView COMPLETE.
+Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 15 COMPLETE.
 Controller is feature-complete for scenario play.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
-condition strip/picker, XP/loot counters, summon section, character detail overlay,
-action bar. Server enforces phone command permissions (whitelist + character match).
-Remaining: FH loot card interaction.
+condition strip/picker, XP/loot counters, character detail overlay (swipe-to-close),
+action bar (auto-exhaust popup replaces manual button), element board (interactive
+during active turn), initiative timeline (auto-show/dismiss), condition splash on
+turn start, per-character accent theming, landscape two-column layout.
+Server enforces phone command permissions (whitelist + character match + global actions).
+Summon section deferred for joint controller development.
+FH loot deck draw integrated via PhoneLootDeckPopup.
 
 ## Documentation Policy
 All project documents MUST be updated to reflect any code changes before committing
@@ -120,24 +126,33 @@ revealRoom, undoAction, setScenario, addCharacter, removeCharacter,
 setLevel, setExperience, setLoot, toggleExhausted, toggleAbsent,
 toggleLongRest, renameCharacter, setLevelAdjustment, setRound,
 addSummon, removeSummon, addMonsterGroup, removeMonsterGroup,
-setMonsterLevel, importGhsState, updateCampaign, completeScenario
+setMonsterLevel, importGhsState, updateCampaign,
+prepareScenarioEnd, cancelScenarioEnd, completeScenario
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
   (returned to supply per rules §5). `lastDrawn` field tracks display.
+- **prepareScenarioEnd:** Sets `state.finish = 'pending:victory'` or
+  `'pending:failure'`. Broadcast to all clients — phones show rewards preview.
+- **cancelScenarioEnd:** Clears `state.finish` back to `undefined`. Phones
+  dismiss rewards overlay.
 - **completeScenario:** Transfers XP + gold, clears monsters/objectives,
   resets character combat state (HP, conditions, initiative), resets round/phase,
   sets elements inert. GH uses `char.loot` for gold; FH uses loot card system.
+  Sets `state.finish = 'success'/'failure'`. Phones transition to "claimed" state.
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
 
 ### Phone Command Permissions
-Phone clients are restricted server-side to 12 character-scoped commands
+Phone clients are restricted server-side to character-scoped commands
 (setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
 toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
 toggleTurn, renameCharacter). Each command's target must match the phone's
 registered characterName. Commands targeting summons are allowed if the summon
-owner matches. All other commands are rejected with an error.
+owner matches. Additionally, `moveElement` and `drawLootCard` are in a
+`PHONE_GLOBAL_ACTIONS` set that bypasses character-name validation (these are
+game-global actions with no character target). All other commands are rejected
+with an error.
 
 ## Build Process
 - `app/build.mjs` — builds all three Preact client apps via esbuild

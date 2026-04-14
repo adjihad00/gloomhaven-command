@@ -7,11 +7,17 @@ interface PhoneCharacterHeaderProps {
   edition: string;
   level: number;
   characterColor?: string;
+  health: number;
+  maxHealth: number;
   onTap?: () => void;
 }
 
-export function PhoneCharacterHeader({ name, edition, level, characterColor, onTap }: PhoneCharacterHeaderProps) {
+export function PhoneCharacterHeader({
+  name, edition, level, characterColor, health, maxHealth, onTap,
+}: PhoneCharacterHeaderProps) {
   const accentColor = characterColor || 'var(--accent-copper)';
+  const ratio = maxHealth > 0 ? health / maxHealth : 0;
+  const hpColor = ratio > 0.5 ? 'var(--health-green)' : ratio > 0.25 ? 'var(--accent-gold)' : 'var(--negative-red)';
 
   return (
     <button
@@ -21,6 +27,15 @@ export function PhoneCharacterHeader({ name, edition, level, characterColor, onT
       style={{ '--char-accent': accentColor } as any}
     >
       <div class="phone-header__accent-bar" />
+
+      {/* HP bar as background fill */}
+      <div class="phone-header__hp-bg">
+        <div
+          class="phone-header__hp-fill"
+          style={{ width: `${ratio * 100}%`, backgroundColor: hpColor }}
+        />
+      </div>
+
       <div class="phone-header__content">
         <img
           src={characterThumbnail(edition, name)}
@@ -32,7 +47,9 @@ export function PhoneCharacterHeader({ name, edition, level, characterColor, onT
           <span class="phone-header__name">{formatName(name)}</span>
           <span class="phone-header__level">Level {level}</span>
         </div>
-        <div class="phone-header__chevron" aria-hidden="true">&#x203A;</div>
+        <span class="phone-header__hp-text">
+          {health}/{maxHealth}
+        </span>
       </div>
     </button>
   );

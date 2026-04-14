@@ -281,3 +281,116 @@ and the target must match. Commands targeting the phone's own summons are
 permitted (summon owner = registered character). The extraction logic handles
 three payload shapes: `payload.characterName`, `payload.target` (CommandTarget),
 and `payload.figure` (FigureIdentifier).
+
+### 2026-04-14 — Phone global commands bypass character-name validation
+**Decision:** `moveElement` and `drawLootCard` are added to the phone command
+whitelist in a separate `PHONE_GLOBAL_ACTIONS` set that skips character-name
+validation.
+**Rationale:** Element infusion and FH loot card draws are game-global actions,
+not character-scoped. They have no `characterName` or `target` field in their
+payloads. Adding them to the standard whitelist would fail the character-match
+check. The global actions set allows these through without loosening the
+character-scoped enforcement for all other commands.
+
+### 2026-04-14 — Landscape two-column layout at max-height 500px
+**Decision:** Phone ScenarioView switches to a CSS Grid two-column layout when
+`max-height: 500px` (landscape phones). Left column: HP bar, initiative,
+turn banner. Right column: conditions, elements, counters.
+**Rationale:** Portrait layout stacks everything vertically, which overflows
+badly in landscape. A two-column split uses the extra width while keeping the
+most critical controls (HP, initiative) immediately visible. The `max-height`
+breakpoint targets landscape phones specifically — tablets in landscape are
+tall enough to keep portrait layout.
+
+### 2026-04-14 — Per-character accent theming via CSS custom properties
+**Decision:** `App.tsx` sets `--phone-accent`, `--phone-accent-glow`, and
+`--phone-accent-dark` CSS custom properties on the root element based on
+the character's class color fetched from edition data.
+**Rationale:** Each Gloomhaven character class has a signature color. Using it
+as the accent color across HP bar, initiative glow, turn banner, action bar,
+numpad, and detail overlay makes the phone feel personalized and immediately
+identifiable at the table. CSS custom properties avoid duplicating color logic
+across components — one set point in App.tsx, consumed everywhere via `var()`.
+
+### 2026-04-14 — Condition splash with CSS-only per-condition effects
+**Decision:** `PhoneConditionSplash` shows a full-screen reminder on turn start
+with priority-ordered queue (stun first) and per-condition CSS effects
+(wound=red vignette, stun=shake+grey-blue, poison=green pulse, etc.).
+4-second auto-dismiss or tap to advance.
+**Rationale:** On a phone, conditions are easy to forget — a small icon strip
+is not enough. The splash forces acknowledgment. Per-condition visual effects
+(CSS-only, no images) make each condition instantly recognizable. Priority
+ordering ensures stun (which skips the turn) is shown first. The 4-second
+auto-dismiss keeps the game moving without requiring interaction.
+
+### 2026-04-14 — Initiative timeline auto-show/dismiss lifecycle
+**Decision:** `PhoneInitiativeTimeline` appears automatically when the play
+phase starts, auto-dismisses when the player's turn begins, and re-appears
+after End Turn. Horizontal strip with character/monster portrait thumbnails
+sorted by initiative; active figure has gold glow.
+**Rationale:** Phone players need to see turn order but don't need it during
+their own turn (they already know it's their turn from the TurnBanner). Showing
+it between turns answers "who's next?" without permanent screen real estate
+cost. Auto-show/dismiss avoids manual toggling.
+
+### 2026-04-14 — Exhaust auto-detection replaces manual button
+**Decision:** Removed the Exhaust button from `PhoneActionBar`. Added
+`PhoneExhaustPopup` that auto-triggers when HP reaches 0.
+**Rationale:** Manual exhaust was redundant and error-prone — players rarely
+need to voluntarily exhaust, and when they do it's because they're at 0 HP.
+The popup provides a dramatic full-screen confirmation (skull icon, deep red)
+with Confirm (exhaust) or Cancel (back to 1 HP). This prevents accidental
+exhaustion while making the intentional case unmissable.
+
+### 2026-04-14 — Summon section deferred for joint development
+**Decision:** `PhoneSummonSection` is stubbed (returns null) with a TODO
+comment. Deferred until joint development with the controller summon system.
+**Rationale:** Summon management on the phone requires interaction patterns
+(add summon, track HP, move in initiative) that must be consistent with how
+the controller handles summons. Building it independently risks divergence.
+Stubbing it now keeps the component slot in place for later implementation.
+
+### 2026-04-14 — Loot read-only on phone
+**Decision:** Phone loot counter is read-only (no +/- buttons). Loot
+assignment is managed by the controller. FH loot draw button triggers
+`drawLootCard` command when available.
+**Rationale:** Loot is a shared game resource — the GM assigns coins and FH
+loot cards from the controller. Letting phones self-increment would cause
+double-counting. The read-only display shows what was assigned. The FH draw
+button is an exception because drawing from the shared loot deck is a
+player-initiated action per the rules.
+
+### 2026-04-14 — Phone element board interactive only during active turn
+**Decision:** `PhoneElementRow` renders the shared `ElementBoard` component
+but only enables interaction (element cycle clicks) during the character's
+active turn.
+**Rationale:** Element infusion happens during ability resolution, which only
+occurs during your turn. Allowing infusion outside your turn would violate
+game rules and cause state conflicts with the controller's element board.
+
+### 2026-04-14 — Two-phase scenario completion with prepareScenarioEnd
+**Decision:** Scenario completion uses a two-phase flow: `prepareScenarioEnd`
+sets `state.finish = 'pending:victory'` (broadcast to all clients), then
+`completeScenario` processes rewards and sets `state.finish = 'success'`.
+`cancelScenarioEnd` clears the pending state.
+**Rationale:** Phone clients need to show a rewards preview overlay when the
+GM initiates scenario end on the controller. The rewards overlay must compute
+from the pre-completion state (XP, loot, loot cards haven't been transferred
+yet). Broadcasting `pending:*` via normal state diffs lets all phones detect
+the transition and show the overlay simultaneously. The GM's "Claim Rewards"
+then fires `completeScenario` which processes everything; phones detect the
+transition to `'success'` and show a "claimed" confirmation. "Cancel" clears
+the pending state, dismissing overlays on all devices.
+
+### 2026-04-14 — Per-character theming from character mat color palettes
+**Decision:** `characterThemes.ts` maps character names to hand-picked
+`{ bg, accent, flair }` color palettes derived from character mat artwork.
+Three CSS variables (`--phone-bg`, `--phone-accent`, `--phone-flair`) set on
+`document.documentElement`. Unmapped characters fall back to generating a
+palette from the GHS `color` field.
+**Rationale:** The single GHS `color` field was insufficient — it only provides
+one accent color. Character mats have rich, distinct identities (Boneshaper =
+dark green + bright green + pink, Blinkblade = teal + cyan, Drifter = brown +
+gold). Storing palettes in a static map avoids runtime image analysis and keeps
+the bundle small (~1KB). Setting variables on `:root` via JS ensures they
+propagate to all components without prop drilling.

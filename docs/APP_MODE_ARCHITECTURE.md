@@ -50,9 +50,11 @@ app/
 │   ├── components/       # PhoneCharacterHeader, PhoneHealthBar,
 │   │                       PhoneInitiativeSection, PhoneTurnBanner,
 │   │                       PhoneActionBar, PhoneConditionStrip,
-│   │                       PhoneCounterRow, PhoneSummonSection
+│   │                       PhoneCounterRow, PhoneSummonSection,
+│   │                       PhoneElementRow, PhoneInitiativeTimeline
 │   ├── overlays/         # PhoneInitiativeNumpad, PhoneConditionPicker,
-│   │                       PhoneCharacterDetail
+│   │                       PhoneCharacterDetail, PhoneExhaustPopup,
+│   │                       PhoneLootDeckPopup, PhoneConditionSplash
 │   └── styles/phone.css
 └── display/              # Monitor — portrait, read-only
     ├── main.tsx, index.html
@@ -87,10 +89,18 @@ Overlays:
 - LootDeckOverlay — FH loot deck draw/assign
 - OverlayBackdrop — shared backdrop for all overlays
 
-### Phone (portrait)
+### Phone (portrait + landscape)
 Character-scoped scenario view. Shows ONLY the selected player's data.
+Per-character accent theming: App.tsx sets `--phone-accent`, `--phone-accent-glow`,
+`--phone-accent-dark` CSS custom properties from the character's class color (edition
+data). Used across HP bar, initiative glow, turn banner, action bar, numpad, and
+detail overlay.
 
-Layout (top to bottom):
+**Portrait layout** (top to bottom):
+- **InitiativeTimeline** — Horizontal strip at top showing all figures sorted by
+  initiative. Auto-appears at play phase start, auto-dismisses when player's turn
+  starts, re-appears after End Turn. Character/monster portrait thumbnails with gold
+  glow on active figure.
 - **CharacterHeader** — class thumbnail, name (Cinzel), level, class color accent bar.
   Tap opens CharacterDetail overlay.
 - **TurnBanner** — "Your Turn" (gold glow pulse), "Waiting" (with position), "Done"
@@ -101,18 +111,36 @@ Layout (top to bottom):
   draw (tappable → numpad), active (gold glow), queued, done (dimmed).
 - **ConditionStrip** — Horizontal scrollable row of active condition icons (36px).
   Tap to remove, "+" button opens ConditionPicker overlay.
-- **CounterRow** — Side-by-side XP (star) and Loot (coin) with +/- controls.
-- **SummonSection** — Conditional. Compact cards with mini HP bar, tap to expand.
-- **ActionBar** — Fixed bottom toolbar: Long Rest (draw phase), End Turn (active turn),
-  Exhaust (with confirmation).
+- **ElementRow** — Compact element board reusing shared `ElementBoard` component.
+  Interactive during active turn only (same inert→new→strong→waning→inert cycle as
+  controller). Read-only when not the character's turn.
+- **CounterRow** — Side-by-side XP (star) and Loot (coin, read-only — no +/- buttons,
+  controller manages assignment). FH loot draw button when loot deck is available.
+- **SummonSection** — Deferred (stubbed, returns null). Awaiting joint development
+  with controller summon system.
+- **ActionBar** — Fixed bottom toolbar: Long Rest (draw phase), End Turn (active turn).
+  No manual Exhaust button (replaced by auto-exhaust popup at 0 HP).
+
+**Landscape layout** (CSS Grid two-column at `max-height: 500px`):
+- Left column: HP bar, initiative section, turn banner.
+- Right column: conditions, element board, counters.
 
 Overlays:
 - **PhoneInitiativeNumpad** — 3×4 grid numpad, stone-tile keys, Long Rest button.
 - **PhoneConditionPicker** — Edition-aware grid split Positive/Negative.
-- **PhoneCharacterDetail** — Bottom sheet: HP, XP (with career total + progress bar),
-  loot, full condition grid, Long Rest/Absent/Exhaust toggles.
+- **PhoneCharacterDetail** — Bottom sheet with swipe-to-close gesture (touch-based
+  panel dragging, >80px threshold). HP, XP (with career total + progress bar),
+  loot (read-only), full condition grid, Long Rest/Absent/Exhaust toggles.
+- **PhoneExhaustPopup** — Full-screen dramatic overlay when HP reaches 0. Skull icon,
+  deep red accents, Cinzel typography. Confirm (exhaust) or Cancel (back to 1 HP).
+- **PhoneLootDeckPopup** — FH loot deck draw popup. Shows drawn card type,
+  auto-assigns to character.
+- **PhoneInitiativeTimeline** — (see layout section above; auto-show/dismiss lifecycle).
+- **PhoneConditionSplash** — Full-screen condition reminder on turn start.
+  Priority-ordered queue (stun first). Per-condition CSS effects (wound=red vignette,
+  stun=shake+grey-blue, poison=green pulse, etc.). 4-second auto-dismiss or tap.
 
-Does NOT show: monsters, other characters, modifier decks, element board, doors.
+Does NOT show: monsters, other characters, modifier decks, doors.
 
 ### Monitor (portrait, vertical tower)
 Read-only: Initiative timeline (vertical), character summary bars, monster groups

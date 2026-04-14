@@ -24,6 +24,14 @@ const PHONE_ALLOWED_ACTIONS: ReadonlySet<CommandAction> = new Set([
   'removeSummon',
   'toggleTurn',
   'renameCharacter',
+  'moveElement',
+  'drawLootCard',
+]);
+
+/** Phone commands that are global (not character-targeted) — skip character-name check. */
+const PHONE_GLOBAL_ACTIONS: ReadonlySet<CommandAction> = new Set([
+  'moveElement',
+  'drawLootCard',
 ]);
 
 /**
@@ -253,11 +261,14 @@ export class WsHub {
         return;
       }
 
-      const targetName = getCommandCharacterName(command);
-      if (targetName !== session.characterName) {
-        console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action} target=${targetName} registered=${session.characterName}`);
-        this.sendTo(ws, { type: 'error', message: 'Phone can only control registered character' });
-        return;
+      // Global actions (moveElement, drawLootCard) skip character-name check
+      if (!PHONE_GLOBAL_ACTIONS.has(command.action)) {
+        const targetName = getCommandCharacterName(command);
+        if (targetName !== session.characterName) {
+          console.log(`Phone blocked: ${info.sessionToken.slice(0, 8)}... action=${command.action} target=${targetName} registered=${session.characterName}`);
+          this.sendTo(ws, { type: 'error', message: 'Phone can only control registered character' });
+          return;
+        }
       }
     }
 

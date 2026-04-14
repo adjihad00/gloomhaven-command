@@ -3,31 +3,37 @@ import { useState, useMemo } from 'preact/hooks';
 import { useGameState } from '../hooks/useGameState';
 import { useCommands } from '../hooks/useCommands';
 import { useDataApi } from '../hooks/useDataApi';
+import { HealthIcon } from '../components/Icons';
 import { PhoneCharacterHeader } from './components/PhoneCharacterHeader';
-import { PhoneHealthBar } from './components/PhoneHealthBar';
 import { PhoneInitiativeSection } from './components/PhoneInitiativeSection';
 import { PhoneTurnBanner } from './components/PhoneTurnBanner';
 import { PhoneConditionStrip } from './components/PhoneConditionStrip';
-import { PhoneCounterRow } from './components/PhoneCounterRow';
-import { PhoneSummonSection } from './components/PhoneSummonSection';
+import { PhoneElementRow } from './components/PhoneElementRow';
+import { PhoneInitiativeTimeline } from './components/PhoneInitiativeTimeline';
 import { PhoneActionBar } from './components/PhoneActionBar';
 import { PhoneInitiativeNumpad } from './overlays/PhoneInitiativeNumpad';
 import { PhoneConditionPicker } from './overlays/PhoneConditionPicker';
 import { PhoneCharacterDetail } from './overlays/PhoneCharacterDetail';
-import type { ConditionName, CommandTarget } from '@gloomhaven-command/shared';
+import { PhoneExhaustPopup } from './overlays/PhoneExhaustPopup';
+import { PhoneLootDeckPopup } from './overlays/PhoneLootDeckPopup';
+import { PhoneConditionSplash } from './overlays/PhoneConditionSplash';
+import { PhoneRewardsOverlay } from './overlays/PhoneRewardsOverlay';
+import type { ConditionName, CommandTarget, ElementType, ElementState } from '@gloomhaven-command/shared';
 
 type OverlayState =
   | { type: 'none' }
   | { type: 'numpad' }
   | { type: 'conditionPicker' }
-  | { type: 'characterDetail' };
+  | { type: 'characterDetail' }
+  | { type: 'lootDeck' };
 
 interface ScenarioViewProps {
   selectedCharacter: string;
+  onSwitchCharacter?: () => void;
 }
 
-export function ScenarioView({ selectedCharacter }: ScenarioViewProps) {
-  const { getCharacter, phase, figures, edition, round } = useGameState();
+export function ScenarioView({ selectedCharacter, onSwitchCharacter }: ScenarioViewProps) {
+  const { getCharacter, phase, figures, edition, round, elementBoard, lootDeck } = useGameState();
   const commands = useCommands();
   const [overlay, setOverlay] = useState<OverlayState>({ type: 'none' });
 
@@ -71,14 +77,32 @@ export function ScenarioView({ selectedCharacter }: ScenarioViewProps) {
   const charTarget: CommandTarget = { type: 'character', name: character.name, edition: ed };
   const isActive = character.active && !character.off;
   const isDone = character.off;
+  const hasLootDeck = !!(lootDeck?.cards?.length);
+  const isPlayPhase = phase !== 'draw';
 
   return (
     <div class="phone-scenario">
+      {/* Initiative Timeline — auto-shows during play phase */}
+      <PhoneInitiativeTimeline
+        selectedCharacter={selectedCharacter}
+        characterColor={characterColor}
+      />
+
+      {/* Condition Splash — shows on turn start with active conditions */}
+      <PhoneConditionSplash
+        conditions={character.entityConditions}
+        isActive={isActive}
+        phase={phase}
+      />
+
+      {/* Character header with integrated HP bar background */}
       <PhoneCharacterHeader
         name={character.name}
         edition={ed}
         level={character.level}
         characterColor={characterColor}
+        health={character.health}
+        maxHealth={character.maxHealth}
         onTap={() => setOverlay({ type: 'characterDetail' })}
       />
 
@@ -91,20 +115,48 @@ export function ScenarioView({ selectedCharacter }: ScenarioViewProps) {
       />
 
       <div class="phone-scenario__body">
-        <PhoneHealthBar
-          current={character.health}
-          max={character.maxHealth}
-          onChangeHealth={(delta) => commands.changeHealth(charTarget, delta)}
-        />
+        {/* Initiative/HP row: initiative left, HP controls right */}
+        {/* During active turn, End Turn replaces the initiative section */}
+        <div class="phone-control-row">
+          {isPlayPhase && isActive && !isDone ? (
+            <button
+              class="phone-control-row__end-turn"
+              onClick={() => commands.toggleTurn({ type: 'character', name: character.name, edition: ed })}
+              aria-label="End Turn"
+            >
+              End Turn
+            </button>
+          ) : (
+            <PhoneInitiativeSection
+              initiative={character.initiative}
+              longRest={character.longRest}
+              phase={phase}
+              isActive={isActive}
+              isDone={isDone}
+              onOpenNumpad={() => setOverlay({ type: 'numpad' })}
+            />
+          )}
 
-        <PhoneInitiativeSection
-          initiative={character.initiative}
-          longRest={character.longRest}
-          phase={phase}
-          isActive={isActive}
-          isDone={isDone}
-          onOpenNumpad={() => setOverlay({ type: 'numpad' })}
-        />
+          <div class="phone-control-row__hp">
+            <button
+              class="phone-control-row__hp-btn phone-control-row__hp-btn--minus"
+              onClick={() => commands.changeHealth(charTarget, -1)}
+              disabled={character.health <= 0}
+              aria-label="Decrease health"
+            >
+              &minus;
+            </button>
+            <HealthIcon size={18} />
+            <button
+              class="phone-control-row__hp-btn phone-control-row__hp-btn--plus"
+              onClick={() => commands.changeHealth(charTarget, 1)}
+              disabled={character.health >= character.maxHealth}
+              aria-label="Increase health"
+            >
+              +
+            </button>
+          </div>
+        </div>
 
         <PhoneConditionStrip
           conditions={character.entityConditions}
@@ -112,37 +164,35 @@ export function ScenarioView({ selectedCharacter }: ScenarioViewProps) {
           onOpenPicker={() => setOverlay({ type: 'conditionPicker' })}
         />
 
-        <PhoneCounterRow
-          xp={character.experience}
-          loot={character.loot}
-          onSetXP={(v) => commands.setExperience(character.name, ed, v)}
-          onSetLoot={(v) => commands.setLoot(character.name, ed, v)}
-        />
-
-        <PhoneSummonSection
-          summons={character.summons}
-          characterName={character.name}
-          characterEdition={ed}
-          onChangeHealth={(uuid, delta) => commands.changeHealth(
-            { type: 'summon', characterName: character.name, characterEdition: ed, summonUuid: uuid },
-            delta
-          )}
-          onRemoveSummon={(uuid) => commands.removeSummon(character.name, ed, uuid)}
-          onToggleCondition={(uuid, cond) => commands.toggleCondition(
-            { type: 'summon', characterName: character.name, characterEdition: ed, summonUuid: uuid },
-            cond
-          )}
+        <PhoneElementRow
+          elements={elementBoard}
+          isActive={isActive}
+          onMoveElement={(element, newState) => commands.moveElement(element, newState)}
         />
       </div>
 
+      {/* Action bar: XP + Loot at bottom */}
       <PhoneActionBar
         phase={phase}
         isActive={isActive}
         isDone={isDone}
-        longRest={character.longRest}
-        onEndTurn={() => commands.toggleTurn({ type: 'character', name: character.name, edition: ed })}
-        onToggleLongRest={() => commands.toggleLongRest(character.name, ed)}
-        onExhaust={() => commands.toggleExhausted(character.name, ed)}
+        xp={character.experience}
+        loot={character.loot}
+        onEndTurn={() => {}}
+        onSetXP={(v) => commands.setExperience(character.name, ed, v)}
+        hasLootDeck={hasLootDeck}
+        canDrawLoot={isActive && hasLootDeck}
+        onDrawLoot={() => setOverlay({ type: 'lootDeck' })}
+      />
+
+      {/* Rewards overlay — triggered when scenario completes */}
+      <PhoneRewardsOverlay selectedCharacter={selectedCharacter} />
+
+      {/* Exhaust popup — triggered when health reaches 0 */}
+      <PhoneExhaustPopup
+        characterHealth={character.health}
+        onConfirmExhaust={() => commands.toggleExhausted(character.name, ed)}
+        onCancelToOneHP={() => commands.changeHealth(charTarget, 1)}
       />
 
       {/* Overlays */}
@@ -170,13 +220,29 @@ export function ScenarioView({ selectedCharacter }: ScenarioViewProps) {
           character={character}
           edition={ed}
           characterColor={characterColor}
+          elements={elementBoard}
+          lootDeck={lootDeck}
+          isActive={isActive}
           onChangeHealth={(delta) => commands.changeHealth(charTarget, delta)}
           onSetXP={(v) => commands.setExperience(character.name, ed, v)}
-          onSetLoot={(v) => commands.setLoot(character.name, ed, v)}
           onToggleCondition={(name) => commands.toggleCondition(charTarget, name)}
+          onMoveElement={(element, newState) => commands.moveElement(element, newState)}
           onToggleLongRest={() => commands.toggleLongRest(character.name, ed)}
           onToggleAbsent={() => commands.toggleAbsent(character.name, ed)}
           onToggleExhausted={() => commands.toggleExhausted(character.name, ed)}
+          onSwitchCharacter={onSwitchCharacter}
+          onClose={() => setOverlay({ type: 'none' })}
+        />
+      )}
+
+      {overlay.type === 'lootDeck' && lootDeck && (
+        <PhoneLootDeckPopup
+          lootDeck={lootDeck}
+          characterName={character.name}
+          characterEdition={ed}
+          isActive={isActive}
+          onDrawLootCard={() => commands.drawLootCard()}
+          onAssignLoot={(idx, name, ed) => commands.assignLoot(idx, name, ed)}
           onClose={() => setOverlay({ type: 'none' })}
         />
       )}

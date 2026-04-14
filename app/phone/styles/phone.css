@@ -116,34 +116,54 @@
   padding-top: var(--space-3);
 }
 
-/* ── Character Header ── */
+/* ── Character Header (with integrated HP bar) ── */
 
 .phone-header {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
   border: none;
   border-radius: var(--radius-md);
   overflow: hidden;
-  cursor: pointer;
   width: 100%;
   text-align: left;
   padding: 0;
+  cursor: pointer;
   touch-action: manipulation;
-  transition: background var(--transition-fast);
-}
-
-.phone-header:active {
-  background: var(--bg-elevated);
 }
 
 .phone-header__accent-bar {
   height: 3px;
-  background: var(--char-accent, var(--accent-copper));
-  box-shadow: 0 1px 8px var(--char-accent, var(--accent-copper));
+  background: var(--char-accent, var(--phone-accent, var(--accent-copper)));
+  box-shadow: 0 1px 8px var(--char-accent, var(--phone-accent, var(--accent-copper)));
+}
+
+/* HP bar as background fill behind content */
+.phone-header__hp-bg {
+  position: absolute;
+  inset: 3px 0 0 0;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.phone-header__hp-fill {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  transition: width 0.4s ease, background-color 0.3s ease;
+  opacity: 0.35;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
 }
 
 .phone-header__content {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -151,12 +171,13 @@
 }
 
 .phone-header__thumb {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
   border-radius: 50%;
-  border: 2px solid var(--char-accent, var(--accent-copper));
+  border: 2px solid var(--char-accent, var(--phone-accent, var(--accent-copper)));
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .phone-header__info {
@@ -168,22 +189,114 @@
 
 .phone-header__name {
   font-family: 'Cinzel', serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-primary);
   text-transform: capitalize;
 }
 
 .phone-header__level {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
-.phone-header__chevron {
+.phone-header__hp-text {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Control Row (Initiative + HP controls) ── */
+
+.phone-control-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
+.phone-control-row .phone-init {
+  flex: 1;
+}
+
+.phone-control-row__hp {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.phone-control-row__hp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
   font-size: 1.4rem;
-  color: var(--text-muted);
-  padding-right: var(--space-1);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.phone-control-row__hp-btn:active:not(:disabled) {
+  background: var(--bg-elevated);
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.phone-control-row__hp-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.phone-control-row__hp-btn--minus {
+  color: var(--negative-red);
+}
+
+.phone-control-row__hp-btn--plus {
+  color: var(--health-green);
+}
+
+/* End Turn button replacing initiative during active turn */
+.phone-control-row__end-turn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(211, 166, 99, 0.1);
+  border: 2px solid var(--phone-accent, var(--accent-gold));
+  border-radius: var(--radius-md);
+  color: var(--phone-accent, var(--accent-gold));
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 12px rgba(211, 166, 99, 0.15);
+  animation: phone-turn-glow 2.5s ease-in-out infinite;
+}
+
+.phone-control-row__end-turn:active {
+  background: rgba(211, 166, 99, 0.2);
+  transform: translateY(1px);
 }
 
 /* ── Health Bar ── */
@@ -811,22 +924,67 @@
   background: rgba(211, 166, 99, 0.1);
 }
 
-.phone-actions__btn--exhaust {
-  flex: 0.6;
-  color: var(--text-muted);
+.phone-actions__spacer {
+  flex: 1;
+}
+
+/* Action bar counter (XP/Loot in bottom bar) */
+.phone-actions__counter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  color: var(--text-secondary);
+}
+
+.phone-actions__counter-val {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 28px;
+  text-align: center;
+}
+
+.phone-actions__counter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-primary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+.phone-actions__counter-btn:active:not(:disabled) {
+  background: var(--bg-elevated);
+  transform: scale(0.95);
+}
+
+.phone-actions__counter-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.phone-actions__counter-btn--draw {
+  width: auto;
+  height: auto;
+  padding: var(--space-1) var(--space-3);
   font-size: 0.7rem;
-}
-
-.phone-actions__btn--danger {
-  border-color: var(--negative-red);
-  color: var(--negative-red);
-  background: rgba(197, 48, 48, 0.1);
-  animation: phone-danger-pulse 1s ease-in-out infinite;
-}
-
-@keyframes phone-danger-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(197, 48, 48, 0.1); }
-  50% { box-shadow: 0 0 16px rgba(197, 48, 48, 0.25); }
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--phone-accent, var(--accent-gold));
+  border-color: var(--phone-accent, var(--accent-gold-dim));
+  white-space: nowrap;
 }
 
 /* ================================================================
@@ -1380,4 +1538,1267 @@
   border-color: var(--negative-red);
   color: var(--negative-red);
   background: rgba(197, 48, 48, 0.1);
+}
+
+/* Loot cards in detail overlay */
+.phone-detail__loot-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  color: inherit;
+  font-family: inherit;
+}
+
+.phone-detail__loot-chevron {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.phone-detail__loot-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+.phone-detail__loot-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--bg-card);
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+}
+
+.phone-detail__loot-card-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.phone-detail__loot-card-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Elements in detail overlay */
+.phone-detail__elements {
+  display: flex;
+  justify-content: center;
+}
+
+.phone-detail__elements .element-btn {
+  width: 44px;
+  height: 44px;
+}
+
+/* Switch character button */
+.phone-detail__switch {
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: var(--space-3);
+}
+
+.phone-detail__switch-btn {
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+}
+
+.phone-detail__switch-btn:active {
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ================================================================
+   PHONE ELEMENT ROW
+   ================================================================ */
+
+.phone-elements {
+  padding: 0 var(--space-1);
+}
+
+.phone-elements .element-board--compact {
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.phone-elements .element-btn {
+  width: 44px;
+  height: 44px;
+  padding: 5px;
+}
+
+/* ================================================================
+   LOOT DRAW BUTTON (FH)
+   ================================================================ */
+
+.phone-counters__btn--draw {
+  width: auto;
+  padding: 0 var(--space-3);
+  font-size: 0.7rem;
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold);
+  border-color: var(--accent-gold-dim);
+}
+
+.phone-counters__btn--draw:active:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--accent-gold);
+}
+
+/* ================================================================
+   EXHAUST POPUP
+   ================================================================ */
+
+.exhaust-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: phone-fade-in 0.3s ease;
+}
+
+.exhaust-popup__overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(120, 20, 20, 0.6) 0%,
+    rgba(0, 0, 0, 0.85) 70%
+  );
+}
+
+.exhaust-popup__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8);
+  max-width: 340px;
+}
+
+.exhaust-popup__skull {
+  color: var(--negative-red);
+  margin-bottom: var(--space-6);
+  filter: drop-shadow(0 0 20px rgba(197, 48, 48, 0.4));
+  animation: exhaust-pulse 2s ease-in-out infinite;
+}
+
+@keyframes exhaust-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+.exhaust-popup__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--negative-red);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-4);
+  text-shadow: 0 0 16px rgba(197, 48, 48, 0.3);
+}
+
+.exhaust-popup__desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-8);
+}
+
+.exhaust-popup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.exhaust-popup__btn {
+  height: 52px;
+  border-radius: var(--radius-md);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+}
+
+.exhaust-popup__btn--confirm {
+  background: rgba(197, 48, 48, 0.2);
+  border: 2px solid var(--negative-red);
+  color: var(--negative-red);
+  box-shadow: 0 0 12px rgba(197, 48, 48, 0.2);
+}
+
+.exhaust-popup__btn--confirm:active {
+  background: rgba(197, 48, 48, 0.35);
+}
+
+.exhaust-popup__btn--cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+}
+
+.exhaust-popup__btn--cancel:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ================================================================
+   SCENARIO REWARDS OVERLAY
+   ================================================================ */
+
+.phone-rewards {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: phone-fade-in 0.4s ease;
+}
+
+.phone-rewards__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.phone-rewards__content {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - var(--space-8));
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-6);
+}
+
+.phone-rewards__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-2);
+}
+
+.phone-rewards__title--victory {
+  color: var(--accent-gold);
+  text-shadow: 0 0 20px rgba(211, 166, 99, 0.4);
+}
+
+.phone-rewards__title--defeat {
+  color: var(--negative-red);
+  text-shadow: 0 0 20px rgba(197, 48, 48, 0.3);
+}
+
+.phone-rewards__name {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--phone-accent, var(--text-primary));
+  text-align: center;
+  text-transform: capitalize;
+  margin-bottom: var(--space-6);
+}
+
+.phone-rewards__section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.phone-rewards__section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.phone-rewards__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+}
+
+.phone-rewards__label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.phone-rewards__value {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.phone-rewards__value--bonus {
+  color: var(--accent-gold);
+}
+
+.phone-rewards__value--total {
+  font-size: 1rem;
+  color: var(--accent-gold);
+}
+
+.phone-rewards__row--total {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.phone-rewards__row--career {
+  padding-top: var(--space-1);
+}
+
+.phone-rewards__row--career .phone-rewards__label,
+.phone-rewards__row--career .phone-rewards__value {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.phone-rewards__resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.phone-rewards__resource {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.phone-rewards__resource-count {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.phone-rewards__resource-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.phone-rewards__waiting {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: var(--space-4) 0;
+  font-style: italic;
+}
+
+.phone-rewards__claimed-msg {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: var(--space-6) var(--space-4);
+  line-height: 1.5;
+}
+
+.phone-rewards__dismiss {
+  display: block;
+  width: 100%;
+  height: 52px;
+  margin-top: var(--space-4);
+  background: rgba(211, 166, 99, 0.1);
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  color: var(--accent-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+}
+
+.phone-rewards__dismiss:active {
+  background: rgba(211, 166, 99, 0.2);
+}
+
+/* ================================================================
+   LOOT DECK POPUP
+   ================================================================ */
+
+.loot-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: phone-fade-in 0.2s ease;
+}
+
+.loot-popup {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(184, 115, 51, 0.25);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  width: calc(100% - var(--space-8));
+  max-width: 340px;
+  box-shadow: var(--shadow-heavy);
+  animation: phone-scale-in 0.2s ease;
+}
+
+.loot-popup__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.loot-popup__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.loot-popup__remaining {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.loot-popup__close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.loot-popup__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.loot-popup__draw-btn {
+  width: 100%;
+  height: 56px;
+  background: rgba(211, 166, 99, 0.1);
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-md);
+  color: var(--accent-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: all var(--transition-fast);
+}
+
+.loot-popup__draw-btn:active:not(:disabled) {
+  background: rgba(211, 166, 99, 0.2);
+}
+
+.loot-popup__draw-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.loot-popup__drawn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.loot-popup__card-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.loot-popup__card-img {
+  width: 80px;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+}
+
+.loot-popup__card-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-transform: capitalize;
+}
+
+.loot-popup__assign-btn {
+  width: 100%;
+  height: 48px;
+  background: rgba(74, 124, 89, 0.15);
+  border: 1px solid var(--health-green);
+  border-radius: var(--radius-md);
+  color: var(--health-green);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ================================================================
+   INITIATIVE TIMELINE — Centered Carousel Overlay
+   ================================================================ */
+
+.phone-timeline {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  animation: phone-fade-in 0.3s ease;
+}
+
+.phone-timeline__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.phone-timeline__banner {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-8) var(--space-4) var(--space-4);
+}
+
+.phone-timeline__active-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-transform: capitalize;
+  text-shadow: 0 0 16px rgba(211, 166, 99, 0.4);
+}
+
+.phone-timeline__carousel {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Gold bar at initiative number level — runs behind numbers */
+.phone-timeline__gold-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Positioned at bottom of carousel where init numbers sit */
+  bottom: calc(50% - 52px);
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(211, 166, 99, 0.2) 5%,
+    var(--accent-gold) 30%,
+    var(--accent-gold) 70%,
+    rgba(211, 166, 99, 0.2) 95%,
+    transparent 100%
+  );
+  z-index: 0;
+}
+
+.phone-timeline__track {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-6);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding: var(--space-4) 40%;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.phone-timeline__track::-webkit-scrollbar {
+  display: none;
+}
+
+.phone-timeline__figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.phone-timeline__figure--done {
+  opacity: 0.3;
+}
+
+.phone-timeline__portrait {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  background: var(--bg-card);
+  transition: all 0.5s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.phone-timeline__figure--active .phone-timeline__portrait {
+  width: 76px;
+  height: 76px;
+  border-color: var(--accent-gold);
+  border-width: 3px;
+  box-shadow:
+    0 0 24px rgba(211, 166, 99, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.phone-timeline__figure--player .phone-timeline__portrait {
+  border-color: var(--phone-accent, var(--accent-copper));
+}
+
+.phone-timeline__figure--active.phone-timeline__figure--player .phone-timeline__portrait {
+  border-color: var(--accent-gold);
+  box-shadow:
+    0 0 24px rgba(211, 166, 99, 0.5),
+    inset 0 0 0 2px var(--phone-accent, var(--accent-copper)),
+    0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.phone-timeline__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Initiative number with background to break gold bar */
+.phone-timeline__init-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 20px;
+  background: rgba(10, 8, 6, 0.95);
+  border-radius: 10px;
+  padding: 0 var(--space-1);
+}
+
+.phone-timeline__init {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.phone-timeline__figure--active .phone-timeline__init {
+  color: var(--accent-gold);
+  font-size: 0.85rem;
+}
+
+.phone-timeline__dismiss {
+  position: relative;
+  z-index: 1;
+  margin: var(--space-4) var(--space-6) var(--space-8);
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg-card);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-md);
+  color: var(--accent-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.phone-timeline__dismiss:active {
+  background: var(--bg-elevated);
+}
+
+/* ================================================================
+   CONDITION SPLASH OVERLAYS
+   ================================================================ */
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  animation: splash-fade-in 0.4s ease;
+}
+
+@keyframes splash-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.splash-overlay__bg {
+  position: absolute;
+  inset: 0;
+}
+
+.splash-overlay__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8);
+  max-width: 340px;
+}
+
+.splash-overlay__icon {
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--space-6);
+  filter: drop-shadow(0 0 24px currentColor);
+}
+
+.splash-overlay__title {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: var(--space-3);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.splash-overlay__title--positive {
+  color: var(--health-green);
+}
+
+.splash-overlay__subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+.splash-overlay__hint {
+  position: absolute;
+  bottom: var(--space-8);
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+  z-index: 1;
+}
+
+/* ── Wound splash ── */
+.splash--wound .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(160, 20, 20, 0.4) 0%,
+    rgba(80, 10, 10, 0.6) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+  animation: wound-pulse 1.5s ease-in-out;
+}
+
+.splash--wound .splash-overlay__title { color: #e04040; }
+.splash--wound .splash-overlay__icon { color: #e04040; }
+
+@keyframes wound-pulse {
+  0% { opacity: 0.5; }
+  30% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* ── Stun splash ── */
+.splash--stun .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(60, 80, 120, 0.5) 0%,
+    rgba(30, 40, 60, 0.6) 40%,
+    rgba(0, 0, 0, 0.9) 80%
+  );
+  animation: stun-shake 0.5s ease-in-out;
+}
+
+.splash--stun .splash-overlay__title { color: #8899bb; }
+.splash--stun .splash-overlay__icon { color: #8899bb; }
+
+@keyframes stun-shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-4px); }
+  30% { transform: translateX(4px); }
+  45% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+  90% { transform: translateX(2px); }
+}
+
+/* ── Poison splash ── */
+.splash--poison .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(30, 100, 30, 0.4) 0%,
+    rgba(15, 60, 15, 0.5) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--poison .splash-overlay__title { color: #40c040; }
+.splash--poison .splash-overlay__icon { color: #40c040; }
+
+/* ── Disarm splash ── */
+.splash--disarm .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(160, 80, 20, 0.4) 0%,
+    rgba(80, 40, 10, 0.5) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--disarm .splash-overlay__title { color: #dd7733; }
+.splash--disarm .splash-overlay__icon { color: #dd7733; }
+
+/* ── Immobilize splash ── */
+.splash--immobilize .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(100, 70, 30, 0.4) 0%,
+    rgba(60, 40, 20, 0.5) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--immobilize .splash-overlay__title { color: #aa8844; }
+.splash--immobilize .splash-overlay__icon { color: #aa8844; }
+
+/* ── Muddle splash ── */
+.splash--muddle .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(90, 60, 120, 0.45) 0%,
+    rgba(50, 30, 70, 0.55) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--muddle .splash-overlay__title { color: #9977bb; }
+.splash--muddle .splash-overlay__icon { color: #9977bb; }
+
+/* ── Bane splash ── */
+.splash--bane .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(60, 20, 80, 0.5) 0%,
+    rgba(30, 10, 40, 0.6) 40%,
+    rgba(0, 0, 0, 0.9) 80%
+  );
+}
+
+.splash--bane .splash-overlay__title { color: #aa44dd; }
+.splash--bane .splash-overlay__icon { color: #aa44dd; }
+
+/* ── Regenerate splash (positive) ── */
+.splash--regenerate .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(74, 124, 89, 0.3) 0%,
+    rgba(40, 80, 50, 0.4) 40%,
+    rgba(0, 0, 0, 0.8) 80%
+  );
+  animation: regen-glow 1.5s ease-in-out;
+}
+
+.splash--regenerate .splash-overlay__title { color: var(--health-green); }
+.splash--regenerate .splash-overlay__icon { color: var(--health-green); }
+
+@keyframes regen-glow {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* ── Strengthen splash (positive) ── */
+.splash--strengthen .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(211, 166, 99, 0.3) 0%,
+    rgba(120, 80, 30, 0.4) 40%,
+    rgba(0, 0, 0, 0.8) 80%
+  );
+}
+
+.splash--strengthen .splash-overlay__title { color: var(--accent-gold); }
+.splash--strengthen .splash-overlay__icon { color: var(--accent-gold); }
+
+/* ── Invisible splash (positive) ── */
+.splash--invisible .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(180, 200, 220, 0.25) 0%,
+    rgba(80, 100, 120, 0.35) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--invisible .splash-overlay__title { color: #aaccee; }
+.splash--invisible .splash-overlay__icon { color: #aaccee; }
+
+/* ── Ward splash (positive) ── */
+.splash--ward .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(74, 122, 173, 0.3) 0%,
+    rgba(40, 70, 100, 0.4) 40%,
+    rgba(0, 0, 0, 0.8) 80%
+  );
+}
+
+.splash--ward .splash-overlay__title { color: var(--shield-blue); }
+.splash--ward .splash-overlay__icon { color: var(--shield-blue); }
+
+/* ── Brittle splash ── */
+.splash--brittle .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(150, 120, 80, 0.4) 0%,
+    rgba(80, 60, 40, 0.5) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--brittle .splash-overlay__title { color: #cc9966; }
+.splash--brittle .splash-overlay__icon { color: #cc9966; }
+
+/* ── Impair splash ── */
+.splash--impair .splash-overlay__bg {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(120, 80, 50, 0.4) 0%,
+    rgba(60, 40, 25, 0.5) 40%,
+    rgba(0, 0, 0, 0.85) 80%
+  );
+}
+
+.splash--impair .splash-overlay__title { color: #bb7744; }
+.splash--impair .splash-overlay__icon { color: #bb7744; }
+
+/* ================================================================
+   CHARACTER THEMING — rich per-character mat colors
+   Uses --phone-bg (dark bg tint), --phone-accent (primary),
+   --phone-flair (secondary) set on :root from characterThemes.ts
+   ================================================================ */
+
+/* ── Background tint from character mat ── */
+.phone-scenario {
+  background: var(--phone-bg, var(--bg-primary));
+}
+
+.phone-scenario::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.015) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Cards and panels pick up themed tint ── */
+.phone-header,
+.phone-init,
+.phone-control-row__hp,
+.phone-conditions__icon,
+.phone-counters {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── HP bar fill uses accent ── */
+.phone-header__hp-fill {
+  opacity: 0.45;
+}
+
+/* ── Initiative active state ── */
+.phone-init--active {
+  border-color: var(--phone-accent, var(--accent-gold));
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.05);
+}
+
+.phone-init--active .phone-init__value {
+  border-color: var(--phone-accent, var(--accent-gold));
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
+}
+
+.phone-init--active .phone-init__number {
+  color: var(--phone-accent, var(--accent-gold));
+}
+
+/* ── Turn banner ── */
+.phone-turn--active {
+  border-color: var(--phone-accent, var(--accent-gold));
+  color: var(--phone-accent, var(--accent-gold));
+}
+
+/* ── End Turn button ── */
+.phone-control-row__end-turn {
+  border-color: var(--phone-accent, var(--accent-gold));
+  color: var(--phone-accent, var(--accent-gold));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Accent bar on header ── */
+.phone-header__accent-bar {
+  background: var(--phone-accent, var(--accent-copper));
+  box-shadow: 0 1px 12px var(--phone-accent, var(--accent-copper));
+}
+
+/* ── Character thumbnail border ── */
+.phone-header__thumb {
+  border-color: var(--phone-accent, var(--accent-copper));
+}
+
+/* ── Numpad accent ── */
+.phone-numpad__value {
+  color: var(--phone-accent, var(--accent-gold));
+}
+
+.phone-numpad__confirm--ready {
+  border-color: var(--phone-accent, var(--accent-gold));
+  color: var(--phone-accent, var(--accent-gold));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Detail overlay name ── */
+.phone-detail__name {
+  color: var(--phone-accent, var(--accent-gold));
+}
+
+/* ── Flair color accents (secondary highlights) ── */
+.phone-header__hp-text {
+  color: var(--phone-flair, var(--text-primary));
+}
+
+.phone-conditions__add:active {
+  border-color: var(--phone-flair, var(--accent-gold));
+  color: var(--phone-flair, var(--accent-gold));
+}
+
+/* ================================================================
+   LANDSCAPE LAYOUT
+   ================================================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .phone-scenario {
+    max-width: 100%;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0));
+  }
+
+  .phone-scenario__body {
+    display: grid;
+    grid-template-columns: 55% 45%;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* Left column: control row, elements, conditions, fills down */
+  .phone-control-row {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .phone-control-row__end-turn,
+  .phone-control-row__hp-btn {
+    height: 40px;
+  }
+
+  .phone-control-row__hp-btn {
+    width: 36px;
+  }
+
+  .phone-elements {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .phone-conditions {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  /* Turn banner spans full if visible */
+  .phone-turn {
+    grid-column: 1 / -1;
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.75rem;
+  }
+
+  /* Right column: reserved for summons (future) */
+
+  /* Compact initiative */
+  .phone-init__value {
+    width: 42px;
+    height: 42px;
+  }
+
+  .phone-init__number {
+    font-size: 1.1rem;
+  }
+
+  /* Footer bigger in landscape */
+  .phone-actions {
+    padding: var(--space-2) var(--space-4);
+    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0));
+  }
+
+  .phone-actions__counter-val {
+    font-size: 1.1rem;
+  }
+
+  .phone-actions__counter-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+
+  /* Numpad fits landscape viewport */
+  .phone-numpad {
+    padding: var(--space-3);
+    max-width: 300px;
+    max-height: calc(100vh - var(--space-4));
+    overflow-y: auto;
+  }
+
+  .phone-numpad__key {
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .phone-numpad__grid {
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  .phone-numpad__display {
+    margin-bottom: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .phone-numpad__value {
+    font-size: 1.8rem;
+  }
+
+  .phone-numpad__title {
+    margin-bottom: var(--space-2);
+    font-size: 0.8rem;
+  }
+
+  .phone-numpad__actions {
+    gap: var(--space-2);
+  }
+
+  .phone-numpad__cancel,
+  .phone-numpad__confirm {
+    height: 40px;
+    font-size: 0.75rem;
+  }
+
+  /* Compact header in landscape */
+  .phone-header__content {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .phone-header__thumb {
+    width: 36px;
+    height: 36px;
+  }
 }

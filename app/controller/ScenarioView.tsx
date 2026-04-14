@@ -217,7 +217,10 @@ export function ScenarioView() {
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
           onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}
-          onScenarioEnd={(outcome) => setActiveOverlay({ type: 'scenarioSummary', outcome })}
+          onScenarioEnd={(outcome) => {
+            commands.prepareScenarioEnd(outcome);
+            setActiveOverlay({ type: 'scenarioSummary', outcome });
+          }}
         />
       )}
 
@@ -229,7 +232,10 @@ export function ScenarioView() {
             commands.completeScenario(activeOverlay.outcome);
             setActiveOverlay({ type: 'none' });
           }}
-          onCancel={() => setActiveOverlay({ type: 'none' })}
+          onCancel={() => {
+            commands.cancelScenarioEnd();
+            setActiveOverlay({ type: 'none' });
+          }}
         />
       )}
 
