@@ -110,6 +110,35 @@ Append-only. Each entry: date, symptom, root cause, fix. Never delete entries.
 
 ---
 
+## 2026-04-14 — Batch 16: Diff Propagation Fix
+
+### B16.1: setupPhase/setupData changes not broadcast to clients
+**Symptom:** After controller sets `setupPhase` (via `prepareScenarioSetup`), phone clients don't receive the update. Setup phase transitions (`proceedToRules`, `proceedToBattleGoals`) require full page reload on all clients to take effect.
+**Root cause:** `diffStates.ts` has an explicit list of top-level GameState keys to diff. `setupPhase`, `setupData`, and `mode` were never added to this list, so changes to these fields produce zero `StateChange` entries, and clients never receive the diffs.
+**Fix:** Added `'mode'` and `'setupPhase'` to the `primitiveKeys` array in `diffStates.ts`. Added `'setupData'` to the section 8 object-keys array. All three fields are now diffed and broadcast like any other GameState field.
+
+### B16.2: Edition reverts to GH after completing FH scenario
+**Symptom:** Playing a Frosthaven scenario, completing it, going through town phase, and returning to lobby shows Gloomhaven as the edition. Scenario selection shows GH scenarios.
+**Root cause:** `state.edition` was only set by `createEmptyGameState()` (defaults to `'gh'`). No command ever updated it. The lobby's `selectedEdition` was client-local state that was lost when the component unmounted.
+**Fix:** `startScenario` and `prepareScenarioSetup` handlers in `applyCommand.ts` now set `after.edition = command.payload.edition`, persisting the edition to the server-side game state.
+
+### B16.3: Stale tsbuildinfo causing server compilation failures
+**Symptom:** Server TypeScript compilation fails with cryptic errors after shared package type changes (new `setupPhase`, `setupData`, `AppMode` fields).
+**Root cause:** Stale `tsconfig.tsbuildinfo` files in `packages/shared/` and `server/` retained old type signatures that conflicted with the new type definitions added in Batch 16.
+**Fix:** Deleted stale `.tsbuildinfo` files and rebuilt. These incremental compilation caches are regenerated automatically by `tsc`.
+
+---
+
+## 2026-04-14 — Known Issue: Session Role Confusion
+
+### OPEN: Controller registered as phone profile
+**Symptom:** Controller commands (e.g., `completeTownPhase`, `advancePhase`) are rejected by the server with a permission error. The server treats the controller connection as a phone client.
+**Root cause:** Under investigation. The `wsHub.ts` session/role tracking may incorrectly associate a controller WebSocket with a phone session, possibly due to session token reuse across browser tabs or stale localStorage entries.
+**Workaround:** Reconnect with a new game code or clear browser storage.
+**Status:** Must fix. Needs investigation in `wsHub.ts` `handleRegister()` and session token management.
+
+---
+
 ## 2026-04-14 — Batch 15: Phone View Adjustments (UX improvements, no bug fixes)
 
 *No bugs fixed in this batch.* Notable UX change: removed manual Exhaust button

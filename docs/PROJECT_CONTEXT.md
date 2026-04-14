@@ -90,8 +90,9 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 - Persistence: SQLite via better-sqlite3
 
 ## Current Phase
-Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 15 COMPLETE.
+Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 16 COMPLETE.
 Controller is feature-complete for scenario play.
+Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
 condition strip/picker, XP/loot counters, character detail overlay (swipe-to-close),
 action bar (auto-exhaust popup replaces manual button), element board (interactive
@@ -100,6 +101,13 @@ turn start, per-character accent theming, landscape two-column layout.
 Server enforces phone command permissions (whitelist + character match + global actions).
 Summon section deferred for joint controller development.
 FH loot deck draw integrated via PhoneLootDeckPopup.
+
+Multi-phase scenario setup workflow (Batch 16): 5-phase collaborative setup
+(Preview → Chores → Rules → Goals → Start). Controller shows enhanced scenario
+preview with monster portraits, room tiles, loot deck config. Auto-assigns setup
+chores to players by count. Phone overlays show assigned chores (with monster images),
+scenario briefing, and battle goal reminders. All devices synchronize via
+`state.setupPhase` and `state.setupData` broadcast.
 
 ## Documentation Policy
 All project documents MUST be updated to reflect any code changes before committing
@@ -127,7 +135,10 @@ setLevel, setExperience, setLoot, toggleExhausted, toggleAbsent,
 toggleLongRest, renameCharacter, setLevelAdjustment, setRound,
 addSummon, removeSummon, addMonsterGroup, removeMonsterGroup,
 setMonsterLevel, importGhsState, updateCampaign,
-prepareScenarioEnd, cancelScenarioEnd, completeScenario
+prepareScenarioEnd, cancelScenarioEnd, completeScenario,
+prepareScenarioSetup, confirmChore, proceedToRules,
+proceedToBattleGoals, cancelScenarioSetup, startScenario,
+completeTownPhase
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
@@ -147,12 +158,12 @@ prepareScenarioEnd, cancelScenarioEnd, completeScenario
 Phone clients are restricted server-side to character-scoped commands
 (setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
 toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
-toggleTurn, renameCharacter). Each command's target must match the phone's
-registered characterName. Commands targeting summons are allowed if the summon
-owner matches. Additionally, `moveElement` and `drawLootCard` are in a
-`PHONE_GLOBAL_ACTIONS` set that bypasses character-name validation (these are
-game-global actions with no character target). All other commands are rejected
-with an error.
+toggleTurn, renameCharacter, confirmChore). Each command's target must match
+the phone's registered characterName. Commands targeting summons are allowed
+if the summon owner matches. Additionally, `moveElement` and `drawLootCard`
+are in a `PHONE_GLOBAL_ACTIONS` set that bypasses character-name validation
+(these are game-global actions with no character target). All other commands
+are rejected with an error.
 
 ## Build Process
 - `app/build.mjs` — builds all three Preact client apps via esbuild

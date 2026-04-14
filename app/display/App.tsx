@@ -5,6 +5,7 @@ import { useConnection } from '../hooks/useConnection';
 import { ConnectionScreen } from './ConnectionScreen';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
+import { LobbyWaitingView } from './LobbyWaitingView';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
 export function App() {
@@ -39,7 +40,7 @@ export function App() {
   }
 
   // Connected — immediately show game view (display is read-only, no setup)
-  const mode: AppMode = state.mode ?? 'scenario';
+  const mode: AppMode = state.mode ?? 'lobby';
 
   return (
     <ErrorBoundary>
@@ -48,7 +49,9 @@ export function App() {
         gameCode, error, disconnect,
       }}>
         <div class="app-shell">
-          {mode === 'town'
+          {mode === 'lobby'
+            ? <LobbyWaitingView />
+            : mode === 'town'
             ? <TownView />
             : <ScenarioView />
           }

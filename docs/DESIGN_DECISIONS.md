@@ -350,6 +350,46 @@ comment. Deferred until joint development with the controller summon system.
 the controller handles summons. Building it independently risks divergence.
 Stubbing it now keeps the component slot in place for later implementation.
 
+### 2026-04-14 — Campaign mode as default, GH as default edition
+**Decision:** New games default to `party.campaignMode = true` and `edition = 'gh'`. The game mode selection screen (Campaign/One-Off) is accessible from the lobby's "Settings" button but not shown on first load.
+**Rationale:** Most players run campaigns. Requiring an explicit mode selection on every new game code adds friction. GH is the most common edition and a sensible default. One-off mode can be enabled from settings for casual play.
+
+### 2026-04-14 — Spoiler masking for locked characters
+**Decision:** Character selection in the lobby checks the `spoiler` field from character data and the `unlockedCharacters` arrays on both `GameState` and `Party`. Locked characters show the class SVG icon and `characterClass` name instead of portrait and real name. They cannot be selected.
+**Rationale:** Gloomhaven has locked character classes that are unlocked through retirement and campaign progression. Showing their full names and portraits is a spoiler. The GHS character data includes a `spoiler: boolean` field and class icon SVGs exist at `assets/ghs/images/character/icons/{edition}-{name}.svg`.
+
+### 2026-04-14 — Battle goal card dealing via data API
+**Decision:** Added `/api/data/:edition/battle-goals` endpoint that reads from `.staging/ghs-client/data/{edition}/battle-goals.json`. Phone LobbyView fetches and deals random cards during the goals phase.
+**Rationale:** Battle goal data (cardId, name, checks) exists in GHS data files. Dealing happens client-side (random shuffle + slice) since the server doesn't track which goals each player received. The dealt cards are stable per component mount via `useMemo`.
+
+### 2026-04-14 — Town phase placeholder with step reminders
+**Decision:** After `completeScenario`, mode transitions to `'town'` (not `'lobby'`). The TownView shows an ordered list of town phase steps (edition-appropriate: GH has 3 steps, FH has 5). A "Town Phase Complete" button fires `completeTownPhase` which transitions to `'lobby'` for scenario selection. Travel phase reminder is included.
+**Rationale:** The full game loop is: scenario → town → travel → scenario. Even without town phase implementation, showing the steps as a checklist keeps players aware of the physical actions needed between scenarios. The placeholder establishes the mode transition pattern for future development.
+
+### 2026-04-14 — Lobby as a first-class AppMode
+**Decision:** Added `'lobby'` to the `AppMode` union type. New games start in lobby mode. The lobby is a dedicated full-screen view, not an overlay on ScenarioView.
+**Rationale:** The overlay-based setup approach had three problems: (1) overlays inside ScenarioView's scroll container caused stacking context issues on iOS Safari, (2) the "no game in progress" empty state was confusing limbo that didn't clearly communicate the app's state, (3) reconnecting clients had no way to know if setup was in progress without client-side guessing. Making lobby a server-driven mode (`state.mode = 'lobby'`) solves all three: it uses the existing mode routing infrastructure, provides clear separation from scenario play, and handles reconnection automatically.
+
+### 2026-04-14 — Campaign vs One-Off game modes
+**Decision:** First connection to a game code presents a "Campaign" or "One-Off" choice. Campaign mode locks in edition and party, so returning connections skip directly to scenario selection. One-off mode shows the full edition → party → scenario flow each time.
+**Rationale:** Campaign players don't want to re-select their edition and characters every session. Using `state.party.campaignMode` (already in the GHS Party type) the lobby skip logic is trivial: if `campaignMode && hasCharacters`, jump to scenario selection. Future campaign management (character retirement, party changes) will be handled via a dedicated campaign menu.
+
+### 2026-04-14 — startScenario command atomically transitions to scenario mode
+**Decision:** Added `startScenario` command that atomically: runs `handleSetScenario` (spawns monsters, builds decks), sets `mode = 'scenario'`, and clears `setupPhase`/`setupData`. Replaces the previous two-command pattern of `setScenario` + `cancelScenarioSetup`.
+**Rationale:** Calling two separate commands left a window where the mode was wrong (still lobby but scenario was being set up). The atomic command ensures all clients transition simultaneously and cleanly.
+
+### 2026-04-14 — Multi-phase scenario setup with chore assignment
+**Decision:** Scenario setup uses a 5-phase collaborative workflow (Preview → Chores → Rules → Goals → Start) mirroring the two-phase `prepareScenarioEnd` pattern. New GameState fields `setupPhase` and `setupData` broadcast setup state to all clients. Five new commands: `prepareScenarioSetup`, `confirmChore`, `proceedToRules`, `proceedToBattleGoals`, `cancelScenarioSetup`.
+**Rationale:** The immediate `setScenario` flow gave no time for physical table setup. Players scrambled to find standees, tiles, and decks simultaneously. The multi-phase workflow assigns specific chores to each player's phone (monsters, map tiles, overlays, decks) based on player count. Auto-assignment distributes work evenly. Each player confirms completion on their phone, creating a synchronized checkpoint before the GM advances. The rules phase ensures all players see scenario level and derived values. Battle goals phase reminds players of the deal count per edition.
+
+### 2026-04-14 — Chore auto-assignment by player count
+**Decision:** Controller auto-assigns chores based on active character count: 1 player gets all, 2 players split monsters/tiles, 3 players spread monsters/map/overlays, 4 players add deck collection as a fourth chore.
+**Rationale:** Manual assignment would slow down the setup flow. The auto-assignment is a reasonable default for most scenarios. The chore data is sent in the `prepareScenarioSetup` command payload, so the server doesn't need to know about the assignment logic.
+
+### 2026-04-14 — Data-driven vs book-reference approach for scenario preview
+**Decision:** The enhanced scenario preview shows all data available from GHS JSON files (monster types with portraits, room tile references, loot deck config, rule count). For win conditions and detailed rules text, it shows "See Scenario Book" since this narrative content is not in the JSON data.
+**Rationale:** The GHS scenario JSON files contain comprehensive structural data (monsters, rooms, overlays, rules conditions) but not the narrative text from the scenario book. Showing what we have is useful (monster portraits help identify standees, tile references help find map tiles), and the book reference keeps the GM anchored to the physical components.
+
 ### 2026-04-14 — Loot read-only on phone
 **Decision:** Phone loot counter is read-only (no +/- buttons). Loot
 assignment is managed by the controller. FH loot draw button triggers

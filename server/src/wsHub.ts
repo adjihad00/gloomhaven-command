@@ -26,6 +26,7 @@ const PHONE_ALLOWED_ACTIONS: ReadonlySet<CommandAction> = new Set([
   'renameCharacter',
   'moveElement',
   'drawLootCard',
+  'confirmChore',
 ]);
 
 /** Phone commands that are global (not character-targeted) — skip character-name check. */

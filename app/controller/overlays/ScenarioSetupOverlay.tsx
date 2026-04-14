@@ -1,12 +1,134 @@
 import { h } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
-import type { GameState, ScenarioData } from '@gloomhaven-command/shared';
+import type { GameState, ScenarioData, ChoreAssignment, ChoreItem } from '@gloomhaven-command/shared';
 import { calculateScenarioLevel, deriveLevelValues } from '@gloomhaven-command/shared';
 import { useCommands } from '../../hooks/useCommands';
 import { useEditions, useCharacterList, useScenarioList, useDataApi } from '../../hooks/useDataApi';
 import { OverlayBackdrop } from './OverlayBackdrop';
 import { formatName } from '../../shared/formatName';
-import { characterThumbnail } from '../../shared/assets';
+import { characterThumbnail, monsterThumbnail } from '../../shared/assets';
+
+/** Small component to fetch and display a single monster's data */
+function MonsterPreviewCard({ edition, name }: { edition: string; name: string }) {
+  const { data } = useDataApi<any>(`${edition}/monster/${name}`, true);
+  return (
+    <div class="scenario-preview__monster-card">
+      <img
+        src={monsterThumbnail(edition, name)}
+        alt={formatName(name)}
+        class="scenario-preview__monster-img"
+        loading="lazy"
+      />
+      <span class="scenario-preview__monster-name">{formatName(name)}</span>
+      {data?.count && (
+        <span class="scenario-preview__monster-count">{data.count} standees</span>
+      )}
+    </div>
+  );
+}
+
+/** Build chore assignments from scenario data and active characters */
+function buildChoreAssignments(
+  scenarioData: ScenarioData,
+  characters: GameState['characters'],
+  edition: string,
+): ChoreAssignment[] {
+  const active = characters.filter(c => !c.absent && !c.exhausted);
+  if (active.length === 0) return [];
+
+  const monsterItems: ChoreItem[] = (scenarioData.monsters || []).map(name => ({
+    name: formatName(name),
+    dataName: name,
+    imageUrl: monsterThumbnail(edition, name),
+  }));
+
+  const mapItems: ChoreItem[] = (scenarioData.rooms || []).map(r => ({
+    name: `Tile ${r.ref || `Room ${r.roomNumber}`}`,
+    ref: r.ref,
+    roomNumber: r.roomNumber,
+    description: r.initial ? 'Starting room' : undefined,
+  }));
+
+  const overlayItems: ChoreItem[] = [{
+    name: 'Overlay tiles for all rooms',
+    description: 'Set up overlay tiles per Scenario Book. Place Room 1 overlays only during initial setup.',
+  }];
+
+  const deckItems: ChoreItem[] = (scenarioData.monsters || []).map(name => ({
+    name: `${formatName(name)} ability deck + stat card`,
+    dataName: name,
+  }));
+
+  const chores: ChoreAssignment[] = [];
+
+  if (active.length === 1) {
+    chores.push({
+      characterName: active[0].name,
+      edition: active[0].edition || edition,
+      choreType: 'monsters',
+      items: [...monsterItems, ...mapItems, ...overlayItems],
+    });
+  } else if (active.length === 2) {
+    chores.push({
+      characterName: active[0].name,
+      edition: active[0].edition || edition,
+      choreType: 'monsters',
+      items: monsterItems,
+    });
+    chores.push({
+      characterName: active[1].name,
+      edition: active[1].edition || edition,
+      choreType: 'map',
+      items: [...mapItems, ...overlayItems],
+    });
+  } else if (active.length === 3) {
+    chores.push({
+      characterName: active[0].name,
+      edition: active[0].edition || edition,
+      choreType: 'monsters',
+      items: monsterItems,
+    });
+    chores.push({
+      characterName: active[1].name,
+      edition: active[1].edition || edition,
+      choreType: 'map',
+      items: mapItems,
+    });
+    chores.push({
+      characterName: active[2].name,
+      edition: active[2].edition || edition,
+      choreType: 'overlays',
+      items: overlayItems,
+    });
+  } else {
+    chores.push({
+      characterName: active[0].name,
+      edition: active[0].edition || edition,
+      choreType: 'monsters',
+      items: monsterItems,
+    });
+    chores.push({
+      characterName: active[1].name,
+      edition: active[1].edition || edition,
+      choreType: 'map',
+      items: mapItems,
+    });
+    chores.push({
+      characterName: active[2].name,
+      edition: active[2].edition || edition,
+      choreType: 'overlays',
+      items: overlayItems,
+    });
+    chores.push({
+      characterName: active[3].name,
+      edition: active[3].edition || edition,
+      choreType: 'decks',
+      items: deckItems,
+    });
+  }
+
+  return chores;
+}
 
 interface ScenarioSetupOverlayProps {
   state: GameState;
@@ -142,65 +264,173 @@ export function ScenarioSetupOverlay({ state, onClose }: ScenarioSetupOverlayPro
     return spawns;
   }, [scenarioData, playerCount]);
 
-  // ── Scenario Preview Step ──
+  // ── Scenario Preview Step (Enhanced) ──
   if (step === 'scenarioPreview' && previewScenario) {
+    const choreLabel: Record<string, string> = {
+      monsters: 'Monster Standees',
+      map: 'Map Tiles',
+      overlays: 'Overlay Tiles',
+      decks: 'Stat Cards & Ability Decks',
+    };
+
+    const handleAssignChores = () => {
+      if (!scenarioData) return;
+      const chores = buildChoreAssignments(scenarioData, state.characters, selectedEdition);
+      const s = scenarios?.find((sc: any) => sc.index === previewScenario.index);
+      commands.prepareScenarioSetup(previewScenario.index, selectedEdition, chores, s?.group);
+      onClose();
+    };
+
     return (
       <OverlayBackdrop onClose={onClose} position="right">
         <div class="setup-overlay">
-          <h2 class="setup-overlay__title">Scenario Preview</h2>
+          <div class="scenario-preview__header">
+            <button class="btn scenario-preview__back" onClick={() => { setStep('scenario'); setPreviewScenario(null); }}>
+              Back
+            </button>
+            <h2 class="setup-overlay__title">Scenario Preview</h2>
+          </div>
 
           <div class="setup-overlay__section">
-            <div class="scenario-preview__header">
+            <div class="scenario-preview__title-row">
               <span class="scenario-preview__number">#{previewScenario.index}</span>
               <span class="scenario-preview__name">{previewScenario.name}</span>
             </div>
-
-            {scenarioData && (
-              <div class="scenario-preview__info">
-                <span>{scenarioData.rooms?.length ?? 0} rooms</span>
-                <span>{scenarioData.monsters?.length ?? 0} monster types</span>
-              </div>
-            )}
-
-            {scenarioData?.monsters && scenarioData.monsters.length > 0 && (
-              <div class="scenario-preview__monsters">
-                <label class="setup-overlay__label">Monsters</label>
-                {scenarioData.monsters.map(name => (
-                  <div key={name} class="scenario-preview__monster-row">
-                    <span>{formatName(name)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {room1Spawns.length > 0 && (
-              <div class="scenario-preview__spawns">
-                <label class="setup-overlay__label">
-                  Room 1 Spawns ({playerCount} player{playerCount !== 1 ? 's' : ''})
-                </label>
-                <div class="scenario-preview__spawn-list">
-                  {room1Spawns.map((s, i) => (
-                    <span key={i} class={`spawn-badge spawn-badge--${s.type}`}>
-                      {formatName(s.monsterName)} ({s.type})
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!scenarioData && <div class="setup-overlay__loading">Loading scenario data...</div>}
+            <div class="scenario-preview__meta">
+              <span>Edition: {selectedEdition.toUpperCase()}</span>
+              <span>Level: {state.level}</span>
+            </div>
           </div>
 
+          {!scenarioData && <div class="setup-overlay__loading">Loading scenario data...</div>}
+
+          {scenarioData && (
+            <>
+              {/* Monster types */}
+              {scenarioData.monsters && scenarioData.monsters.length > 0 && (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">
+                    Monster Types ({scenarioData.monsters.length})
+                  </label>
+                  <div class="scenario-preview__monster-grid">
+                    {scenarioData.monsters.map(name => (
+                      <MonsterPreviewCard key={name} edition={selectedEdition} name={name} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Map tiles */}
+              {scenarioData.rooms && scenarioData.rooms.length > 0 && (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">
+                    Map Tiles ({scenarioData.rooms.length} rooms)
+                  </label>
+                  <div class="scenario-preview__room-list">
+                    {scenarioData.rooms.map(r => (
+                      <div key={r.roomNumber} class="scenario-preview__room-item">
+                        <span class="scenario-preview__room-ref">{r.ref || `Room ${r.roomNumber}`}</span>
+                        {r.initial && <span class="scenario-preview__room-initial">Start</span>}
+                        {(r as any).treasures?.length > 0 && (
+                          <span class="scenario-preview__room-treasure">
+                            Treasure: {(r as any).treasures.join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Room 1 spawns */}
+              {room1Spawns.length > 0 && (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">
+                    Room 1 Spawns ({playerCount} player{playerCount !== 1 ? 's' : ''})
+                  </label>
+                  <div class="scenario-preview__spawn-list">
+                    {room1Spawns.map((s, i) => (
+                      <span key={i} class={`spawn-badge spawn-badge--${s.type}`}>
+                        {formatName(s.monsterName)} ({s.type})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Loot deck config (FH) */}
+              {(scenarioData as any).lootDeckConfig && (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">Loot Deck</label>
+                  <div class="scenario-preview__loot-config">
+                    {Object.entries((scenarioData as any).lootDeckConfig)
+                      .filter(([, v]) => (v as number) > 0)
+                      .map(([type, count]) => (
+                        <span key={type} class="scenario-preview__loot-pill">
+                          {formatName(type)}: {count as number}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Special rules */}
+              {(scenarioData as any).rules && (scenarioData as any).rules.length > 0 ? (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">Special Rules</label>
+                  <div class="scenario-preview__rules-note">
+                    {(scenarioData as any).rules.length} special rule(s) — see Scenario Book
+                  </div>
+                </div>
+              ) : (
+                <div class="setup-overlay__section">
+                  <label class="setup-overlay__label">Special Rules</label>
+                  <div class="scenario-preview__rules-note">
+                    See Scenario Book for rules and win conditions
+                  </div>
+                </div>
+              )}
+
+              {/* Derived values */}
+              <div class="setup-overlay__section">
+                <div class="setup-overlay__derived">
+                  <span class="setup-overlay__derived-pill">
+                    <span class="setup-overlay__derived-label">Trap</span>
+                    <span class="setup-overlay__derived-value">{levelValues.trapDamage}</span>
+                  </span>
+                  <span class="setup-overlay__derived-pill">
+                    <span class="setup-overlay__derived-label">Gold</span>
+                    <span class="setup-overlay__derived-value">{levelValues.goldConversion}</span>
+                  </span>
+                  <span class="setup-overlay__derived-pill">
+                    <span class="setup-overlay__derived-label">XP</span>
+                    <span class="setup-overlay__derived-value">{levelValues.bonusXP}</span>
+                  </span>
+                  <span class="setup-overlay__derived-pill">
+                    <span class="setup-overlay__derived-label">Hazard</span>
+                    <span class="setup-overlay__derived-value">{levelValues.hazardousTerrain}</span>
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
           <div class="scenario-preview__actions">
-            <button class="btn" onClick={() => { setStep('scenario'); setPreviewScenario(null); }}>
-              Back
-            </button>
             <button
               class="btn btn-primary"
+              onClick={handleAssignChores}
+              disabled={!scenarioData || state.characters.length === 0}
+              aria-label="Assign setup chores to players"
+            >
+              Assign Chores
+            </button>
+            <button
+              class="btn"
               onClick={handleConfirmScenario}
               disabled={!scenarioData}
+              aria-label="Skip setup and start scenario"
             >
-              Start Scenario
+              Start Scenario (Skip Setup)
             </button>
           </div>
         </div>

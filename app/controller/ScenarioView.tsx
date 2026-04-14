@@ -13,7 +13,6 @@ import { ScenarioHeader } from '../components/ScenarioHeader';
 import { ScenarioFooter } from '../components/ScenarioFooter';
 import { CharacterDetailOverlay } from './overlays/CharacterDetailOverlay';
 import { CharacterSheetOverlay } from './overlays/CharacterSheetOverlay';
-import { ScenarioSetupOverlay } from './overlays/ScenarioSetupOverlay';
 import { MenuOverlay } from './overlays/MenuOverlay';
 import { LootDeckOverlay } from './overlays/LootDeckOverlay';
 import { ScenarioSummaryOverlay } from './overlays/ScenarioSummaryOverlay';
@@ -25,7 +24,6 @@ type OverlayState =
   | { type: 'none' }
   | { type: 'characterDetail'; characterName: string }
   | { type: 'characterSheet'; characterName: string }
-  | { type: 'scenarioSetup' }
   | { type: 'menu' }
   | { type: 'lootDeck' }
   | { type: 'scenarioSummary'; outcome: 'victory' | 'defeat' };
@@ -113,22 +111,6 @@ export function ScenarioView() {
 
   if (!state) return <div class="scenario-empty"><p>Loading...</p></div>;
 
-  // Empty state — no characters and no scenario
-  if (characters.length === 0 && !state.scenario) {
-    return (
-      <div class="scenario-empty">
-        <h2>No Game in Progress</h2>
-        <p>Set up a scenario to begin.</p>
-        <button class="btn btn-primary" onClick={() => setActiveOverlay({ type: 'scenarioSetup' })}>
-          Scenario Setup
-        </button>
-        {activeOverlay.type === 'scenarioSetup' && (
-          <ScenarioSetupOverlay state={state} onClose={() => setActiveOverlay({ type: 'none' })} />
-        )}
-      </div>
-    );
-  }
-
   return (
     <div class="controller-scenario">
       <ScenarioHeader
@@ -202,13 +184,6 @@ export function ScenarioView() {
           />
         ) : null;
       })()}
-
-      {activeOverlay.type === 'scenarioSetup' && (
-        <ScenarioSetupOverlay
-          state={state}
-          onClose={() => setActiveOverlay({ type: 'none' })}
-        />
-      )}
 
       {activeOverlay.type === 'menu' && (
         <MenuOverlay

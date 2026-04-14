@@ -486,7 +486,36 @@ export interface FigureIdentifier {
 // ── App mode ─────────────────────────────────────────────────────────────────
 
 /** App-level mode: scenario play, town/outpost phase, or transitioning between */
-export type AppMode = 'scenario' | 'town' | 'transition';
+export type AppMode = 'scenario' | 'town' | 'transition' | 'lobby';
+
+// ── Scenario setup workflow ────────────────────────────────────────────────
+
+export type SetupPhase = 'chores' | 'rules' | 'goals';
+
+export interface ChoreItem {
+  name: string;
+  dataName?: string;
+  count?: number;
+  ref?: string;
+  roomNumber?: number;
+  imageUrl?: string;
+  description?: string;
+}
+
+export interface ChoreAssignment {
+  characterName: string;
+  edition: string;
+  choreType: 'monsters' | 'map' | 'overlays' | 'decks';
+  items: ChoreItem[];
+}
+
+export interface SetupData {
+  scenarioIndex: string;
+  edition: string;
+  group?: string;
+  chores: ChoreAssignment[];
+  choreConfirmations: Record<string, boolean>;
+}
 
 // ── Top-level game state ────────────────────────────────────────────────────
 
@@ -539,6 +568,8 @@ export interface GameState {
   unlockedCharacters: string[];
   server: boolean;
   finish?: ScenarioFinish;
+  setupPhase?: SetupPhase;
+  setupData?: SetupData;
   gameClock: GameClockTimestamp[];
   challengeDeck: ChallengeDeck;
   favors: Identifier[];

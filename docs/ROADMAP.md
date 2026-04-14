@@ -79,6 +79,32 @@
   - [x] Phone rewards overlay — auto-triggered on all phones, shows XP/gold/resources preview
   - [x] FH loot card viewer in character detail overlay
   - [x] Character switch button in detail overlay
+  - [x] Batch 16: Multi-phase scenario setup workflow
+    - [x] Enhanced scenario preview (monster portraits, room tiles, loot deck, rules)
+    - [x] Chore assignment system (auto-assigns monsters/map/overlays/decks to players)
+    - [x] Phone chore overlay with item list and confirmation
+    - [x] Rules phase overlay (scenario level, derived values, book references)
+    - [x] Battle goals phase overlay (edition-appropriate deal count)
+    - [x] 5 new commands (prepareScenarioSetup, confirmChore, proceedToRules, proceedToBattleGoals, cancelScenarioSetup)
+    - [x] Controller setup phase tracking overlay
+    - [x] Cancel at any phase dismisses all devices
+  - [x] Batch 16b: Lobby mode + campaign/one-off
+    - [x] Fix diff bug (mode, setupPhase, setupData not broadcast to clients)
+    - [x] Add 'lobby' as first-class AppMode (new games start in lobby)
+    - [x] Add startScenario command (atomic mode transition)
+    - [x] Controller LobbyView with sequential steps (mode → edition → party → scenario → preview → chores → rules → goals)
+    - [x] Campaign vs One-Off mode selection on first connection
+    - [x] Phone LobbyView (waiting screen + setup phase content)
+    - [x] Display LobbyWaitingView
+    - [x] Remove ScenarioSetupOverlay and SetupPhaseOverlay from ScenarioView
+    - [x] completeScenario transitions to town phase, then lobby
+  - [x] Batch 16c: Lobby refinements
+    - [x] Default to campaign mode + GH edition (skip mode selection on first load)
+    - [x] Graphical edition selection with GHS logo assets
+    - [x] Spoiler masking for locked characters (class icon + descriptive name)
+    - [x] Battle goal deck API endpoint + phone card dealing during goals phase
+    - [x] Town phase placeholder (step list, travel reminder, completeTownPhase command)
+    - [x] completeTownPhase command transitions town → lobby
 
 ## Phase 4: Display Client
 - [ ] Scaffold display HTML + TypeScript entry

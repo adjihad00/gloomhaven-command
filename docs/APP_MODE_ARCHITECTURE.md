@@ -1,15 +1,19 @@
 # Gloomhaven Command — App Mode Architecture
 
-Two operational modes across three device roles. Mode transitions are server
+Three operational modes across three device roles. Mode transitions are server
 commands — all devices switch simultaneously via WebSocket broadcast.
 
 ## Mode Flow
 
 ```
-TOWN MODE → Road Event (transition) → SCENARIO MODE → Scenario End (transition) → TOWN MODE
+LOBBY MODE → Scenario Setup → SCENARIO MODE → Scenario End → TOWN MODE → LOBBY MODE
+LOBBY MODE → (future: Road Event/Travel Phase) → SCENARIO MODE
 ```
 
-`GameState.mode`: `'town' | 'scenario' | 'transition'`
+`GameState.mode`: `'lobby' | 'scenario' | 'town' | 'transition'`
+
+New games start in `'lobby'` mode. `startScenario` transitions to `'scenario'`.
+`completeScenario` transitions to `'town'`. `completeTownPhase` transitions to `'lobby'`.
 
 ---
 
@@ -38,6 +42,7 @@ app/
 │   └── assets.ts         # asset URL helpers
 ├── controller/           # GM — iPad landscape, full control
 │   ├── main.tsx, index.html
+│   ├── LobbyView.tsx     # 8-step sequential setup flow
 │   ├── ScenarioView.tsx  # single-screen + overlays
 │   ├── TownView.tsx      # outpost phase stepper
 │   └── overlays/
@@ -45,6 +50,7 @@ app/
 │   ├── main.tsx, index.html
 │   ├── App.tsx           # connection → picker → mode routing
 │   ├── ConnectionScreen.tsx, CharacterPicker.tsx
+│   ├── LobbyView.tsx     # waiting screen + setup phase content
 │   ├── ScenarioView.tsx  # main scenario screen + overlay state machine
 │   ├── TownView.tsx      # tabbed character sheet (placeholder)
 │   ├── components/       # PhoneCharacterHeader, PhoneHealthBar,
@@ -58,11 +64,41 @@ app/
 │   └── styles/phone.css
 └── display/              # Monitor — portrait, read-only
     ├── main.tsx, index.html
-    ├── ScenarioView.tsx  # vertical tower layout
-    └── TownView.tsx      # outpost map, events, world map
+    ├── LobbyWaitingView.tsx  # simple waiting screen
+    ├── ScenarioView.tsx      # vertical tower layout
+    └── TownView.tsx          # outpost map, events, world map
 ```
 
 Three parallel esbuild builds. Tree-shaking gives each device only what it uses.
+
+---
+
+## LOBBY MODE
+
+### Controller (iPad, landscape)
+Full-screen sequential flow. Not an overlay — a dedicated view.
+
+**Steps:**
+1. **Game Mode** — Campaign or One-Off (first connection only)
+2. **Edition** — Select game edition
+3. **Party** — Add/remove characters with class grid and level selector
+4. **Scenario** — Scenario selection with search, level controls, derived values
+5. **Preview** — Enhanced scenario preview (monster portraits, room tiles, spawns, loot deck)
+6. **Chores** — Server-driven chore tracking (player confirmations, ✓/⏳ status)
+7. **Rules** — Scenario briefing (special rules reference, derived values)
+8. **Goals** — Battle goal reminder with "Start Scenario" button
+
+Campaign mode: Steps 1-2 skipped on return (jump to Step 4).
+Steps 1-5 are client-local state; Steps 6-8 are server-driven via `state.setupPhase`.
+
+### Phone (portrait)
+Two states based on `state.setupPhase`:
+- **Waiting** (no setupPhase): Character portrait + "Waiting for GM" message
+- **Setup active**: Shows chore assignment, rules briefing, or battle goal reminder
+  depending on current `setupPhase` value
+
+### Monitor (portrait)
+Simple "Setting up scenario..." waiting screen.
 
 ---
 
@@ -82,7 +118,8 @@ modifier deck floating overlay, loot deck badge.
 Overlays:
 - CharacterDetailOverlay — health, conditions, XP, loot, summons
 - CharacterSheetOverlay — stats tab with resources, campaign progress
-- ScenarioSetupOverlay — 3-step wizard (edition → characters → scenario)
+- ~~ScenarioSetupOverlay~~ — (deprecated, replaced by LobbyView in Batch 16b)
+- ~~SetupPhaseOverlay~~ — (deprecated, replaced by LobbyView in Batch 16b)
 - InitiativeNumpad — lifted to ScenarioView level (escapes scroll stacking context)
 - MenuOverlay — scenario end (victory/defeat), settings
 - ScenarioSummaryOverlay — per-character reward preview before commit
@@ -140,6 +177,14 @@ Overlays:
   Priority-ordered queue (stun first). Per-condition CSS effects (wound=red vignette,
   stun=shake+grey-blue, poison=green pulse, etc.). 4-second auto-dismiss or tap.
 
+**Setup overlays** (rendered from App.tsx during `state.setupPhase`):
+- **PhoneChoreOverlay** — full-screen chore assignment (monster standees, map tiles,
+  overlays). Shows monster portraits, item lists, "Task Complete" confirm button.
+- **PhoneRulesOverlay** — scenario briefing (special rules reference, win/loss
+  conditions, scenario level + derived values).
+- **PhoneBattleGoalOverlay** — battle goal reminder with edition-appropriate deal
+  count (GH=2, FH=3).
+
 Does NOT show: monsters, other characters, modifier decks, doors.
 
 ### Monitor (portrait, vertical tower)
@@ -150,7 +195,13 @@ with ability card + standee health, element board, round counter, scenario name.
 
 ## TOWN MODE
 
-### Controller (iPad)
+**Current state (Batch 16c):** Town mode is a placeholder. Controller and phone
+TownViews show an ordered checklist of town phase steps (edition-appropriate: GH has
+3 steps, FH has 5) plus a travel phase reminder. A "Town Phase Complete" button fires
+the `completeTownPhase` command, which transitions `mode` from `'town'` to `'lobby'`.
+Full town phase implementation is deferred to Phase T.
+
+### Controller (iPad) — Future Design
 
 **FH Outpost Phase — 5-step guided workflow:**
 1. Passage of Time — calendar with season marker, advance + section prompts
@@ -188,21 +239,21 @@ to selected mission. Road event card overlay.
 
 ## MODE TRANSITIONS
 
-### Scenario End → Town
-1. Win/loss determination
+### Scenario End → Town → Lobby
+1. Win/loss determination (`prepareScenarioEnd` → pending state on all devices)
 2. XP from dial → each character
 3. Gold from loot (gold × conversion rate)
 4. FH: Resources from loot cards
 5. Treasure claims, battle goals
 6. Scenario rewards (achievements, unlocks)
 7. FH: Inspiration (4 − character count)
-→ Automatic transition to Town Mode
+8. `completeScenario` → `state.mode = 'town'`
+9. Town phase checklist (placeholder) → `completeTownPhase` → `state.mode = 'lobby'`
 
-### Town → Scenario
-1. Scenario selected from world map
-2. Road event drawn → displayed on monitor, resolved on controller
-3. Transition to Scenario Mode
-4. All devices switch views simultaneously
+### Lobby → Scenario
+1. Controller steps through lobby flow (edition → party → scenario → preview → chores → rules → goals)
+2. `startScenario` command atomically: runs scenario setup, sets `mode = 'scenario'`, sets `edition`, clears `setupPhase`/`setupData`
+3. All devices switch to ScenarioView simultaneously
 
 ---
 

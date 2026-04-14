@@ -6,6 +6,7 @@ import type {
   MonsterType,
   SummonColor,
   FigureIdentifier,
+  ChoreAssignment,
 } from './gameState.js';
 
 // ── Command target ──────────────────────────────────────────────────────────
@@ -59,7 +60,14 @@ export type CommandAction =
   | 'updateCampaign'
   | 'prepareScenarioEnd'
   | 'cancelScenarioEnd'
-  | 'completeScenario';
+  | 'completeScenario'
+  | 'startScenario'
+  | 'prepareScenarioSetup'
+  | 'confirmChore'
+  | 'proceedToRules'
+  | 'proceedToBattleGoals'
+  | 'cancelScenarioSetup'
+  | 'completeTownPhase';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -291,6 +299,48 @@ export interface CompleteScenarioCommand {
   payload: { outcome: 'victory' | 'defeat' };
 }
 
+export interface StartScenarioCommand {
+  action: 'startScenario';
+  payload: { scenarioIndex: string; edition: string; group?: string };
+}
+
+// ── Scenario setup workflow commands ───────────────────────────────────────
+
+export interface PrepareScenarioSetupCommand {
+  action: 'prepareScenarioSetup';
+  payload: {
+    scenarioIndex: string;
+    edition: string;
+    group?: string;
+    chores: ChoreAssignment[];
+  };
+}
+
+export interface ConfirmChoreCommand {
+  action: 'confirmChore';
+  payload: { characterName: string; edition: string };
+}
+
+export interface ProceedToRulesCommand {
+  action: 'proceedToRules';
+  payload: Record<string, never>;
+}
+
+export interface ProceedToBattleGoalsCommand {
+  action: 'proceedToBattleGoals';
+  payload: Record<string, never>;
+}
+
+export interface CancelScenarioSetupCommand {
+  action: 'cancelScenarioSetup';
+  payload: Record<string, never>;
+}
+
+export interface CompleteTownPhaseCommand {
+  action: 'completeTownPhase';
+  payload: Record<string, never>;
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -334,7 +384,14 @@ export type Command =
   | UpdateCampaignCommand
   | PrepareScenarioEndCommand
   | CancelScenarioEndCommand
-  | CompleteScenarioCommand;
+  | CompleteScenarioCommand
+  | StartScenarioCommand
+  | PrepareScenarioSetupCommand
+  | ConfirmChoreCommand
+  | ProceedToRulesCommand
+  | ProceedToBattleGoalsCommand
+  | CancelScenarioSetupCommand
+  | CompleteTownPhaseCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

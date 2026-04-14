@@ -143,6 +143,16 @@ app.get('/api/data/:edition/monster-deck/:name', (req, res) => {
   data ? res.json(data) : res.status(404).json({ error: 'Deck not found' });
 });
 
+app.get('/api/data/:edition/battle-goals', (req, res) => {
+  const bgPath = join(stagingDataPath, req.params.edition, 'battle-goals.json');
+  try {
+    const data = JSON.parse(readFileSync(bgPath, 'utf-8'));
+    res.json(data);
+  } catch {
+    res.json([]);
+  }
+});
+
 app.get('/api/data/level-calc', (req, res) => {
   const levels = (req.query.levels as string || '').split(',').map(Number).filter((n) => !isNaN(n));
   const adj = parseInt(req.query.adjustment as string) || 0;

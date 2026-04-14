@@ -347,6 +347,40 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'startScenario':
+      return OK;
+
+    // ── Scenario setup workflow ──────────────────────────────────────────
+    case 'prepareScenarioSetup': {
+      const p = command.payload as any;
+      if (!p.scenarioIndex || !p.edition) {
+        return fail('prepareScenarioSetup requires scenarioIndex and edition');
+      }
+      return OK;
+    }
+
+    case 'confirmChore': {
+      if (state.setupPhase !== 'chores') return fail('Not in chore assignment phase');
+      const char = findCharacter(state, command.payload.characterName, command.payload.edition);
+      if (!char) return fail(`Character "${command.payload.characterName}" not found`);
+      return OK;
+    }
+
+    case 'proceedToRules':
+      if (state.setupPhase !== 'chores') return fail('Not in chore phase');
+      return OK;
+
+    case 'proceedToBattleGoals':
+      if (state.setupPhase !== 'rules') return fail('Not in rules phase');
+      return OK;
+
+    case 'cancelScenarioSetup':
+      if (!state.setupPhase) return fail('No setup in progress');
+      return OK;
+
+    case 'completeTownPhase':
+      return OK;
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

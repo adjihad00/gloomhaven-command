@@ -25,6 +25,14 @@ export function gameIcon(name: string): string {
   return `/assets/ghs/images/${name}.svg`;
 }
 
+export function editionLogo(edition: string): string {
+  return `/assets/ghs/images/logos/${edition}.png`;
+}
+
+export function characterIcon(edition: string, name: string): string {
+  return `/assets/ghs/images/character/icons/${edition}-${name}.svg`;
+}
+
 export function lootCardIcon(type: string, coinValue?: number): string {
   if (type === 'money' && coinValue) {
     return `/assets/ghs/images/fh/loot/loot-money${coinValue}.png`;

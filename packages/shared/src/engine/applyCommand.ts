@@ -173,6 +173,48 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'completeScenario':
       handleCompleteScenario(after, command.payload);
       break;
+    case 'startScenario':
+      handleSetScenario(after, command.payload, dataContext);
+      after.edition = command.payload.edition;
+      after.mode = 'scenario';
+      after.setupPhase = undefined;
+      after.setupData = undefined;
+      break;
+    case 'prepareScenarioSetup':
+      after.edition = command.payload.edition;
+      after.mode = 'lobby';
+      after.setupPhase = 'chores';
+      after.setupData = {
+        scenarioIndex: command.payload.scenarioIndex,
+        edition: command.payload.edition,
+        group: command.payload.group,
+        chores: command.payload.chores,
+        choreConfirmations: {},
+      };
+      break;
+    case 'confirmChore':
+      if (after.setupData) {
+        after.setupData = { ...after.setupData };
+        after.setupData.choreConfirmations = {
+          ...after.setupData.choreConfirmations,
+          [command.payload.characterName]: true,
+        };
+      }
+      break;
+    case 'proceedToRules':
+      if (after.setupPhase === 'chores') after.setupPhase = 'rules';
+      break;
+    case 'proceedToBattleGoals':
+      if (after.setupPhase === 'rules') after.setupPhase = 'goals';
+      break;
+    case 'cancelScenarioSetup':
+      after.setupPhase = undefined;
+      after.setupData = undefined;
+      break;
+    case 'completeTownPhase':
+      after.mode = 'lobby';
+      after.finish = undefined;
+      break;
     default: {
       const _exhaustive: never = command;
       throw new Error(`Unknown command action: ${(_exhaustive as Command).action}`);
@@ -1552,8 +1594,9 @@ function handleCompleteScenario(
     }
   }
 
-  // Store finish state
+  // Store finish state and transition to town phase
   state.finish = isVictory ? 'success' : 'failure';
+  state.mode = 'town';
 }
 
 function handleAddModifierCard(

@@ -7,6 +7,7 @@ import { ConnectionScreen } from './ConnectionScreen';
 import { EditionSelector } from './EditionSelector';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
+import { LobbyView } from './LobbyView';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
 export function App() {
@@ -36,17 +37,8 @@ export function App() {
     );
   }
 
-  // Connected but no edition — show edition selector
-  const activeEdition = state.edition || selectedEdition;
-  if (!activeEdition) {
-    return (
-      <EditionSelector
-        onSelect={(ed) => setSelectedEdition(ed)}
-      />
-    );
-  }
-
-  // Connected with edition — provide context and route by mode
+  // Connected — provide context and route by mode
+  // Edition selection is now handled by the lobby view
   return (
     <ErrorBoundary>
       <AppContext.Provider value={{
@@ -60,11 +52,13 @@ export function App() {
 }
 
 function AppShell({ state }: { state: GameState }) {
-  const mode: AppMode = state.mode ?? 'scenario';
+  const mode: AppMode = state.mode ?? 'lobby';
 
   return (
     <div class="app-shell">
-      {mode === 'town'
+      {mode === 'lobby'
+        ? <LobbyView />
+        : mode === 'town'
         ? <TownView />
         : <ScenarioView />
       }

@@ -2802,3 +2802,605 @@
     height: 36px;
   }
 }
+
+/* ============================================
+   Phone Chore Overlay (Batch 16)
+   ============================================ */
+
+.phone-chore {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-chore__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.92);
+}
+
+.phone-chore__content {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4);
+  background: linear-gradient(170deg, #1e1a15 0%, #15120e 100%);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(211, 166, 99, 0.08);
+}
+
+.phone-chore__heading {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.phone-chore__title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-4);
+}
+
+.phone-chore__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.phone-chore__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-md);
+}
+
+.phone-chore__item-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.phone-chore__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.phone-chore__item-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.phone-chore__item-detail {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.phone-chore__reminder {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(211, 166, 99, 0.05);
+  border-left: 2px solid var(--accent-gold-dim);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: var(--space-4);
+}
+
+.phone-chore__reminder ul {
+  margin: var(--space-1) 0 0 var(--space-3);
+  padding: 0;
+}
+
+.phone-chore__reminder li {
+  margin-bottom: 2px;
+}
+
+.phone-chore__confirm {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  background: linear-gradient(135deg, #2d4a2d 0%, #1a3a1a 100%);
+  border: 1px solid var(--health-green);
+  border-radius: var(--radius-md);
+  color: var(--health-green);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+.phone-chore__confirm:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+}
+
+.phone-chore__confirm--done {
+  opacity: 0.7;
+  cursor: default;
+  background: var(--bg-secondary);
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.phone-chore__waiting {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: var(--space-3);
+  font-style: italic;
+}
+
+.phone-chore__no-task {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--space-4) 0;
+}
+
+.phone-chore__no-task p {
+  margin: var(--space-2) 0;
+}
+
+/* ============================================
+   Phone Rules Overlay (Batch 16)
+   ============================================ */
+
+.phone-rules {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-rules__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.92);
+}
+
+.phone-rules__content {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4);
+  background: linear-gradient(170deg, #1e1a15 0%, #15120e 100%);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(211, 166, 99, 0.08);
+}
+
+.phone-rules__heading {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.phone-rules__scenario-id {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.phone-rules__section {
+  margin-bottom: var(--space-3);
+}
+
+.phone-rules__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent-copper);
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phone-rules__text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.phone-rules__derived {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-gold-dim);
+  margin-bottom: var(--space-3);
+}
+
+.phone-rules__derived-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+  width: 100%;
+  margin-bottom: var(--space-1);
+}
+
+.phone-rules__derived-pill {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  padding: 2px 8px;
+  background: rgba(211, 166, 99, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.phone-rules__waiting {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ============================================
+   Phone Battle Goal Overlay (Batch 16)
+   ============================================ */
+
+.phone-battlegoal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-battlegoal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 6, 0.92);
+}
+
+.phone-battlegoal__content {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 380px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4);
+  background: linear-gradient(170deg, #1e1a15 0%, #15120e 100%);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(211, 166, 99, 0.08);
+}
+
+.phone-battlegoal__heading {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin: 0 0 var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.phone-battlegoal__instructions {
+  margin-bottom: var(--space-4);
+}
+
+.phone-battlegoal__rule {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+  text-align: center;
+}
+
+.phone-battlegoal__rule strong {
+  color: var(--accent-gold);
+}
+
+.phone-battlegoal__edition-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--accent-copper);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(184, 115, 51, 0.08);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.phone-battlegoal__waiting {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ============================================
+   Phone Lobby View (Batch 16 — Dedicated Mode)
+   ============================================ */
+
+.phone-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-5) var(--space-4);
+  min-height: 100vh;
+  gap: var(--space-4);
+}
+
+.phone-lobby--waiting {
+  justify-content: center;
+}
+
+.phone-lobby__heading {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.phone-lobby__subheading {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+}
+
+.phone-lobby__char-portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  object-fit: contain;
+  border: 2px solid var(--accent-gold-dim);
+}
+
+.phone-lobby__waiting-text {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+.phone-lobby__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-md);
+}
+
+.phone-lobby__item-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.phone-lobby__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.phone-lobby__item-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.phone-lobby__item-detail {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.phone-lobby__reminder {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(211, 166, 99, 0.05);
+  border-left: 2px solid var(--accent-gold-dim);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__confirm {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  padding: var(--space-3);
+  background: linear-gradient(135deg, #2d4a2d 0%, #1a3a1a 100%);
+  border: 1px solid var(--health-green);
+  border-radius: var(--radius-md);
+  color: var(--health-green);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+.phone-lobby__confirm--done {
+  opacity: 0.7;
+  cursor: default;
+  background: var(--bg-secondary);
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.phone-lobby__waiting {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.phone-lobby__no-task {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.phone-lobby__no-task p {
+  margin: var(--space-2) 0;
+}
+
+.phone-lobby__scenario-id {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.phone-lobby__section {
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent-copper);
+  margin: 0 0 var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phone-lobby__text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.phone-lobby__derived {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-gold-dim);
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__derived-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+  width: 100%;
+  margin-bottom: var(--space-1);
+}
+
+.phone-lobby__derived-pill {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  padding: 2px 8px;
+  background: rgba(211, 166, 99, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.phone-lobby__instructions {
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__rule {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+  text-align: center;
+}
+
+.phone-lobby__rule strong {
+  color: var(--accent-gold);
+}
+
+.phone-lobby__goals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 380px;
+}
+
+.phone-lobby__goal-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-gold-dim);
+  border-radius: var(--radius-md);
+}
+
+.phone-lobby__goal-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+}
+
+.phone-lobby__goal-checks {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.phone-lobby__edition-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--accent-copper);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(184, 115, 51, 0.08);
+  border-radius: var(--radius-md);
+}

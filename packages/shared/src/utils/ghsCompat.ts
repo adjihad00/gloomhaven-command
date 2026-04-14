@@ -86,7 +86,7 @@ function createEmptyParty(edition: string): Party {
     conclusions: [],
     casualScenarios: [],
     manualScenarios: [],
-    campaignMode: false,
+    campaignMode: true,
     globalAchievements: '',
     globalAchievementsList: [],
     treasures: [],
@@ -134,13 +134,14 @@ function createEmptyParty(edition: string): Party {
  * Create a blank, valid GameState for starting a new game.
  */
 export function createEmptyGameState(edition?: string): GameState {
-  const ed = edition ?? 'gh';
   return {
     gameCode: '',
     undoStack: [],
+    mode: 'lobby',
     revision: 0,
+    // Default to campaign mode — one-off can be selected from settings later
     revisionOffset: 0,
-    edition: ed,
+    edition: edition ?? 'gh',
     conditions: [],
     battleGoalEditions: [],
     filteredBattleGoals: [],
@@ -169,7 +170,7 @@ export function createEmptyGameState(edition?: string): GameState {
     allyAttackModifierDeck: createEmptyAttackModifierDeck(),
     elementBoard: createDefaultElementBoard(),
     solo: false,
-    party: createEmptyParty(ed),
+    party: createEmptyParty(edition ?? 'gh'),
     parties: [],
     lootDeck: createEmptyLootDeck(),
     lootDeckEnhancements: [],

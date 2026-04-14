@@ -7,6 +7,7 @@ import { ConnectionScreen } from './ConnectionScreen';
 import { CharacterPicker } from './CharacterPicker';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
+import { LobbyView } from './LobbyView';
 import { getCharacterTheme } from './characterThemes';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
@@ -112,7 +113,7 @@ export function App() {
     );
   }
 
-  const mode: AppMode = state.mode ?? 'scenario';
+  const mode: AppMode = state.mode ?? 'lobby';
 
   return (
     <ErrorBoundary>
@@ -121,7 +122,9 @@ export function App() {
         gameCode, error, disconnect: handleDisconnect,
       }}>
         <div class="app-shell">
-          {mode === 'town'
+          {mode === 'lobby'
+            ? <LobbyView selectedCharacter={selectedCharacter} />
+            : mode === 'town'
             ? <TownView />
             : <ScenarioView
                 selectedCharacter={selectedCharacter}

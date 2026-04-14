@@ -3,7 +3,7 @@ import type { Connection } from './connection.js';
 import type {
   Command, CommandTarget, ConditionName,
   ElementType, ElementState, MonsterType, SummonColor,
-  FigureIdentifier,
+  FigureIdentifier, ChoreAssignment,
 } from '@gloomhaven-command/shared';
 
 type ModifierDeck = 'monster' | 'ally' | { character: string; edition: string };
@@ -207,6 +207,36 @@ export class CommandSender {
 
   completeScenario(outcome: 'victory' | 'defeat'): void {
     this.send({ action: 'completeScenario', payload: { outcome } });
+  }
+
+  // ── Scenario setup workflow ──
+
+  startScenario(scenarioIndex: string, edition: string, group?: string): void {
+    this.send({ action: 'startScenario', payload: { scenarioIndex, edition, ...(group ? { group } : {}) } });
+  }
+
+  prepareScenarioSetup(scenarioIndex: string, edition: string, chores: ChoreAssignment[], group?: string): void {
+    this.send({ action: 'prepareScenarioSetup', payload: { scenarioIndex, edition, chores, ...(group ? { group } : {}) } });
+  }
+
+  confirmChore(characterName: string, edition: string): void {
+    this.send({ action: 'confirmChore', payload: { characterName, edition } });
+  }
+
+  proceedToRules(): void {
+    this.send({ action: 'proceedToRules', payload: {} as Record<string, never> });
+  }
+
+  proceedToBattleGoals(): void {
+    this.send({ action: 'proceedToBattleGoals', payload: {} as Record<string, never> });
+  }
+
+  cancelScenarioSetup(): void {
+    this.send({ action: 'cancelScenarioSetup', payload: {} as Record<string, never> });
+  }
+
+  completeTownPhase(): void {
+    this.send({ action: 'completeTownPhase', payload: {} as Record<string, never> });
   }
 
   // ── Internal ──
