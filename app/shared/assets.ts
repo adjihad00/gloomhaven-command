@@ -33,6 +33,14 @@ export function characterIcon(edition: string, name: string): string {
   return `/assets/ghs/images/character/icons/${edition}-${name}.svg`;
 }
 
+export function actionIcon(type: string): string {
+  return `/assets/ghs/images/action/${type}.svg`;
+}
+
+export function amCardImage(type: string): string {
+  return `/assets/ghs/images/attackmodifier/${type}.png`;
+}
+
 export function lootCardIcon(type: string, coinValue?: number): string {
   if (type === 'money' && coinValue) {
     return `/assets/ghs/images/fh/loot/loot-money${coinValue}.png`;

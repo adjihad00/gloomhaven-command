@@ -187,9 +187,42 @@ Overlays:
 
 Does NOT show: monsters, other characters, modifier decks, doors.
 
-### Monitor (portrait, vertical tower)
-Read-only: Initiative timeline (vertical), character summary bars, monster groups
-with ability card + standee health, element board, round counter, scenario name.
+### Monitor / Display (portrait, 1080×1920 vertical tower)
+Read-only, zero interaction. Dark fantasy war table aesthetic.
+
+**Layout:** Sticky header (round/level/elements) → initiative column → completed
+figure tray → fixed footer (special rules, victory/defeat conditions).
+
+**Character cards:** Initiative badge, portrait, name, level, HP bar, conditions,
+XP icon + loot bag icon. Per-character accent theming from phone theme colors.
+Active card has gold border + glow. Done cards collapse to compact form (portrait +
+HP + conditions only) and stack vertically in bottom-right tray.
+
+**Monster cards:** Left-justified (aligned with character cards). Initiative badge,
+portrait, name, innate stat icons (from GHS API: flying, shield, retaliate, conditions
+on attacks, immunities — normal white / elite gold). Ability card area right-justified
+with ability name + action icons (inverted white for visibility). Standees render
+below card, indented. Compact form shows portrait + flying + combined shield/retaliate.
+
+**Completed figure tray:** Bottom-left: monster standees grouped by type (full size).
+Bottom-right: compact character + monster cards stacked vertically.
+
+**Auto-scroll:** Active figure scrolls to top. When active figure advances (via
+server state change), previous figure transitions to completed tray.
+
+**Element board:** 6 elements with strong (pulsing glow), waning (full brightness
+icon, dimmed ring), inert (greyed) states. Infusion animation (radial color burst).
+Consumption animation (conic-gradient vortex drain).
+
+**Splash animations:** AMD card draw (3D perspective flip, landscape card shape,
+special flares for bless/curse/2x/null). Loot card (slide in, display, shrink toward
+looting character's portrait).
+
+**Ambient effects:** Canvas particle system — embers preset (GH), snow preset (FH).
+Fog layers, vignette, candlelight flicker on text.
+
+**Edition theming:** GH warm gold (#d3a663) vs FH ice blue (#77aadd) via CSS custom
+properties affecting accents, glows, borders, particles.
 
 ---
 

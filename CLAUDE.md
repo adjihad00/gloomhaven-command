@@ -43,8 +43,10 @@ Key areas that require rules verification:
 See docs/PROJECT_CONTEXT.md for full tree.
 
 ## Current Phase
-Phase R COMPLETE (13 fix batches). Next: Phase 3 (Phone Client).
+Phase R COMPLETE (13 fix batches). Phase 3 COMPLETE (Phone Client).
+Phase 4 Display Client — Design Exploration COMPLETE.
 Controller is feature-complete for scenario play.
+Next: Scenario database (special rules, victory/loss conditions from scenario books).
 
 ## Design Skills & Conventions
 

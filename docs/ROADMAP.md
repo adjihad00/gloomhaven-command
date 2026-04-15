@@ -106,15 +106,28 @@
     - [x] Town phase placeholder (step list, travel reminder, completeTownPhase command)
     - [x] completeTownPhase command transitions town → lobby
 
-## Phase 4: Display Client
-- [ ] Scaffold display HTML + TypeScript entry
-- [ ] Portrait vertical tower layout
-- [ ] Initiative timeline (vertical, top-to-bottom)
-- [ ] Character panels — health, conditions, active summons
-- [ ] Monster panels — ability card, standee health/conditions
-- [ ] Element board display
-- [ ] Round/scenario info header
-- [ ] Auto-reconnect, no interaction needed
+## Phase 4: Display Client — Design Exploration
+- [x] Scaffold display HTML + TypeScript entry
+- [x] Portrait vertical tower layout (1080×1920 target)
+- [x] Initiative timeline (vertical, top-to-bottom) with auto-scroll to active figure
+- [x] Character panels — health bar, conditions, XP/loot icons, per-character accent theming
+- [x] Monster panels — ability card (right-justified with name), standee grid below card
+- [x] Monster innate stats from GHS API — flying, shield, retaliate, conditions on attacks, immunities
+- [x] Normal/elite stat differentiation (white vs gold values)
+- [x] Attack+condition composite icons (e.g., attack with brittle badge)
+- [x] Element board with infusion burst + consumption vortex animations
+- [x] Round/scenario info header with sticky scroll behavior
+- [x] Scenario footer — special rules, victory/defeat conditions (placeholder text)
+- [x] AMD card draw splash — 3D flip animation, landscape card shape, special flares
+- [x] Loot card splash — targets looting character's portrait
+- [x] Canvas ambient particles — embers (GH), snow (FH)
+- [x] Edition theming — GH warm gold, FH ice blue CSS variables
+- [x] Auto-scroll + completed figure tray — compact cards stack vertically (right), standees group by type (left)
+- [x] Pending initiative layout — characters top, monsters bottom, scenario name visible
+- [x] Transition overlays — victory, defeat, round, scenario start
+- [x] Lobby waiting view + town view with edition-specific steps
+- [ ] Scenario database — special rules, victory/loss conditions from scenario books (deferred)
+- [ ] Monster stat database — structured innate stats from stat card images (deferred, using GHS JSON)
 
 ## Phase 5: Polish & Compatibility
 - [ ] GHS save file import/export UI in controller

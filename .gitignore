@@ -18,3 +18,4 @@ data/
 !.claude/commands/
 .DS_Store
 Thumbs.db
+docs/Cloudflare-token.txt

@@ -434,3 +434,55 @@ dark green + bright green + pink, Blinkblade = teal + cyan, Drifter = brown +
 gold). Storing palettes in a static map avoids runtime image analysis and keeps
 the bundle small (~1KB). Setting variables on `:root` via JS ensures they
 propagate to all components without prop drilling.
+
+---
+
+### 44. Display client prototype mode (2026-04-15)
+**Decision:** Display client runs in `PROTOTYPE_MODE` with full mock data (characters,
+monsters, elements, scenario rules) allowing visual design iteration without a live
+game session. Keyboard shortcuts (Tab, 1-6, a, l, v, d, r) cycle through states.
+**Rationale:** The display is a visual centerpiece — design approval requires
+interactive previewing of all states (active, done, pending, compact) without
+coordinating multiple devices. Mock data ensures consistent testing scenarios.
+
+### 45. Monster innate stats from GHS API, not hardcoded (2026-04-15)
+**Decision:** Display fetches monster stats from `/api/data/{edition}/monster/{name}`
+at runtime via `useDisplayMonsterData` hook, extracting flying, shield, retaliate,
+conditions on attacks, and immunities from the GHS JSON data at the current scenario
+level. Mock data serves as fallback only.
+**Rationale:** Hardcoded mock data caused incorrect displays (Snow Imp showed "Ranged"
+instead of "Flying"). The GHS JSON files already contain complete per-level stat data
+for all editions. Fetching at runtime ensures accuracy as scenario level changes.
+
+### 46. Standees outside monster cards (2026-04-15)
+**Decision:** Monster standees render as siblings below the monster card in a
+`.figure-group` wrapper, rather than inside the card body.
+**Rationale:** Keeps monster card height uniform regardless of standee count. Allows
+standees to be independently repositioned (e.g., moved to completed tray at bottom-left)
+without affecting card layout.
+
+### 47. Completed figure tray with compact cards + standees (2026-04-15)
+**Decision:** When a figure's turn completes, its card transforms to a compact variant
+(~1/4 width) and moves to a vertical stack at bottom-right. Monster standees move to
+bottom-left grouped by type at full size.
+**Rationale:** Players need to see completed figures' health/conditions for targeting
+and battle goal tracking, but active figures should dominate the screen. Compact cards
+preserve essential info (HP, conditions, shield/retaliate) without competing for
+vertical space. Standees stay full-size because individual standee health is
+frequently referenced for targeting decisions.
+
+### 48. Action icon inversion for dark backgrounds (2026-04-15)
+**Decision:** Action SVG icons (shield, retaliate, attack, fly, move, range, loot, XP)
+use `filter: invert(1) brightness(0.85)` to render as white/light grey. Condition icons
+(brittle, wound, poison, etc.) are NOT inverted since they are already colored.
+**Rationale:** GHS action SVGs are dark-filled, invisible on the dark fantasy background.
+Inverting produces clean white icons. Condition icons are multi-colored by design and
+must retain their original colors for quick visual identification.
+
+### 49. Attack + condition composite icon (2026-04-15)
+**Decision:** When a monster's stat card includes conditions on attacks (e.g., brittle),
+display a white inverted attack icon with the colored condition icon overlaid as a small
+badge at bottom-right, rather than showing the condition icon alone.
+**Rationale:** A standalone condition icon under the monster name is ambiguous — it could
+mean the monster is immune to it, applies it, or starts with it. The composite clearly
+communicates "attacks from this monster cause this condition."

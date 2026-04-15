@@ -24,8 +24,16 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
   to one character. Initiative input, health, conditions, turn actions, loot,
   element board, initiative timeline, condition splash, exhaust/loot popups.
   Per-character accent theming. Landscape two-column layout.
-- **Display Client** (`app/display/`): Portrait-oriented TV/monitor.
-  Read-only. Vertical tower layout: initiative timeline → characters → monsters.
+- **Display Client** (`app/display/`): Portrait-oriented TV/monitor (1080×1920).
+  Read-only, zero interaction. Dark fantasy war table aesthetic with canvas
+  particle effects (embers/snow), edition theming (GH warm gold, FH ice blue).
+  Initiative column with auto-scroll to active figure. Character cards with
+  per-character accent theming, XP/loot SVG icons. Monster cards with real GHS
+  API stat data (flying, shield, retaliate, immunities, conditions on attacks),
+  ability card display (right-justified with name), standees below cards.
+  Completed figures collapse to compact tray (cards right, standees left).
+  AMD card draw splash (3D flip), loot card splash (targets character portrait),
+  element board with infusion/consumption animations, transition overlays.
 
 ### Key Files for Understanding the System
 - Types: `packages/shared/src/types/gameState.ts` — all data structures
@@ -91,6 +99,7 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 
 ## Current Phase
 Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 16 COMPLETE.
+Phase 4 Display Client — Design Exploration COMPLETE.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
