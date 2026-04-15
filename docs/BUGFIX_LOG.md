@@ -141,3 +141,12 @@ from `PhoneActionBar`, replaced by `PhoneExhaustPopup` that auto-triggers when
 HP reaches 0. This prevents accidental exhaustion and provides a dramatic
 confirmation flow (skull icon, deep red accents). Not a bug fix — the old button
 worked correctly, but the auto-detect pattern is more ergonomic and less error-prone.
+
+---
+
+## 2026-04-14 — HTTPS + LAN Connectivity Investigation
+
+### INF1: game.gh-command.com unreachable from LAN devices
+**Symptom:** After setting up Let's Encrypt certs + Cloudflare DNS, `https://game.gh-command.com:3000` fails to load from Chrome PC and phones. localhost works. LAN IP works from dev PC but cert mismatch on other devices.
+**Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.
+**Fix:** Added `192.168.50.96 game.gh-command.com` to Windows hosts file (`C:\Windows\System32\drivers\etc\hosts`) for dev PC. For LAN-wide resolution: added entry to router's `/etc/hosts` and signaled dnsmasq with `kill -HUP` (not `service restart_dnsmasq`, which regenerates `/etc/hosts`). Created `/jffs/scripts/services-start` on the router to persist the entry across reboots. Note: `/jffs/configs/dnsmasq.conf.add` does NOT work on this ASUS firmware — dnsmasq's config never includes it. Created `docs/HTTPS_LAN_SETUP.md` documenting the full setup. No server code changes were needed — the server was correctly binding to `0.0.0.0:3000` with a valid Let's Encrypt cert.
