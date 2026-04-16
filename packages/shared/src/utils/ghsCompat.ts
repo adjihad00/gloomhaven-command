@@ -161,7 +161,7 @@ export function createEmptyGameState(edition?: string): GameState {
     bonusAdjustment: 0,
     ge5Player: false,
     playerCount: 0,
-    round: 0,
+    round: 1,
     roundResets: [],
     roundResetsHidden: [],
     playSeconds: 0,

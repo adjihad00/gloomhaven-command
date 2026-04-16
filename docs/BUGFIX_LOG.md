@@ -155,6 +155,56 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 
 ---
 
+---
+
+## 2026-04-16 — Batch 18a: Server Logic Bugs + Controller Standee Management
+
+### B18a.1: Round count starts at 0 instead of 1
+**Symptom:** New scenarios display "Round 0" on all devices. Gloomhaven rules say the first round is "Round 1."
+**Root cause:** `handleSetScenario()` in `applyCommand.ts` initialized `state.round = 0`. The `startScenario` command delegates to the same handler. GHS compat import also defaulted to `round: 0`.
+**Fix:** Changed initialization to `state.round = 1` in `handleSetScenario()` and `ghsCompat.ts`. `completeScenario` still resets to 0 (no active scenario during teardown). `endRound()` increments correctly from 1→2→3.
+
+### B18a.2: Dead standee skulls persist across rounds
+**Symptom:** Monster standees killed during a round show skull badges indefinitely. They should clear at end of round (after loot token tracking) but persist into subsequent rounds.
+**Root cause:** `endRound()` in `turnOrder.ts` resets active/off flags and processes condition expiry but never removes dead entities from `monster.entities[]`.
+**Fix:** Added dead entity cleanup in `handleAdvancePhase()` before the `endRound()` call: filters `monster.entities` to remove dead entries, removes empty monster groups from `state.monsters`, and cleans `state.figures` to match. Placed before `endRound()` because `endRound()` deep-clones the state.
+
+### B18a.3: Room reveal doesn't draw ability cards for new monsters
+**Symptom:** Opening a door mid-round spawns monsters but they sit idle until the next round. Per rules §7, revealed monsters act during the round they appear.
+**Root cause:** `handleRevealRoom()` called `spawnRoomMonsters()` but never drew ability cards or set initiative for the new groups.
+**Fix:** After `spawnRoomMonsters()`, if in play phase (`state.state === 'next'`), tracks which monster groups are new, draws ability cards for them (reusing the same deck-grouping logic as `drawMonsterAbilities`), sets initiative, and re-sorts `state.figures` by initiative. Shared ability decks that were already drawn this round copy the existing card instead of re-drawing. Refactored `drawMonsterAbilities` into `groupMonstersByDeck` + `drawAbilityForDeckGroup` helpers.
+
+### B18a.4: Monster ability special actions (infuse/consume/summon) not processed
+**Symptom:** Monster ability cards with element infusion, element consumption, or summon actions have no mechanical effect. The engine draws the card and displays it but doesn't execute the actions.
+**Root cause:** No code existed to process monster ability card actions beyond displaying them in the UI.
+**Fix:** Added `processMonsterAbilityActions()` that reads the drawn ability card's actions (including nested subActions) and processes: (1) `elementHalf` (consume) — sets consumed element to inert on monster activation, (2) `element` (infuse) — sets element to strong on monster deactivation, (3) `summon` — creates new monster entity with correct stats on activation. Threaded `dataContext` through `handleToggleTurn` → `activateFigure` → `activateNextInOrder`. Extended `MonsterAbilityAction` type with `valueObject` for summon data. Per rules §6: consume fires at activation, infuse at deactivation. Summons marked `off: true` per rules §8 (don't act the round summoned).
+
+### B18a.5: Controller cannot add/remove standees mid-game
+**Symptom:** No UI to add or remove monster standees during a scenario. The `addEntity`/`removeEntity` commands exist in the protocol but aren't exposed in the controller.
+**Root cause:** `MonsterGroup.tsx` only renders existing standees with HP/condition controls. No add/remove buttons.
+**Fix:** Added "+ Normal" and "+ Elite" buttons below the standee list in `MonsterGroup.tsx`. Added "×" remove button on each standee row. Client-side `getNextStandeeNumber()` finds the lowest available number. Capped at 10 standees per group. Buttons hidden in `readonly` mode (display client). Styled with existing BEM patterns and dark fantasy aesthetic.
+
+---
+
+## 2026-04-16 — Batch 18b: Display UI Polish
+
+### B18b.1: Monster stat icons duplicated for normal/elite
+**Symptom:** When a monster has different innate stats for normal vs. elite (e.g., Ice Wraith: normal Shield 2, elite Retaliate 2), the display renders two separate icons — one per type. Wastes horizontal space and looks redundant.
+**Root cause:** `InnateAbilitiesRow` in `DisplayFigureCard.tsx` rendered two full `StatActionItem` components (each with its own icon) in a `figure-card__innate-split` wrapper when values differed.
+**Fix:** Replaced the split rendering with a single icon followed by dual-colored values: white for normal, gold (`--elite-gold`) for elite, with `/` separator. Range sub-actions on retaliate also render with dual colors when they differ. Single-value cases (normal only, elite only, identical) unchanged.
+
+### B18b.2: Character initiatives visible during draw phase
+**Symptom:** When players enter initiatives during draw phase, values are immediately visible on the display. Per rules §2, initiatives are revealed simultaneously when all players commit.
+**Root cause:** `DisplayFigureCard` always rendered `initiative` directly in the initiative circle, regardless of game phase.
+**Fix:** Added `phase` prop to `DisplayFigureCard`. During draw phase: characters with entered initiative show `??` (with muted styling), unentered show empty, long-resting show `99`. Monsters show empty during draw (no ability card drawn yet). All values reveal when play phase begins (`state.state === 'next'`). Phase prop passed from `ScenarioView`.
+
+### B18b.3: Compact card tray shifts position when standees appear
+**Symptom:** Completed figure cards shift from left to right when the first monster standee dies and populates the standee tray. Causes visual jitter mid-round.
+**Root cause:** `.display-completed-tray__layout` used `justify-content: space-between`. With no standees div, cards were the only child and sat on the left. Adding standees pushed cards right.
+**Fix:** Removed `justify-content: space-between` from the layout. Added `margin-left: auto` to `.display-completed-tray__cards` so cards always align right regardless of standee tray presence.
+
+---
+
 ### INF1: game.gh-command.com unreachable from LAN devices
 **Symptom:** After setting up Let's Encrypt certs + Cloudflare DNS, `https://game.gh-command.com:3000` fails to load from Chrome PC and phones. localhost works. LAN IP works from dev PC but cert mismatch on other devices.
 **Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.

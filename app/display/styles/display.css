@@ -484,6 +484,12 @@
   box-shadow: 0 0 8px rgba(211, 166, 99, 0.3);
 }
 
+.figure-card__initiative--hidden {
+  font-size: 16px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
 .figure-card__conditions {
   display: flex;
   gap: var(--space-1);
@@ -861,6 +867,7 @@
   flex-direction: column;
   gap: var(--space-2);
   align-items: flex-end;
+  margin-left: auto; /* Always right-aligned, even when standees tray is empty */
 }
 
 .display-completed-tray__standees {
@@ -878,7 +885,6 @@
 
 .display-completed-tray__layout {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-4);
 }

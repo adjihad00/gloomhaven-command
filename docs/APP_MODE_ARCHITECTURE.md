@@ -119,7 +119,8 @@ Simple "Setting up scenario..." waiting screen.
 ### Controller (iPad, landscape)
 Primary: Single-screen with initiative-sorted figure grid — characters and monsters
 interleaved by initiative. Absent characters shown in a greyscale bench strip below
-the figure grid.
+the figure grid. Monster groups have inline standee management (+ Normal, + Elite,
+× remove) for mid-game spawns and corrections.
 
 Header: Scenario info (name, level, round), element board (top-right).
 
@@ -213,11 +214,14 @@ figure tray → fixed footer (special rules, victory/defeat conditions).
 **Character cards:** Initiative badge, portrait, name, level, HP bar, conditions,
 XP icon + loot bag icon. Per-character accent theming from phone theme colors.
 Active card has gold border + glow. Done cards collapse to compact form (portrait +
-HP + conditions only) and stack vertically in bottom-right tray.
+HP + conditions only) and stack vertically in bottom-right tray (always right-aligned).
+During draw phase, initiative badges show `??` for entered values (secret until reveal),
+empty for unentered, `99` for long rest (publicly declared per rules).
 
 **Monster cards:** Left-justified (aligned with character cards). Initiative badge,
 portrait, name, innate stat icons (from GHS API: flying, shield, retaliate, conditions
-on attacks, immunities — normal white / elite gold). Ability card area right-justified
+on attacks, immunities — single icon per stat type with white normal / gold elite values
+when they differ). Ability card area right-justified
 with ability name + action icons (inverted white for visibility). Standees render
 below card, indented. Compact form shows portrait + flying + combined shield/retaliate.
 

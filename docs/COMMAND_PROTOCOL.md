@@ -88,6 +88,19 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | updateCampaign         | { field, value }                                                 |
 | completeScenario       | { outcome: 'victory' \| 'defeat' }                               |
 
+### Side Effects
+
+- **revealRoom**: During play phase (`state.state === 'next'`), automatically draws
+  ability cards for newly spawned monster groups and re-sorts figures by initiative.
+  Shared ability decks already drawn this round are copied, not re-drawn.
+- **toggleTurn (monster)**: On activation, processes consume + summon actions from
+  the drawn ability card. On deactivation, processes infuse actions.
+- **addEntity / removeEntity**: Now exposed in the controller UI. `addEntity` resolves
+  `maxHealth` from data context if not provided. `removeEntity` filters by entity number
+  and type.
+- **advancePhase (next→draw)**: Removes dead monster entities and prunes empty groups
+  before calling `endRound()`.
+
 ## Diffs (S→C broadcast)
 ```json
 {

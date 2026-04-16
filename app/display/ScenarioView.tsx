@@ -313,6 +313,7 @@ export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: Scenari
                 initiative={entry.initiative}
                 active={entry.active}
                 done={entry.done}
+                phase={state.state}
                 character={entry.character}
                 monster={entry.monster}
                 ability={ability}

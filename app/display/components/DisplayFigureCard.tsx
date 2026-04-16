@@ -22,6 +22,7 @@ interface DisplayFigureCardProps {
   active: boolean;
   done: boolean;
   compact?: boolean;
+  phase?: string;  // 'draw' | 'next' — used to hide initiatives during draw phase
   character?: Character;
   monster?: Monster;
   ability?: MockMonsterAbility;
@@ -185,23 +186,42 @@ function InnateAbilitiesRow({ innateStats }: { innateStats: MonsterInnateStats }
       const sameValue = normalAction.value === eliteAction.value;
       const sameRange = JSON.stringify(normalAction.subActions) === JSON.stringify(eliteAction.subActions);
       if (sameValue && sameRange) {
-        // Identical — show once
+        // Identical — show once with single icon
         items.push(<StatActionItem key={statType} action={normalAction} />);
       } else {
-        // Different — show both labeled
+        // Different — single icon, dual colored values (white normal / gold elite)
+        const normalRange = normalAction.subActions?.find(s => s.type === 'range');
+        const eliteRange = eliteAction.subActions?.find(s => s.type === 'range');
         items.push(
-          <div key={statType} class="figure-card__innate-split">
-            <StatActionItem action={normalAction} />
+          <div key={statType} class="figure-card__innate-item">
+            <img src={actionIcon(statType)} alt={statType} class="figure-card__innate-icon" />
+            <span class="figure-card__innate-value">{normalAction.value}</span>
             <span class="figure-card__innate-sep">/</span>
-            <StatActionItem action={eliteAction} eliteColored />
+            <span class="figure-card__innate-value--elite">{eliteAction.value}</span>
+            {(normalRange || eliteRange) && (
+              <span class="figure-card__innate-range">
+                <img src={actionIcon('range')} alt="range" class="figure-card__innate-icon" />
+                {normalRange && eliteRange && normalRange.value !== eliteRange.value ? (
+                  <>
+                    <span class="figure-card__innate-value">{normalRange.value}</span>
+                    <span class="figure-card__innate-sep">/</span>
+                    <span class="figure-card__innate-value--elite">{eliteRange.value}</span>
+                  </>
+                ) : (
+                  <span class={eliteRange && !normalRange ? 'figure-card__innate-value--elite' : 'figure-card__innate-value'}>
+                    {(normalRange || eliteRange)!.value}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
         );
       }
     } else if (normalAction) {
-      // Normal only
+      // Normal only — white
       items.push(<StatActionItem key={`n-${statType}`} action={normalAction} />);
     } else if (eliteAction) {
-      // Elite only — render in gold
+      // Elite only — gold
       items.push(<StatActionItem key={`e-${statType}`} action={eliteAction} eliteColored />);
     }
   }
@@ -230,7 +250,7 @@ function InnateAbilitiesRow({ innateStats }: { innateStats: MonsterInnateStats }
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export function DisplayFigureCard({
-  type, name, edition, initiative, active, done, compact,
+  type, name, edition, initiative, active, done, compact, phase,
   character, monster, ability, baseStats, innateStats,
 }: DisplayFigureCardProps) {
   const stateClass = active ? 'figure-card--active' : done ? 'figure-card--done' : '';
@@ -317,7 +337,11 @@ export function DisplayFigureCard({
     } as any;
     return (
       <div class={`figure-card figure-card--character ${stateClass}`} style={charStyle}>
-        <div class="figure-card__initiative">{initiative}</div>
+        <div class={`figure-card__initiative${phase === 'draw' && initiative > 0 && !character.longRest ? ' figure-card__initiative--hidden' : ''}`}>
+          {phase === 'draw'
+            ? (initiative === 0 ? '' : character.longRest ? '99' : '??')
+            : initiative}
+        </div>
         <img src={thumbnail} alt={name} class="figure-card__portrait"
           data-character-name={name} />
         <div class="figure-card__info">
@@ -362,7 +386,7 @@ export function DisplayFigureCard({
     return (
       <div class="figure-group">
         <div class={`figure-card figure-card--monster ${stateClass}`}>
-          <div class="figure-card__initiative">{initiative}</div>
+          <div class="figure-card__initiative">{phase === 'draw' ? '' : initiative}</div>
           <img src={thumbnail} alt={name} class="figure-card__portrait" />
           <div class="figure-card__monster-info">
             <div class="figure-card__name">{formatName(name)}</div>

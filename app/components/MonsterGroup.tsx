@@ -144,6 +144,15 @@ function StandeeRow({ entity, monsterName, edition, readonly }: {
           <StandeeConditionAdder target={target} existingConditions={activeConditions} />
         )}
       </div>
+
+      {!readonly && !isBoss && (
+        <button
+          class="standee-remove-btn"
+          aria-label={`Remove standee ${entity.number}`}
+          onClick={() => commands.removeEntity(monsterName, edition, entity.number, entity.type)}
+          title="Remove standee"
+        >×</button>
+      )}
     </div>
   );
 }
@@ -207,6 +216,17 @@ function StandeeConditionAdder({ target, existingConditions }: {
   );
 }
 
+// ── Standee number helper ──────────────────────────────────────────────────
+
+const MAX_STANDEES = 10;
+
+function getNextStandeeNumber(entities: MonsterEntity[]): number {
+  const used = new Set(entities.map((e) => e.number));
+  let n = 1;
+  while (used.has(n)) n++;
+  return n;
+}
+
 // ── MonsterGroup ────────────────────────────────────────────────────────────
 
 export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isDone, readonly }: MonsterGroupProps) {
@@ -226,6 +246,13 @@ export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isD
     if (!readonly) {
       commands.toggleTurn({ type: 'monster', name, edition });
     }
+  };
+
+  const canAddMore = entities.length < MAX_STANDEES;
+
+  const handleAddStandee = (type: 'normal' | 'elite') => {
+    const nextNumber = getNextStandeeNumber(entities);
+    commands.addEntity(name, edition, nextNumber, type);
   };
 
   return (
@@ -264,6 +291,22 @@ export function MonsterGroup({ monster, monsterStats, abilityCard, isActive, isD
           />
         ))}
       </div>
+
+      {/* Add standee controls */}
+      {!readonly && canAddMore && (
+        <div class="standee-add-row">
+          <button
+            class="standee-add-btn normal"
+            aria-label="Add normal standee"
+            onClick={() => handleAddStandee('normal')}
+          >+ Normal</button>
+          <button
+            class="standee-add-btn elite"
+            aria-label="Add elite standee"
+            onClick={() => handleAddStandee('elite')}
+          >+ Elite</button>
+        </div>
+      )}
 
       {/* Dead standees — collapsed */}
       {deadEntities.length > 0 && (

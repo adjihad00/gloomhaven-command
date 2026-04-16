@@ -133,6 +133,16 @@
 - [x] Connection status indicator (tiny dot, no modals)
 - [ ] Scenario database — special rules, victory/loss conditions from scenario books (deferred)
 - [ ] Monster stat database — structured innate stats from stat card images (deferred, using GHS JSON)
+- [x] Batch 18a: Server logic bugs + controller standee management
+  - [x] Round count starts at 1 (not 0) on scenario start
+  - [x] Dead standee cleanup at end of round
+  - [x] Controller add/remove standee UI (+ Normal, + Elite, × remove)
+  - [x] Room reveal draws ability cards for new monster groups during play phase
+  - [x] Monster ability special actions: element consume, element infuse, summon
+- [x] Batch 18b: Display UI polish
+  - [x] Single icon + colored text for normal/elite monster stat differentiation
+  - [x] Hidden initiatives during draw phase (??), simultaneous reveal at play phase
+  - [x] Stable compact card tray positioning (always bottom-right)
 
 ## Phase 5: Polish & Compatibility
 - [ ] GHS save file import/export UI in controller

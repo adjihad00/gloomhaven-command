@@ -103,6 +103,8 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 ## Current Phase
 Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 16 COMPLETE.
 Phase 4 Display Client — Design Exploration COMPLETE. Production wiring COMPLETE (Batch 17).
+Batch 18a: Server logic bugs + controller standee management COMPLETE.
+Batch 18b: Display UI polish COMPLETE (stat icon consolidation, hidden initiatives, stable tray).
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
@@ -165,6 +167,17 @@ completeTownPhase
   Sets `state.finish = 'success'/'failure'`. Phones transition to "claimed" state.
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
+  Monster activation triggers ability card consume + summon actions via
+  `processMonsterAbilityActions()`.
+- **revealRoom:** Spawns monsters for the revealed room. During play phase
+  (`state.state === 'next'`), also draws ability cards for new monster groups
+  and re-sorts figures by initiative (per rules §7: revealed monsters act
+  during the round they appear).
+- **toggleTurn (monster deactivation):** Processes end-of-turn conditions,
+  then triggers ability card infuse actions (per rules §6: infuse at end of
+  monster turn). Dead standees are cleaned up at end of round, not immediately.
+- **advancePhase (next→draw):** Removes dead monster entities, prunes empty
+  monster groups, then calls `endRound()` for round increment + element decay.
 
 ### Phone Command Permissions
 Phone clients are restricted server-side to character-scoped commands

@@ -18,7 +18,7 @@ import type {
 } from '../types/gameState.js';
 import type { Command, CommandTarget } from '../types/commands.js';
 import type { StateChange } from '../types/protocol.js';
-import type { ScenarioData, MonsterData, MonsterLevelStats, MonsterAbilityDeckData, ResolvedSpawn } from '../data/types.js';
+import type { ScenarioData, MonsterData, MonsterLevelStats, MonsterAbilityDeckData, MonsterAbilityAction, ResolvedSpawn } from '../data/types.js';
 import { deepClone } from './turnOrder.js';
 import { canAdvancePhase, startRound, endRound, getInitiativeOrder } from './turnOrder.js';
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
@@ -67,7 +67,7 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
       after = handleAdvancePhase(after, dataContext);
       break;
     case 'toggleTurn':
-      handleToggleTurn(after, command.payload);
+      handleToggleTurn(after, command.payload, dataContext);
       break;
     case 'moveElement':
       handleMoveElement(after, command.payload);
@@ -486,58 +486,260 @@ function handleAdvancePhase(state: GameState, dataContext?: DataContext): GameSt
   if (dataContext) {
     handleEndOfRoundShuffle(state, dataContext);
   }
+
+  // End of round: remove dead monster entities (skulls persist during the round
+  // for loot token tracking, then clean up before the new round starts)
+  for (const monster of state.monsters) {
+    monster.entities = monster.entities.filter((e) => !e.dead);
+  }
+  // Remove monster groups with no living entities
+  state.monsters = state.monsters.filter((m) => m.entities.length > 0);
+  // Clean figures array to match
+  state.figures = state.figures.filter((figStr) => {
+    if (state.characters.some((c) => `${c.edition}-${c.name}` === figStr)) return true;
+    if (state.objectiveContainers.some((o) => `${o.edition}-${o.name}` === figStr)) return true;
+    return state.monsters.some((m) => `${m.edition}-${m.name}` === figStr);
+  });
+
   return endRound(state);
 }
 
 // ── Auto-draw monster ability cards ─────────────────────────────────────────
 
-function drawMonsterAbilities(state: GameState, dataContext: DataContext): void {
-  // Group monsters by their shared ability deck
+/** Group monsters by shared ability deck name. */
+function groupMonstersByDeck(monsters: Monster[], dataContext: DataContext): Map<string, Monster[]> {
   const deckGroups = new Map<string, Monster[]>();
-
-  for (const monster of state.monsters) {
-    // Only draw for monsters with living entities
+  for (const monster of monsters) {
     if (!monster.entities.some((e) => !e.dead)) continue;
-
     const monsterData = dataContext.getMonster(monster.edition, monster.name);
     const deckName = monsterData?.deck || monster.name;
     const key = `${monster.edition}:${deckName}`;
-
     if (!deckGroups.has(key)) {
       deckGroups.set(key, []);
     }
     deckGroups.get(key)!.push(monster);
   }
+  return deckGroups;
+}
 
-  // For each unique deck, draw one card and apply to all groups sharing it
+/** Draw one ability card for a group of monsters sharing a deck. Sets ability + initiative on all. */
+function drawAbilityForDeckGroup(monsters: Monster[], dataContext: DataContext): void {
+  const master = monsters[0];
+  const deckData = dataContext.getMonsterDeckForMonster(master.edition, master.name);
+  if (!deckData || deckData.abilities.length === 0) return;
+
+  // Initialize abilities array if empty (first draw ever)
+  if (master.abilities.length === 0) {
+    master.abilities = deckData.abilities.map((_, i) => i);
+    shuffleArray(master.abilities);
+  }
+
+  // Draw next card
+  master.lastDraw += 1;
+  if (master.lastDraw >= master.abilities.length) {
+    shuffleArray(master.abilities);
+    master.lastDraw = 0;
+  }
+
+  const cardIndex = master.abilities[master.lastDraw];
+  const drawnCard = deckData.abilities[cardIndex];
+  if (!drawnCard) return;
+
+  // Apply to all monsters sharing this deck
+  for (const monster of monsters) {
+    monster.ability = cardIndex;
+    monster.lastDraw = master.lastDraw;
+    monster.abilities = [...master.abilities];
+    monster.initiative = drawnCard.initiative;
+  }
+}
+
+function drawMonsterAbilities(state: GameState, dataContext: DataContext): void {
+  const deckGroups = groupMonstersByDeck(state.monsters, dataContext);
   for (const [, monsters] of deckGroups) {
-    const master = monsters[0];
-    const deckData = dataContext.getMonsterDeckForMonster(master.edition, master.name);
-    if (!deckData || deckData.abilities.length === 0) continue;
+    drawAbilityForDeckGroup(monsters, dataContext);
+  }
+}
 
-    // Initialize abilities array if empty (first draw ever)
-    if (master.abilities.length === 0) {
-      master.abilities = deckData.abilities.map((_, i) => i);
-      shuffleArray(master.abilities);
+/** Draw ability cards for newly spawned monster groups during a room reveal in play phase. */
+function drawAbilitiesForNewMonsters(
+  state: GameState,
+  newGroupNames: Set<string>,
+  dataContext: DataContext,
+): void {
+  // Only new groups need ability cards drawn. Existing groups that gained new
+  // entities already have their ability card for this round.
+  const newMonsters = state.monsters.filter(
+    (m) => newGroupNames.has(`${m.edition}-${m.name}`),
+  );
+  if (newMonsters.length === 0) return;
+
+  const deckGroups = groupMonstersByDeck(newMonsters, dataContext);
+  for (const [deckKey, monsters] of deckGroups) {
+    // If another monster already sharing this deck has drawn this round, copy its card
+    const existingDraw = state.monsters.find(
+      (m) => !newGroupNames.has(`${m.edition}-${m.name}`) && m.ability >= 0
+        && (() => {
+          const md = dataContext.getMonster(m.edition, m.name);
+          return `${m.edition}:${md?.deck || m.name}` === deckKey;
+        })(),
+    );
+
+    if (existingDraw) {
+      // Shared deck already drawn this round — copy card to new monsters
+      for (const monster of monsters) {
+        monster.ability = existingDraw.ability;
+        monster.lastDraw = existingDraw.lastDraw;
+        monster.abilities = [...existingDraw.abilities];
+        monster.initiative = existingDraw.initiative;
+      }
+    } else {
+      drawAbilityForDeckGroup(monsters, dataContext);
+    }
+  }
+
+  // Re-sort figures by initiative so new monsters appear in correct turn order
+  const initiativeMap = new Map<string, { initiative: number; typeOrder: number }>();
+  for (const char of state.characters) {
+    initiativeMap.set(`${char.edition}-${char.name}`, { initiative: char.initiative, typeOrder: 0 });
+  }
+  for (const mon of state.monsters) {
+    initiativeMap.set(`${mon.edition}-${mon.name}`, { initiative: mon.initiative, typeOrder: 1 });
+  }
+  for (const obj of state.objectiveContainers) {
+    initiativeMap.set(`${obj.edition}-${obj.name}`, { initiative: obj.initiative, typeOrder: 2 });
+  }
+  state.figures.sort((a, b) => {
+    const aInit = initiativeMap.get(a)?.initiative ?? 0;
+    const bInit = initiativeMap.get(b)?.initiative ?? 0;
+    if (aInit !== bInit) return aInit - bInit;
+    return (initiativeMap.get(a)?.typeOrder ?? 3) - (initiativeMap.get(b)?.typeOrder ?? 3);
+  });
+}
+
+// ── Monster ability action processing (infuse, consume, summon) ─────────────
+
+/** Collect all actions of given types from a card, including nested subActions. */
+function collectActions(actions: MonsterAbilityAction[], types: Set<string>): MonsterAbilityAction[] {
+  const result: MonsterAbilityAction[] = [];
+  for (const action of actions) {
+    if (types.has(action.type)) {
+      result.push(action);
+    }
+    if (action.subActions) {
+      result.push(...collectActions(action.subActions, types));
+    }
+  }
+  return result;
+}
+
+/**
+ * Process monster ability card special actions on activation or deactivation.
+ *
+ * Per rules §6: Monster consume fires at activation (start of monster turn),
+ * monster infuse fires at deactivation (end of monster turn).
+ * Summons are created at activation.
+ */
+function processMonsterAbilityActions(
+  state: GameState,
+  monster: Monster,
+  phase: 'activate' | 'deactivate',
+  dataContext?: DataContext,
+): void {
+  if (!dataContext || monster.ability < 0) return;
+
+  const deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
+  if (!deckData) return;
+
+  const card = deckData.abilities[monster.ability];
+  if (!card || !card.actions) return;
+
+  if (phase === 'activate') {
+    // Consume elements (elementHalf actions — first part of value is the consumed element)
+    const consumeActions = collectActions(card.actions, new Set(['elementHalf']));
+    for (const action of consumeActions) {
+      const parts = String(action.value).split(':');
+      if (parts.length >= 1) {
+        const elementName = parts[0];
+        const el = state.elementBoard.find((e) => e.type === elementName);
+        if (el && (el.state === 'strong' || el.state === 'waning')) {
+          el.state = 'inert';
+        }
+      }
     }
 
-    // Draw next card
-    master.lastDraw += 1;
-    if (master.lastDraw >= master.abilities.length) {
-      shuffleArray(master.abilities);
-      master.lastDraw = 0;
+    // Process summon actions
+    const summonActions = collectActions(card.actions, new Set(['summon']));
+    for (const action of summonActions) {
+      if (!action.valueObject || action.valueObject.length === 0) continue;
+      for (const summonDef of action.valueObject) {
+        if (!summonDef.monster) continue;
+        const summonName = summonDef.monster.name;
+        const summonType = (summonDef.monster.type || 'normal') as MonsterEntity['type'];
+
+        // Resolve HP: explicit override from action, or data lookup
+        let maxHealth = summonDef.monster.health ? Number(summonDef.monster.health) : 0;
+        if (!maxHealth) {
+          maxHealth = dataContext.getMonsterMaxHealth(monster.edition, summonName, monster.level, summonType);
+        }
+
+        // Find or create the monster group for the summon
+        let group = state.monsters.find((m) => m.name === summonName && m.edition === monster.edition);
+        if (!group) {
+          group = {
+            name: summonName,
+            edition: monster.edition,
+            level: monster.level,
+            initiative: 0,
+            off: true,
+            active: false,
+            drawExtra: false,
+            lastDraw: -1,
+            ability: -1,
+            abilities: [],
+            entities: [],
+            isAlly: false,
+            isAllied: false,
+            tags: [],
+          };
+          state.monsters.push(group);
+          state.figures.push(`${monster.edition}-${summonName}`);
+        }
+
+        const nextNumber = getNextStandeeNumber(group);
+        group.entities.push({
+          number: nextNumber,
+          marker: '',
+          type: summonType,
+          dead: false,
+          summon: 'true',
+          active: false,
+          off: true,  // Summons don't act the round they are summoned (rules §8)
+          revealed: false,
+          dormant: false,
+          health: maxHealth,
+          maxHealth,
+          entityConditions: [],
+          immunities: [],
+          markers: [],
+          tags: [],
+          shield: '',
+          shieldPersistent: '',
+          retaliate: [],
+          retaliatePersistent: [],
+        });
+      }
     }
-
-    const cardIndex = master.abilities[master.lastDraw];
-    const drawnCard = deckData.abilities[cardIndex];
-    if (!drawnCard) continue;
-
-    // Apply to all monsters sharing this deck
-    for (const monster of monsters) {
-      monster.ability = cardIndex;
-      monster.lastDraw = master.lastDraw;
-      monster.abilities = [...master.abilities];
-      monster.initiative = drawnCard.initiative;
+  } else {
+    // phase === 'deactivate': Infuse elements
+    const infuseActions = collectActions(card.actions, new Set(['element']));
+    for (const action of infuseActions) {
+      const elementName = String(action.value);
+      if (elementName === 'wild') continue; // Wild is not a board element
+      const el = state.elementBoard.find((e) => e.type === elementName);
+      if (el) {
+        el.state = 'strong';
+      }
     }
   }
 }
@@ -583,6 +785,7 @@ function handleEndOfRoundShuffle(state: GameState, dataContext: DataContext): vo
 function handleToggleTurn(
   state: GameState,
   payload: { figure: { type: string; name: string; edition: string } },
+  dataContext?: DataContext,
 ): void {
   const { figure: figId } = payload;
 
@@ -653,16 +856,18 @@ function handleToggleTurn(
           if (entity.health <= 0) entity.dead = true;
         }
       }
+      // Monster infuse: set elements to strong at end of monster turn (rules §6)
+      processMonsterAbilityActions(state, m, 'deactivate', dataContext);
     }
 
     // Auto-advance: activate the next non-off, non-absent figure
-    activateNextInOrder(state);
+    activateNextInOrder(state, dataContext);
   } else {
     // Activate: deactivate any currently active figure first
     deactivateAllFigures(state);
 
     // Now activate the target
-    activateFigure(state, targetFigure, targetType);
+    activateFigure(state, targetFigure, targetType, dataContext);
   }
 }
 
@@ -701,6 +906,7 @@ function activateFigure(
   state: GameState,
   figure: Character | Monster | ObjectiveContainer,
   type: 'character' | 'monster' | 'objectiveContainer',
+  dataContext?: DataContext,
 ): void {
   figure.active = true;
   figure.off = false;
@@ -738,6 +944,9 @@ function activateFigure(
     }
   } else if (type === 'monster') {
     const m = figure as Monster;
+    // Monster consume + summon: fires at activation (rules §6 — consume at first monster's turn)
+    processMonsterAbilityActions(state, m, 'activate', dataContext);
+
     for (const entity of m.entities) {
       if (!entity.dead) {
         entity.active = true;
@@ -819,7 +1028,7 @@ function applyTurnStartToActiveFigure(state: GameState): void {
 }
 
 /** Find the next non-off, non-absent figure in initiative order and activate it. */
-function activateNextInOrder(state: GameState): void {
+function activateNextInOrder(state: GameState, dataContext?: DataContext): void {
   const order = getInitiativeOrder(state);
   const next = order.find((f) => !f.off && !f.absent);
   if (!next) return;
@@ -827,19 +1036,19 @@ function activateNextInOrder(state: GameState): void {
   // Find the actual figure and activate it
   const char = state.characters.find((c) => c.name === next.name && c.edition === next.edition);
   if (char) {
-    activateFigure(state, char, 'character');
+    activateFigure(state, char, 'character', dataContext);
     return;
   }
 
   const mon = state.monsters.find((m) => m.name === next.name && m.edition === next.edition);
   if (mon) {
-    activateFigure(state, mon, 'monster');
+    activateFigure(state, mon, 'monster', dataContext);
     return;
   }
 
   const obj = state.objectiveContainers.find((o) => o.name === next.name && o.edition === next.edition);
   if (obj) {
-    activateFigure(state, obj, 'objectiveContainer');
+    activateFigure(state, obj, 'objectiveContainer', dataContext);
   }
 }
 
@@ -1297,7 +1506,7 @@ function handleSetScenario(
     custom: '',
     revealedRooms: [],
   };
-  state.round = 0;
+  state.round = 1;
   state.state = 'draw';
   state.monsters = [];
   state.objectiveContainers = [];
@@ -1373,8 +1582,27 @@ function handleRevealRoom(
   if (dataContext) {
     const scenario = dataContext.getScenario(state.scenario.edition, state.scenario.index);
     if (scenario) {
+      // Track existing monster group names before spawning
+      const existingGroups = new Set(
+        state.monsters.map((m) => `${m.edition}-${m.name}`),
+      );
+
       const playerCount = getPlayerCount(state.characters);
       spawnRoomMonsters(state, state.scenario.edition, scenario, payload.roomId, playerCount, dataContext);
+
+      // During play phase, draw ability cards for newly spawned monster groups
+      // so they can act this round (per rules §7: revealed monsters act during
+      // the round they appear)
+      if (state.state === 'next') {
+        const newGroupNames = new Set(
+          state.monsters
+            .filter((m) => !existingGroups.has(`${m.edition}-${m.name}`))
+            .map((m) => `${m.edition}-${m.name}`),
+        );
+        if (newGroupNames.size > 0) {
+          drawAbilitiesForNewMonsters(state, newGroupNames, dataContext);
+        }
+      }
     }
   }
 }

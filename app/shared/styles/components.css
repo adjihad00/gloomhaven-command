@@ -947,6 +947,73 @@
 }
 
 /* Dead standees */
+/* Standee remove button */
+.standee-remove-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--text-muted);
+    color: var(--negative-red);
+    font-size: 0.85rem;
+    line-height: 1;
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    touch-action: manipulation;
+    opacity: 0.5;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.standee-remove-btn:hover,
+.standee-remove-btn:focus-visible {
+    opacity: 1;
+    border-color: var(--negative-red);
+    background: rgba(197, 48, 48, 0.15);
+}
+
+/* Add standee row */
+.standee-add-row {
+    display: flex;
+    gap: 6px;
+    padding: 4px 8px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.standee-add-btn {
+    flex: 1;
+    padding: 4px 8px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px dashed var(--text-muted);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    opacity: 0.6;
+    transition: opacity 0.15s, border-color 0.15s;
+}
+.standee-add-btn:hover,
+.standee-add-btn:focus-visible {
+    opacity: 1;
+}
+.standee-add-btn.normal {
+    color: var(--text-secondary);
+}
+.standee-add-btn.normal:hover {
+    border-color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+}
+.standee-add-btn.elite {
+    color: var(--elite-gold, #d4af37);
+}
+.standee-add-btn.elite:hover {
+    border-color: var(--elite-gold, #d4af37);
+    background: rgba(212, 175, 55, 0.08);
+}
+
 .dead-standees {
     display: flex;
     flex-wrap: wrap;

@@ -103,11 +103,20 @@ export interface MonsterAbilityCard {
 }
 
 export interface MonsterAbilityAction {
-  type: string;           // "move", "attack", "shield", "retaliate", "condition", etc.
+  type: string;           // "move", "attack", "shield", "retaliate", "condition", "element", "elementHalf", "summon", etc.
   value: string | number;
   valueType?: string;     // "plus" = add to base stat; "minus" = subtract; absent = absolute
   small?: boolean;
   subActions?: MonsterAbilityAction[];
+  valueObject?: MonsterSummonValue[];  // Used by "summon" actions
+}
+
+export interface MonsterSummonValue {
+  monster?: {
+    name: string;
+    type?: string;    // "normal", "elite", "boss"
+    health?: string | number;
+  };
 }
 
 // ── Scenario data ───────────────────────────────────────────────────────────

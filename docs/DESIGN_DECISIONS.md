@@ -546,3 +546,60 @@ text is displayed.
 **Rationale:** Real scenario rules text is not in the GHS JSON data files — it requires
 a scenario database (deferred to Batch 18). The placeholder keeps the footer visible
 and structurally correct while clearly directing players to the physical book.
+
+### 56. Monster ability action processing at activation/deactivation (2026-04-16)
+**Decision:** Monster ability card special actions (element consume, element infuse, summon)
+are processed via `processMonsterAbilityActions()` called at two points: consume + summon
+on `activateFigure` (monster turn start), infuse on `handleToggleTurn` deactivation branch
+(monster turn end). DataContext is threaded through the toggle/activate call chain.
+**Rationale:** Per rules §6, monster element consumption fires at the start of the first
+monster's turn (benefits all entities), and infusion fires at the end of the last monster's
+turn. In this codebase, monster groups activate/deactivate as a unit, so activation =
+consume + summon, deactivation = infuse. Processing at these two existing hook points
+avoids adding new command types and keeps the flow consistent with character turn-start
+processing already in `activateFigure`.
+
+### 57. Refactored drawMonsterAbilities into composable helpers (2026-04-16)
+**Decision:** Extracted `groupMonstersByDeck()` and `drawAbilityForDeckGroup()` from the
+monolithic `drawMonsterAbilities()`. Added `drawAbilitiesForNewMonsters()` for room reveal.
+**Rationale:** Room reveals during play phase need to draw ability cards for newly spawned
+monster groups using the same deck-sharing and shuffle logic as start-of-round draws.
+Duplicating the logic would create divergence bugs. The helper functions are reused by both
+the start-of-round `drawMonsterAbilities()` and the mid-round `handleRevealRoom()` paths.
+
+### 58. Dead standee cleanup at end of round, not immediately (2026-04-16)
+**Decision:** Dead monster entities are removed from `monster.entities[]` during
+`handleAdvancePhase()` at the 'next' → 'draw' transition, after end-of-round shuffles
+but before `endRound()` deep-clones the state.
+**Rationale:** Dead standees persist during the round they died for two reasons: (1) loot
+token placement — the GM needs to see where each monster died, and (2) battle goal tracking
+("Kill X enemies" goals reference death counts). Cleaning at end-of-round is the natural
+GH/FH cadence. Empty monster groups are also pruned to prevent display artifacts.
+
+### 59. Inline standee add/remove in MonsterGroup (2026-04-16)
+**Decision:** "+ Normal" and "+ Elite" buttons render inline below the standee list in
+`MonsterGroup.tsx`, not in a separate overlay.
+**Rationale:** Overlays add interaction friction (open → act → close) for a frequent action.
+Monster spawns from special rules, forgotten standees, and mid-round summons need fast access.
+Inline buttons match the existing pattern of HP +/- and condition buttons on standee rows.
+The remove "×" button mirrors the kill action but operates at the data level (useful for
+correcting setup mistakes without dealing damage).
+
+### 60. Initiative hiding on display during draw phase (2026-04-16)
+**Decision:** Display client masks character initiative values as `??` during draw phase
+(`state.state === 'draw'`). Long rest shows `99` (publicly declared per rules). Monsters
+show empty (no ability card drawn yet). All values reveal when play phase begins.
+**Rationale:** Per rules §2, initiative cards are selected secretly and revealed
+simultaneously. The display is the shared source of truth at the table — showing entered
+initiatives before the reveal moment breaks the secrecy rule and gives late-committing
+players a strategic advantage. The `phase` prop on `DisplayFigureCard` keeps the masking
+logic self-contained.
+
+### 61. Single icon with dual-colored values for monster stats (2026-04-16)
+**Decision:** When normal and elite monsters have different values for the same innate stat
+(shield, retaliate), render one icon with white (normal) and gold (elite) values separated
+by `/`. Range sub-actions follow the same pattern.
+**Rationale:** The previous approach rendered two full `StatActionItem` components, each
+with its own icon. On a portrait display viewed from across the table, duplicate icons
+waste horizontal space and create visual clutter. A single icon with color-coded values
+is more readable at distance and eliminates ambiguity about whether both types have the stat.
