@@ -637,3 +637,44 @@ categories. Flattening to dot keys makes SQLite queries simple (exact match or p
 LIKE) without requiring JSON path extraction. The import script's `flattenObject()`
 handles arbitrary nesting depth. The `getLabelsPrefix()` query method enables bulk
 retrieval (e.g., all scenario rule labels for an edition).
+
+### 65. Client-side label key filtering for prefix queries (2026-04-16)
+**Decision:** `useScenarioText` hook filters the `rulesLabels` returned by `/api/ref/scenario-text`
+client-side, accepting only keys that match exactly `scenario.rules.{edition}.{index}` or start
+with `scenario.rules.{edition}.{index}.` (with a trailing dot before sub-index).
+**Rationale:** The server's `getLabelsPrefix()` uses SQL LIKE with a prefix pattern. For
+single-digit scenario indices (e.g., scenario "1"), `LIKE 'scenario.rules.fh.1%'` would
+match scenario "10", "110", "112", etc. Rather than modifying the Phase 5.1 reference DB
+(which would require schema changes), the client filters false positives by checking that
+the key suffix after the prefix is either empty or starts with `.`.
+
+### 66. Label interpolation via dangerouslySetInnerHTML (2026-04-16)
+**Decision:** `interpolateLabelIcons()` returns HTML strings with `<img>` tags for icons.
+Consumer components render via Preact's `dangerouslySetInnerHTML`. A `.label-icon` CSS class
+handles sizing (1.1em) and filter (invert for action icons, none for condition/element icons).
+**Rationale:** GHS label text contains `%game.action.X%` placeholders that must become inline
+SVG icon images. Preact has no JSX interpolation for arbitrary HTML — `dangerouslySetInnerHTML`
+is the standard pattern. The label text comes from our own reference DB (not user input), so
+the injection risk is controlled. Condition and element icons skip the invert filter because
+they are already colored.
+
+### 67. Full action tree rendering in MonsterAbilityActions (2026-04-16)
+**Decision:** `MonsterAbilityActions` in `DisplayFigureCard.tsx` renders the complete action
+tree from the reference DB, not a filtered subset. Actions are categorized: numeric (totalized
+against base stats for move/attack/range), condition (colored icon, no value), element/elementHalf
+(colored/dimmed icon), summon (text + name), and sub-actions (recursive, smaller). Unknown
+action types render as text fallback.
+**Rationale:** Phase 5.1's previous approach filtered to only 5 action types (move, attack,
+range, shield, heal), losing conditions, elements, and summons from the card display. The
+reference DB now provides the full GHS action tree including `subActions[]` arrays. Rendering
+the complete tree gives players the information they need without consulting the physical ability
+cards. The recursive `renderAction()` function handles the tree structure naturally.
+
+### 68. Win/loss conditions deferred to PDF extraction (2026-04-16)
+**Decision:** Win conditions remain "See Scenario Book" and loss conditions remain "All
+characters exhausted." despite wiring other scenario text from the reference DB.
+**Rationale:** GHS data files contain scenario structure (monsters, rooms, rules mechanics)
+but NOT human-readable goal/win/loss condition text. This text exists only in the physical
+scenario books (PDFs available in `.staging/worldhaven/images/books/`). A follow-up Phase 5.x
+task will extract all scenario text (introductions, goals, conditions, conclusions, story
+summaries) from these PDFs comprehensively, rather than attempting partial extraction now.

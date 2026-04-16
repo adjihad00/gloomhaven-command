@@ -209,7 +209,8 @@ shown as tiny dot (top-right), no error modals. Prototype mode at `?prototype=tr
 uses mock data with keyboard controls (Tab/1-6/a/l/v/d/r).
 
 **Layout:** Sticky header (round/level/elements) → initiative column → completed
-figure tray → fixed footer (special rules, victory/defeat conditions).
+figure tray → fixed footer (special rules from reference DB with inline icons,
+victory/defeat conditions — "See Scenario Book" until PDF extraction).
 
 **Character cards:** Initiative badge, portrait, name, level, HP bar, conditions,
 XP icon + loot bag icon. Per-character accent theming from phone theme colors.
@@ -221,9 +222,11 @@ empty for unentered, `99` for long rest (publicly declared per rules).
 **Monster cards:** Left-justified (aligned with character cards). Initiative badge,
 portrait, name, innate stat icons (from GHS API: flying, shield, retaliate, conditions
 on attacks, immunities — single icon per stat type with white normal / gold elite values
-when they differ). Ability card area right-justified
-with ability name + action icons (inverted white for visibility). Standees render
-below card, indented. Compact form shows portrait + flying + combined shield/retaliate.
+when they differ). Ability card area right-justified with real card name (from labels)
++ full action tree: move/attack/range totalized against base stats (normal/elite colors),
+conditions (colored icons), elements (infuse/consume icons), summons (name text),
+sub-actions (recursive, smaller). Standees render below card, indented.
+Compact form shows portrait + flying + combined shield/retaliate.
 
 **Completed figure tray:** Bottom-left: monster standees grouped by type (full size).
 Bottom-right: compact character + monster cards stacked vertically.

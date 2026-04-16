@@ -7,6 +7,7 @@ import { deriveLevelValues } from '@gloomhaven-command/shared';
 import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../shared/formatName';
 import { monsterThumbnail, characterThumbnail } from '../shared/assets';
+import { useScenarioText } from '../hooks/useScenarioText';
 
 interface LobbyViewProps {
   selectedCharacter: string;
@@ -28,6 +29,9 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
     ? `${setupData.edition}/scenario/${setupData.scenarioIndex}`
     : '';
   const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!setupData);
+  const { specialRules: refRules } = useScenarioText(
+    setupData?.edition || '', setupData?.scenarioIndex || '',
+  );
 
   const levelValues = useMemo(() => deriveLevelValues(state?.level ?? 0), [state?.level]);
 
@@ -116,7 +120,18 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
 
         <div class="phone-lobby__section">
           <h3 class="phone-lobby__section-title">Special Rules</h3>
-          <p class="phone-lobby__text">See Scenario Book for details.</p>
+          {refRules.length > 0 ? (
+            refRules.map((rule, i) => (
+              <p key={i} class="phone-lobby__text" dangerouslySetInnerHTML={{ __html: rule }} />
+            ))
+          ) : (
+            <p class="phone-lobby__text">No special rules for this scenario.</p>
+          )}
+        </div>
+
+        <div class="phone-lobby__section">
+          <h3 class="phone-lobby__section-title">Win Condition</h3>
+          <p class="phone-lobby__text">See Scenario Book.</p>
         </div>
 
         <div class="phone-lobby__section">

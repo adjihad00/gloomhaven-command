@@ -2098,3 +2098,18 @@ a,
     font-size: 0.85rem;
     color: var(--text-muted);
 }
+
+/* ── Label Icons (inline in label text) ──────────────────────────────── */
+
+.label-icon {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    vertical-align: text-bottom;
+    filter: invert(1) brightness(0.85);
+}
+
+.label-icon--condition,
+.label-icon--element {
+    filter: none;
+}

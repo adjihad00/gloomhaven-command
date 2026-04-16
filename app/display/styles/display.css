@@ -612,6 +612,37 @@
   margin-left: var(--space-1);
 }
 
+/* Condition/element icons — don't invert (already colored) */
+.figure-card__ability-action--condition .figure-card__ability-icon,
+.figure-card__ability-action--element .figure-card__ability-icon {
+  filter: none;
+}
+
+/* Element consume — dimmed icon */
+.figure-card__ability-action--consume .figure-card__ability-icon {
+  filter: none;
+  opacity: 0.5;
+}
+
+/* Sub-actions — smaller, inline */
+.figure-card__ability-action--sub {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.figure-card__ability-action--sub .figure-card__ability-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Summon name text */
+.figure-card__ability-summon-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
 /* ── Monster Innate Abilities Row ─────────────────────────────────────────── */
 
 .figure-card__innate-row {

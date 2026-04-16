@@ -152,10 +152,18 @@
   - [x] Asset manifest — ~11,000 images cataloged from GHS client + Worldhaven
   - [x] Reference API endpoints (8 new /api/ref/ routes)
   - [x] Server integration (ReferenceDb class, auto-load on startup)
-- [ ] Phase 5.2: Wire consumers — replace "See Scenario Book" placeholders with real data
-- [ ] Phase 5.3: Extend display monster ability action renderer (5/30+ action types)
-- [ ] Phase 5.4: Decouple mock types — replace MockMonsterAbility with shared types
-- [ ] Phase 5.5: Label interpolation engine for %game.action.X% placeholders
+- [x] Phase 5.2: Wire consumers to reference DB — real scenario text, full ability cards
+  - [x] Label interpolation engine (app/shared/labelRenderer.ts) — %game.action.X% → inline icons
+  - [x] useScenarioText hook — fetches /api/ref/scenario-text, parses labels with prefix filtering
+  - [x] Display footer wired to real special rules (fallback for scenarios without labels)
+  - [x] Controller LobbyView + SetupPhaseOverlay wired to real rules text
+  - [x] Phone PhoneRulesOverlay + LobbyView wired to real rules text
+  - [x] useDisplayMonsterData switched from /api/data/ to /api/ref/ability-cards
+  - [x] MonsterAbilityActions renderer handles all 30+ action types (conditions, elements, summons, sub-actions)
+  - [x] Mock types replaced with shared MonsterAbilityAction — DisplayAbility/DisplayBaseStats types
+  - [x] Win/loss conditions remain "See Scenario Book" (data not in DB — deferred to Phase 5.x PDF extraction)
+- [ ] Phase 5.x: Scenario book PDF text extraction — goals, win/loss conditions, story text
+- [ ] Phase 5.y: Extend display ability card rendering with remaining edge cases
 - [ ] GHS save file import/export UI in controller
 - [ ] Campaign persistence across sessions
 - [x] Undo/redo stack (bounded, 50 actions)

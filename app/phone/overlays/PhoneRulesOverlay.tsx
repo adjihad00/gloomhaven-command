@@ -5,6 +5,7 @@ import { useDataApi } from '../../hooks/useDataApi';
 import { deriveLevelValues } from '@gloomhaven-command/shared';
 import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../../shared/formatName';
+import { useScenarioText } from '../../hooks/useScenarioText';
 
 interface PhoneRulesOverlayProps {
   selectedCharacter: string;
@@ -23,6 +24,9 @@ export function PhoneRulesOverlay({ selectedCharacter }: PhoneRulesOverlayProps)
     ? `${setupData.edition}/scenario/${setupData.scenarioIndex}`
     : '';
   const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!setupData);
+  const { specialRules: refRules } = useScenarioText(
+    setupData?.edition || '', setupData?.scenarioIndex || '',
+  );
 
   const levelValues = useMemo(() => deriveLevelValues(state?.level ?? 0), [state?.level]);
 
@@ -56,12 +60,13 @@ export function PhoneRulesOverlay({ selectedCharacter }: PhoneRulesOverlayProps)
 
         <div class="phone-rules__section">
           <h3 class="phone-rules__section-title">Special Rules</h3>
-          <p class="phone-rules__text">
-            {hasRules
-              ? `${(scenarioData as any).rules.length} special rule(s) — read from Scenario Book.`
-              : 'See Scenario Book for details.'
-            }
-          </p>
+          {refRules.length > 0 ? (
+            refRules.map((rule, i) => (
+              <p key={i} class="phone-rules__text" dangerouslySetInnerHTML={{ __html: rule }} />
+            ))
+          ) : (
+            <p class="phone-rules__text">No special rules for this scenario.</p>
+          )}
         </div>
 
         <div class="phone-rules__section">

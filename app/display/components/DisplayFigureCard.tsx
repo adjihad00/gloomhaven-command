@@ -1,10 +1,11 @@
 import { h } from 'preact';
 import type { Character, Monster, MonsterEntity, EntityCondition } from '@gloomhaven-command/shared';
 import type { MonsterLevelStats, MonsterStatAction } from '@gloomhaven-command/shared';
-import { characterThumbnail, monsterThumbnail, conditionIcon, actionIcon } from '../../shared/assets';
+import type { MonsterAbilityAction } from '@gloomhaven-command/shared';
+import { characterThumbnail, monsterThumbnail, conditionIcon, actionIcon, elementIcon } from '../../shared/assets';
 import { formatName } from '../../shared/formatName';
 import { getCharacterTheme } from '../../phone/characterThemes';
-import type { MockMonsterAbility, MockMonsterBaseStats } from '../mockData';
+import type { DisplayAbility, DisplayBaseStats } from '../hooks/useDisplayMonsterData';
 
 // ── Types for real monster stat data ───────────────────────────────────────
 
@@ -25,8 +26,8 @@ interface DisplayFigureCardProps {
   phase?: string;  // 'draw' | 'next' — used to hide initiatives during draw phase
   character?: Character;
   monster?: Monster;
-  ability?: MockMonsterAbility;
-  baseStats?: MockMonsterBaseStats;
+  ability?: DisplayAbility;
+  baseStats?: DisplayBaseStats;
   innateStats?: MonsterInnateStats;
 }
 
@@ -51,9 +52,119 @@ function ActiveConditions({ conditions, size = 24 }: { conditions: EntityConditi
 
 // ── Monster Ability Actions (totalized with icons) ──────────────────────────
 
+/** Types where the value is numeric and can be totalized against base stats */
+const TOTALIZABLE_TYPES = new Set(['move', 'attack', 'range']);
+/** Types where the value is numeric and should show icon + value */
+const NUMERIC_ACTION_TYPES = new Set([
+  'move', 'attack', 'range', 'shield', 'heal', 'retaliate',
+  'pierce', 'push', 'pull', 'loot', 'target', 'damage', 'suffer',
+]);
+
+function renderAction(
+  action: MonsterAbilityAction,
+  baseStats: DisplayBaseStats | undefined,
+  index: number,
+  isSub?: boolean,
+): h.JSX.Element | null {
+  const val = typeof action.value === 'number' ? action.value : parseInt(String(action.value), 10);
+  const isNumeric = NUMERIC_ACTION_TYPES.has(action.type) && !isNaN(val);
+  const canTotalize = TOTALIZABLE_TYPES.has(action.type) && !isNaN(val);
+  const isAdditive = action.valueType === 'plus' || action.valueType === 'minus';
+  const modClass = isSub ? ' figure-card__ability-action--sub' : '';
+
+  // Condition action — colored icon, no value
+  if (action.type === 'condition') {
+    return (
+      <div key={index} class={`figure-card__ability-action figure-card__ability-action--condition${modClass}`}>
+        <img src={conditionIcon(String(action.value))} alt={String(action.value)}
+          class="figure-card__ability-icon" />
+      </div>
+    );
+  }
+
+  // Element infuse — colored icon
+  if (action.type === 'element') {
+    return (
+      <div key={index} class={`figure-card__ability-action figure-card__ability-action--element${modClass}`}>
+        <img src={elementIcon(String(action.value))} alt={String(action.value)}
+          class="figure-card__ability-icon" />
+      </div>
+    );
+  }
+
+  // Element consume — dimmed icon
+  if (action.type === 'elementHalf') {
+    const elName = String(action.value).split(':')[0];
+    return (
+      <div key={index} class={`figure-card__ability-action figure-card__ability-action--consume${modClass}`}>
+        <img src={elementIcon(elName)} alt={`Consume ${elName}`}
+          class="figure-card__ability-icon" />
+      </div>
+    );
+  }
+
+  // Summon — icon + monster name
+  if (action.type === 'summon') {
+    const summonName = action.valueObject?.[0]?.monster?.name;
+    return (
+      <div key={index} class={`figure-card__ability-action${modClass}`}>
+        <span class="figure-card__ability-summon-name">
+          Summon{summonName ? ` ${formatName(summonName)}` : ''}
+        </span>
+      </div>
+    );
+  }
+
+  // Numeric actions — icon + totalized value
+  if (isNumeric) {
+    let normalTotal = val;
+    let eliteTotal = val;
+    if (canTotalize && isAdditive && baseStats) {
+      const nBase = baseStats.normal[action.type];
+      const eBase = baseStats.elite[action.type];
+      if (nBase != null) normalTotal = nBase + val;
+      if (eBase != null) eliteTotal = eBase + val;
+    }
+    const showBoth = normalTotal !== eliteTotal;
+
+    return (
+      <div key={index} class={`figure-card__ability-action${modClass}`}>
+        <img src={actionIcon(action.type)} alt={action.type}
+          class="figure-card__ability-icon" />
+        {showBoth ? (
+          <span class="figure-card__ability-values">
+            <span class="figure-card__ability-value--normal">{normalTotal}</span>
+            <span class="figure-card__ability-sep">/</span>
+            <span class="figure-card__ability-value--elite">{eliteTotal}</span>
+          </span>
+        ) : (
+          <span class="figure-card__ability-value--normal">{normalTotal}</span>
+        )}
+        {/* Render inline sub-actions (e.g., range after attack) */}
+        {action.subActions?.map((sub, si) => renderAction(sub, baseStats, si, true))}
+      </div>
+    );
+  }
+
+  // Skip layout-only / internal types
+  if (['specialTarget', 'area', 'grant', 'custom'].includes(action.type)) {
+    return null;
+  }
+
+  // Unknown type — text fallback
+  return (
+    <div key={index} class={`figure-card__ability-action${modClass}`}>
+      <span class="figure-card__ability-value--normal">
+        {action.type.charAt(0).toUpperCase() + action.type.slice(1)}
+        {action.value != null && action.value !== '' ? ` ${action.value}` : ''}
+      </span>
+    </div>
+  );
+}
+
 function MonsterAbilityActions({ ability, baseStats, abilityName }: {
-  ability: MockMonsterAbility;
-  baseStats?: MockMonsterBaseStats;
+  ability: DisplayAbility;
+  baseStats?: DisplayBaseStats;
   abilityName?: string;
 }) {
   return (
@@ -62,29 +173,7 @@ function MonsterAbilityActions({ ability, baseStats, abilityName }: {
         <div class="figure-card__ability-name">{abilityName}</div>
       )}
       <div class="figure-card__ability-actions">
-        {ability.actions.map((action, i) => {
-          const normalBase = baseStats?.normal?.[action.type as keyof typeof baseStats.normal] as number | undefined;
-          const eliteBase = baseStats?.elite?.[action.type as keyof typeof baseStats.elite] as number | undefined;
-          const normalTotal = normalBase != null ? normalBase + action.value : action.value;
-          const eliteTotal = eliteBase != null ? eliteBase + action.value : action.value;
-          const showBoth = normalTotal !== eliteTotal;
-
-          return (
-            <div key={i} class="figure-card__ability-action">
-              <img src={actionIcon(action.type)} alt={action.type}
-                class="figure-card__ability-icon" />
-              {showBoth ? (
-                <span class="figure-card__ability-values">
-                  <span class="figure-card__ability-value--normal">{normalTotal}</span>
-                  <span class="figure-card__ability-sep">/</span>
-                  <span class="figure-card__ability-value--elite">{eliteTotal}</span>
-                </span>
-              ) : (
-                <span class="figure-card__ability-value--normal">{normalTotal}</span>
-              )}
-            </div>
-          );
-        })}
+        {ability.actions.map((action, i) => renderAction(action, baseStats, i))}
         {ability.shuffle && (
           <div class="figure-card__ability-shuffle" title="Shuffle after round">{'\u27F3'}</div>
         )}
@@ -309,7 +398,7 @@ export function DisplayFigureCard({
             <div class="figure-card__innate-item">
               <img src={actionIcon('shield')} alt="shield" class="figure-card__innate-icon" />
               <span class="figure-card__innate-value">
-                {(innateShield ? Number(innateShield.value) : 0) + (abilityShield ? abilityShield.value : 0)}
+                {(innateShield ? Number(innateShield.value) : 0) + (abilityShield ? Number(abilityShield.value) : 0)}
               </span>
             </div>
           )}
@@ -317,7 +406,7 @@ export function DisplayFigureCard({
             <div class="figure-card__innate-item">
               <img src={actionIcon('retaliate')} alt="retaliate" class="figure-card__innate-icon" />
               <span class="figure-card__innate-value">
-                {(innateRetaliate ? Number(innateRetaliate.value) : 0) + (abilityRetaliate ? abilityRetaliate.value : 0)}
+                {(innateRetaliate ? Number(innateRetaliate.value) : 0) + (abilityRetaliate ? Number(abilityRetaliate.value) : 0)}
               </span>
             </div>
           )}

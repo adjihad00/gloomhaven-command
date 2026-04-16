@@ -1,0 +1,1 @@
+{"root":["./src/commandhandler.ts","./src/dataloader.ts","./src/gamestore.ts","./src/index.ts","./src/sessionmanager.ts","./src/staticserver.ts","./src/wshub.ts","./src/__tests__/integration.test.mts"],"errors":true,"version":"6.0.2"}

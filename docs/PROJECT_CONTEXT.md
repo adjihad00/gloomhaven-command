@@ -55,7 +55,8 @@ packages/shared/src/    — game logic, types, GHS compat
 server/src/             — HTTP + WebSocket server
   referenceDb.ts        — immutable SQLite reference data (schema + queries)
 app/components/         — shared Preact UI components
-app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands)
+app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands, useScenarioText)
+app/shared/             — shared non-component code (assets.ts, formatName.ts, labelRenderer.ts)
 app/shared/styles/      — CSS theme, typography, component styles
 app/controller/         — landscape tablet app (GM)
 app/phone/              — portrait phone app (player)
@@ -114,6 +115,11 @@ Batch 18b: Display UI polish COMPLETE (stat icon consolidation, hidden initiativ
 Phase 5.1: Reference data schema + import pipeline COMPLETE. SQLite reference database
 (`data/reference.db`) stores all GHS edition data (labels, scenarios, monsters, abilities,
 items, events, sections, assets) populated from `.staging/` sources via `scripts/import-data.ts`.
+Phase 5.2: Consumer wiring COMPLETE. All "See Scenario Book" placeholders for special rules
+replaced with real label text from reference DB (with inline icon interpolation). Display
+monster ability card renderer upgraded from 5 to 30+ action types (conditions, elements,
+summons, sub-actions). Ability card names from labels. Mock types replaced with shared types.
+Win/loss conditions remain placeholder (text not in GHS data — deferred to PDF extraction).
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,

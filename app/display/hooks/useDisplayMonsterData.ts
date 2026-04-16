@@ -1,17 +1,29 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
-import type { Monster, MonsterLevelStats } from '@gloomhaven-command/shared';
+import type { Monster, MonsterLevelStats, MonsterAbilityAction } from '@gloomhaven-command/shared';
 import type { MonsterInnateStats } from '../components/DisplayFigureCard';
-import type { MockMonsterBaseStats, MockMonsterAbility, MockAbilityAction } from '../mockData';
+
+export interface DisplayAbility {
+  monsterName: string;
+  name: string | null;
+  initiative: number;
+  actions: MonsterAbilityAction[];
+  shuffle: boolean;
+}
+
+export interface DisplayBaseStats {
+  normal: Record<string, number>;
+  elite: Record<string, number>;
+}
 
 interface MonsterDisplayData {
   innateStats: MonsterInnateStats;
-  baseStats: MockMonsterBaseStats;
-  ability: MockMonsterAbility | null;
+  baseStats: DisplayBaseStats;
+  ability: DisplayAbility | null;
 }
 
 /**
  * Fetches real monster stat data and ability cards for all active monsters.
- * Returns maps keyed by monster name (e.g., 'snow-imp').
+ * Innate stats from /api/data/, ability cards from /api/ref/ability-cards.
  */
 export function useDisplayMonsterData(monsters: Monster[], edition: string, level: number) {
   const [dataMap, setDataMap] = useState<Map<string, MonsterDisplayData>>(new Map());
@@ -45,7 +57,7 @@ export function useDisplayMonsterData(monsters: Monster[], edition: string, leve
         };
 
         // Build base stats for ability totalization
-        const baseStats: MockMonsterBaseStats = {
+        const baseStats: DisplayBaseStats = {
           normal: {
             health: typeof normalStats?.health === 'number' ? normalStats.health : 0,
             move: normalStats?.movement ?? 0,
@@ -60,28 +72,27 @@ export function useDisplayMonsterData(monsters: Monster[], edition: string, leve
           },
         };
 
-        // Fetch ability deck
-        let ability: MockMonsterAbility | null = null;
+        // Fetch ability deck from reference DB
+        let ability: DisplayAbility | null = null;
         const deckName = monsterData.deck || m.name;
         if (m.ability >= 0) {
           try {
-            const deckResp = await fetch(`/api/data/${ed}/monster-deck/${deckName}`);
+            const deckResp = await fetch(`/api/ref/ability-cards/${ed}/${deckName}`);
             if (deckResp.ok) {
-              const deckData = await deckResp.json();
-              if (deckData.abilities && m.ability < deckData.abilities.length) {
-                const card = deckData.abilities[m.ability];
-                // Convert ability card actions to display format
-                const actions: MockAbilityAction[] = [];
-                for (const a of card.actions || []) {
-                  if (['move', 'attack', 'range', 'shield', 'heal'].includes(a.type)) {
-                    const val = typeof a.value === 'number' ? a.value : parseInt(String(a.value), 10) || 0;
-                    // valueType "plus" means additive, absent means absolute
-                    actions.push({ type: a.type, value: a.valueType === 'plus' || a.valueType === 'minus' ? val : val });
-                  }
-                }
+              const cards: Array<{
+                card_id: number;
+                name: string | null;
+                initiative: number;
+                shuffle: number;
+                actions_json: string;
+              }> = await deckResp.json();
+
+              if (m.ability < cards.length) {
+                const card = cards[m.ability];
+                const actions: MonsterAbilityAction[] = JSON.parse(card.actions_json);
                 ability = {
                   monsterName: m.name,
-                  name: `Card ${card.cardId}`,
+                  name: card.name,
                   initiative: card.initiative,
                   actions,
                   shuffle: !!card.shuffle,

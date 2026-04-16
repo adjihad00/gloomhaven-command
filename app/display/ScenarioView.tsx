@@ -13,6 +13,7 @@ import { DisplayLootSplash } from './components/DisplayLootSplash';
 import type { TransitionType } from './components/DisplayTransitions';
 import { useDisplayMonsterData } from './hooks/useDisplayMonsterData';
 import { useStateTransition } from './hooks/useStateTransitions';
+import { useScenarioText } from '../hooks/useScenarioText';
 
 // ── Prototype-only imports (keyboard demo controls) ─────────────────────────
 
@@ -262,24 +263,28 @@ export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: Scenari
   const getMonsterAbility = (monsterName: string) => {
     const apiData = monsterDataMap.get(monsterName);
     if (apiData?.ability) return apiData.ability;
-    if (prototypeMode) return mockAbilities[monsterName];
+    if (prototypeMode) return mockAbilities[monsterName] as any;
     return null;
   };
 
   const getMonsterBaseStats = (monsterName: string) => {
     const apiData = monsterDataMap.get(monsterName);
     if (apiData?.baseStats) return apiData.baseStats;
-    if (prototypeMode) return mockMonsterStats[monsterName];
+    if (prototypeMode) return mockMonsterStats[monsterName] as any;
     return undefined;
   };
 
-  // Scenario footer: placeholder text in production, mock text in prototype
+  // Scenario footer: real rules from reference DB, or mock in prototype mode
+  const { specialRules: refRules } = useScenarioText(
+    prototypeMode ? '' : (state?.edition || ''),
+    prototypeMode ? '' : scenarioIndex,
+  );
   const footerRules = prototypeMode
-    ? mockScenarioRules
+    ? { specialRules: [mockScenarioRules.specialRules], winConditions: mockScenarioRules.winConditions, lossConditions: mockScenarioRules.lossConditions }
     : {
-        specialRules: 'See Scenario Book',
+        specialRules: refRules.length > 0 ? refRules : ['See Scenario Book'],
         winConditions: 'See Scenario Book',
-        lossConditions: 'See Scenario Book',
+        lossConditions: 'All characters exhausted.',
       };
 
   return (

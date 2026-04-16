@@ -8,6 +8,7 @@ import type { GameState, ScenarioData, ChoreAssignment, ChoreItem } from '@gloom
 import { calculateScenarioLevel, deriveLevelValues } from '@gloomhaven-command/shared';
 import { formatName } from '../shared/formatName';
 import { characterThumbnail, monsterThumbnail, editionLogo, characterIcon } from '../shared/assets';
+import { useScenarioText } from '../hooks/useScenarioText';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,20 @@ function MonsterPreviewCard({ edition, name }: { edition: string; name: string }
         class="lobby__monster-img" loading="lazy" />
       <span class="lobby__monster-name">{formatName(name)}</span>
       {data?.count && <span class="lobby__monster-count">{data.count} standees</span>}
+    </div>
+  );
+}
+
+/** Renders special rules text from reference DB, or fallback message */
+function ScenarioRulesText({ edition, scenarioIndex, cssClass }: { edition: string; scenarioIndex: string; cssClass: string }) {
+  const { specialRules, loading } = useScenarioText(edition, scenarioIndex);
+  if (loading) return <p class={cssClass}>Loading rules...</p>;
+  if (specialRules.length === 0) return <p class={cssClass}>No special rules for this scenario.</p>;
+  return (
+    <div>
+      {specialRules.map((rule, i) => (
+        <p key={i} class={cssClass} dangerouslySetInnerHTML={{ __html: rule }} />
+      ))}
     </div>
   );
 }
@@ -566,7 +581,12 @@ export function LobbyView() {
 
         <div class="lobby__section">
           <label class="lobby__label">Special Rules</label>
-          <p class="lobby__rules-text">See Scenario Book for special rules and win conditions.</p>
+          <ScenarioRulesText edition={setupData.edition} scenarioIndex={setupData.scenarioIndex} cssClass="lobby__rules-text" />
+        </div>
+
+        <div class="lobby__section">
+          <label class="lobby__label">Win Condition</label>
+          <p class="lobby__rules-text">See Scenario Book.</p>
         </div>
 
         <div class="lobby__section">

@@ -4,6 +4,7 @@ import type { GameState, ScenarioData } from '@gloomhaven-command/shared';
 import { deriveLevelValues } from '@gloomhaven-command/shared';
 import { useCommands } from '../../hooks/useCommands';
 import { useDataApi } from '../../hooks/useDataApi';
+import { useScenarioText } from '../../hooks/useScenarioText';
 import { OverlayBackdrop } from './OverlayBackdrop';
 import { formatName } from '../../shared/formatName';
 import { characterThumbnail } from '../../shared/assets';
@@ -23,6 +24,9 @@ export function SetupPhaseOverlay({ state, onClose }: SetupPhaseOverlayProps) {
     ? `${setupData.edition}/scenario/${setupData.scenarioIndex}`
     : '';
   const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!setupData);
+  const { specialRules: refRules } = useScenarioText(
+    setupData?.edition || '', setupData?.scenarioIndex || '',
+  );
 
   const levelValues = useMemo(() => deriveLevelValues(state.level), [state.level]);
 
@@ -115,19 +119,18 @@ export function SetupPhaseOverlay({ state, onClose }: SetupPhaseOverlayProps) {
 
           <div class="setup-overlay__section">
             <label class="setup-overlay__label">Special Rules</label>
-            <div class="setup-phase__rules-text">
-              {hasRules
-                ? `${(scenarioData as any).rules.length} special rule(s) apply. Read from Scenario Book.`
-                : 'No special rules. See Scenario Book for details.'
-              }
-            </div>
+            {refRules.length > 0 ? (
+              refRules.map((rule, i) => (
+                <div key={i} class="setup-phase__rules-text" dangerouslySetInnerHTML={{ __html: rule }} />
+              ))
+            ) : (
+              <div class="setup-phase__rules-text">No special rules for this scenario.</div>
+            )}
           </div>
 
           <div class="setup-overlay__section">
             <label class="setup-overlay__label">Win Condition</label>
-            <div class="setup-phase__rules-text">
-              See Scenario Book for win condition.
-            </div>
+            <div class="setup-phase__rules-text">See Scenario Book.</div>
           </div>
 
           <div class="setup-overlay__section">
