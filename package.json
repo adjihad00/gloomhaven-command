@@ -16,7 +16,8 @@
     "build:server": "npm run build --workspace=server",
     "build:clients": "npm run build --workspace=clients/display --workspace=clients/controller --workspace=clients/phone",
     "build:app": "node app/build.mjs",
-    "watch:app": "node app/build.mjs --watch"
+    "watch:app": "node app/build.mjs --watch",
+    "import-data": "tsx scripts/import-data.ts"
   },
   "engines": {
     "node": ">=20.0.0"

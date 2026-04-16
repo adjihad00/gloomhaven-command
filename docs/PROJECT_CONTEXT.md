@@ -53,12 +53,18 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
 ```
 packages/shared/src/    — game logic, types, GHS compat
 server/src/             — HTTP + WebSocket server
+  referenceDb.ts        — immutable SQLite reference data (schema + queries)
 app/components/         — shared Preact UI components
 app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands)
 app/shared/styles/      — CSS theme, typography, component styles
 app/controller/         — landscape tablet app (GM)
 app/phone/              — portrait phone app (player)
 app/display/            — portrait TV app (read-only)
+scripts/                — data import tooling
+  import-data.ts        — populates data/reference.db from .staging/ sources
+data/                   — gitignored runtime databases
+  ghs.sqlite            — mutable game state (sessions, saves)
+  reference.db          — immutable reference data (scenarios, monsters, items, labels, assets)
 assets/                 — game images/data (gitignored, local only)
 docs/                   — context, roadmap, decisions, bugs, rules reference
 ```
@@ -105,6 +111,9 @@ Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 16 COMPL
 Phase 4 Display Client — Design Exploration COMPLETE. Production wiring COMPLETE (Batch 17).
 Batch 18a: Server logic bugs + controller standee management COMPLETE.
 Batch 18b: Display UI polish COMPLETE (stat icon consolidation, hidden initiatives, stable tray).
+Phase 5.1: Reference data schema + import pipeline COMPLETE. SQLite reference database
+(`data/reference.db`) stores all GHS edition data (labels, scenarios, monsters, abilities,
+items, events, sections, assets) populated from `.staging/` sources via `scripts/import-data.ts`.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
@@ -196,3 +205,22 @@ are rejected with an error.
   auto-generates `dist/index.html` + `dist/sw.js` per app with baked-in precache lists
 - **Dev** (`npm run dev`): plain `main.js`, source HTML/SW files served directly
 - Static server prefers `dist/` files when present, falls back to source for dev
+- `npm run import-data` — populates `data/reference.db` from `.staging/` source files
+
+## Reference Data System (Phase 5.1)
+Immutable SQLite database (`data/reference.db`) populated by `scripts/import-data.ts`.
+Contains all GHS edition data: labels, scenarios, monsters, ability decks/cards,
+items, events, sections, personal quests, buildings, treasures, campaign data,
+and an asset manifest cataloging ~11,000 images from GHS client and Worldhaven.
+
+### Reference API Endpoints
+```
+GET /api/ref/scenario-text/:edition/:index    — scenario rules + label text
+GET /api/ref/ability-cards/:edition/:deck      — monster ability cards with names
+GET /api/ref/labels/:edition?prefix=...        — label lookup by prefix
+GET /api/ref/label/:edition/:key               — single label value
+GET /api/ref/section/:edition/:sectionId       — section book data
+GET /api/ref/items/:edition                    — item catalog
+GET /api/ref/assets/:edition/:category         — asset manifest by category
+GET /api/ref/asset/:edition/:category/:name    — specific asset lookup
+```

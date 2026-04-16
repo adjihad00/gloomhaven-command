@@ -144,7 +144,18 @@
   - [x] Hidden initiatives during draw phase (??), simultaneous reveal at play phase
   - [x] Stable compact card tray positioning (always bottom-right)
 
-## Phase 5: Polish & Compatibility
+## Phase 5: Data Pipeline & Polish
+- [x] Phase 5.1: Reference data inventory, schema design, and import pipeline
+  - [x] Exhaustive inventory of .staging/ data sources (25 editions, ~43K rows)
+  - [x] SQLite reference database schema (17 tables + indexes)
+  - [x] Import script (scripts/import-data.ts) — labels, scenarios, monsters, abilities, items, events, sections, assets
+  - [x] Asset manifest — ~11,000 images cataloged from GHS client + Worldhaven
+  - [x] Reference API endpoints (8 new /api/ref/ routes)
+  - [x] Server integration (ReferenceDb class, auto-load on startup)
+- [ ] Phase 5.2: Wire consumers — replace "See Scenario Book" placeholders with real data
+- [ ] Phase 5.3: Extend display monster ability action renderer (5/30+ action types)
+- [ ] Phase 5.4: Decouple mock types — replace MockMonsterAbility with shared types
+- [ ] Phase 5.5: Label interpolation engine for %game.action.X% placeholders
 - [ ] GHS save file import/export UI in controller
 - [ ] Campaign persistence across sessions
 - [x] Undo/redo stack (bounded, 50 actions)

@@ -10,6 +10,7 @@ import { WsHub } from './wsHub.js';
 import { configureStaticRoutes } from './staticServer.js';
 import { CommandHandler } from './commandHandler.js';
 import { FileSystemDataLoader } from './dataLoader.js';
+import { ReferenceDb } from './referenceDb.js';
 import {
   importGhsState, exportGhsState,
   DataManager, calculateScenarioLevel, deriveLevelValues,
@@ -48,6 +49,16 @@ async function loadEditions(): Promise<void> {
       console.log(`  Loaded edition: ${ed} (${chars} chars, ${monsters} monsters, ${scenarios} scenarios)`);
     }
   }
+}
+
+// ── Reference database (immutable, populated by scripts/import-data.ts) ──────
+
+const refDbPath = resolve(rootDir, 'data', 'reference.db');
+const refDb = existsSync(refDbPath) ? ReferenceDb.openReadonly(refDbPath) : null;
+if (refDb) {
+  console.log('  Reference DB loaded:', refDbPath);
+} else {
+  console.warn('  Reference DB not found. Run: npx tsx scripts/import-data.ts');
 }
 
 // ── API routes ────────────────────────────────────────────────────────────────
@@ -161,6 +172,56 @@ app.get('/api/data/level-calc', (req, res) => {
   res.json({ ...deriveLevelValues(level), characterLevels: levels, adjustment: adj });
 });
 
+// ── Reference Data API endpoints ─────────────────────────────────────────────
+
+app.get('/api/ref/scenario-text/:edition/:index', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const data = refDb.getScenarioText(req.params.edition, req.params.index);
+  data.name ? res.json(data) : res.status(404).json({ error: 'Scenario not found' });
+});
+
+app.get('/api/ref/ability-cards/:edition/:deck', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const cards = refDb.getMonsterAbilityCards(req.params.edition, req.params.deck);
+  res.json(cards);
+});
+
+app.get('/api/ref/labels/:edition', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const prefix = (req.query.prefix as string) || '';
+  if (!prefix) { res.status(400).json({ error: 'prefix query param required' }); return; }
+  const labels = refDb.getLabelsPrefix(req.params.edition, prefix);
+  res.json(labels);
+});
+
+app.get('/api/ref/label/:edition/:key(*)', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const value = refDb.getLabel(req.params.edition, req.params.key);
+  value != null ? res.json({ value }) : res.status(404).json({ error: 'Label not found' });
+});
+
+app.get('/api/ref/section/:edition/:sectionId', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const data = refDb.getSectionData(req.params.edition, req.params.sectionId);
+  data ? res.json(data) : res.status(404).json({ error: 'Section not found' });
+});
+
+app.get('/api/ref/items/:edition', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  res.json(refDb.getItems(req.params.edition));
+});
+
+app.get('/api/ref/assets/:edition/:category', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  res.json(refDb.getAssets(req.params.edition, req.params.category));
+});
+
+app.get('/api/ref/asset/:edition/:category/:name(*)', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const assets = refDb.getAsset(req.params.edition, req.params.category, req.params.name);
+  assets.length > 0 ? res.json(assets) : res.status(404).json({ error: 'Asset not found' });
+});
+
 // ── HTTP/HTTPS server ────────────────────────────────────────────────────────
 
 // Certificate search order:
@@ -266,6 +327,7 @@ function shutdown(): void {
   console.log('Shutting down...');
   wsHub.shutdown();
   gameStore.close();
+  refDb?.close();
   process.exit(0);
 }
 

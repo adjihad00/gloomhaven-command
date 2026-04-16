@@ -603,3 +603,37 @@ by `/`. Range sub-actions follow the same pattern.
 with its own icon. On a portrait display viewed from across the table, duplicate icons
 waste horizontal space and create visual clutter. A single icon with color-coded values
 is more readable at distance and eliminates ambiguity about whether both types have the stat.
+
+### 62. Immutable reference database separate from mutable game state (2026-04-16)
+**Decision:** Added `data/reference.db` (SQLite, immutable) alongside the existing
+`data/ghs.sqlite` (mutable game state). Reference DB is populated by `scripts/import-data.ts`
+from `.staging/` source files and never written during gameplay.
+**Rationale:** Game reference data (scenarios, monster stats, ability cards, items, labels,
+asset paths) is static per edition. Storing it in SQLite gives: (1) fast indexed lookups vs
+scanning JSON files at runtime, (2) a single queryable source for all data needs (the
+DataManager in-memory approach only loads 5 categories and doesn't handle labels, items,
+events, sections, or assets), (3) clean separation from mutable game state, (4) regenerable
+from source files at any time. The `ReferenceDb` class opens read-only at server startup;
+the import script recreates the entire DB from scratch each run.
+
+### 63. Asset manifest in reference DB for image path lookups (2026-04-16)
+**Decision:** Added `asset_manifest` table cataloging ~11,000 images from GHS client
+(~550 files: character portraits, monster thumbnails, action/condition/element icons)
+and Worldhaven (~10,600 files: stat cards, ability cards, item cards, event cards, etc.).
+Each row maps `(edition, category, name)` to a relative file path with source attribution.
+**Rationale:** The app currently builds asset URLs with string concatenation in
+`app/shared/assets.ts`. This works for the ~10 image types currently used but doesn't
+scale to items, events, character ability cards, or other categories needed for town mode.
+A queryable manifest enables: (1) API-driven image discovery (`/api/ref/assets/:edition/:category`),
+(2) validation that expected assets exist, (3) supporting multiple sources (GHS vs Worldhaven)
+for the same game concept with a `source` column.
+
+### 64. Flattened label keys with dot notation (2026-04-16)
+**Decision:** GHS label JSON files (nested objects) are flattened to dot-separated keys
+on import. Example: `{ "scenario": { "title": { "fh": { "1": "..." } } } }` becomes key
+`scenario.title.fh.1`. Queried via `LIKE 'prefix%'` for prefix lookups.
+**Rationale:** GHS label files use 3-5 levels of nesting with inconsistent depth across
+categories. Flattening to dot keys makes SQLite queries simple (exact match or prefix
+LIKE) without requiring JSON path extraction. The import script's `flattenObject()`
+handles arbitrary nesting depth. The `getLabelsPrefix()` query method enables bulk
+retrieval (e.g., all scenario rule labels for an edition).
