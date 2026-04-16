@@ -10,9 +10,10 @@ interface DisplayScenarioHeaderProps {
   level: number;
   elements: ElementModel[];
   isPending?: boolean;
+  onOpenMenu?: () => void;
 }
 
-export function DisplayScenarioHeader({ scenarioName, scenarioIndex, round, level, elements, isPending }: DisplayScenarioHeaderProps) {
+export function DisplayScenarioHeader({ scenarioName, scenarioIndex, round, level, elements, isPending, onOpenMenu }: DisplayScenarioHeaderProps) {
   const derived = deriveLevelValues(level);
 
   return (
@@ -25,7 +26,7 @@ export function DisplayScenarioHeader({ scenarioName, scenarioIndex, round, leve
 
       {/* Sticky portion — remains fixed at top */}
       <div class="display-header__sticky">
-        <div class="display-header__round">
+        <div class="display-header__round" onClick={onOpenMenu} style={{ cursor: onOpenMenu ? 'pointer' : undefined }}>
           Round <span class="display-header__round-number">{round}</span>
         </div>
         <div class="display-header__derived">

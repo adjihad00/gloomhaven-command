@@ -62,11 +62,23 @@ app/
 │   │                       PhoneCharacterDetail, PhoneExhaustPopup,
 │   │                       PhoneLootDeckPopup, PhoneConditionSplash
 │   └── styles/phone.css
-└── display/              # Monitor — portrait, read-only
-    ├── main.tsx, index.html
-    ├── LobbyWaitingView.tsx  # simple waiting screen
-    ├── ScenarioView.tsx      # vertical tower layout
-    └── TownView.tsx          # outpost map, events, world map
+└── display/              # Monitor — portrait, read-only, production-wired
+    ├── main.tsx, index.html, manifest.json
+    ├── App.tsx               # connection + mode routing, display registration
+    ├── ConnectionScreen.tsx   # game code input
+    ├── LobbyWaitingView.tsx   # setup-phase-aware waiting screen
+    ├── ScenarioView.tsx       # live state + state-driven animations
+    ├── TownView.tsx           # edition-specific town steps
+    ├── mockData.ts            # prototype mode data (URL param gated)
+    ├── hooks/
+    │   ├── useDisplayMonsterData.ts  # API fetch for monster stats/abilities
+    │   └── useStateTransitions.ts    # state change detection for animations
+    ├── components/            # DisplayScenarioHeader, DisplayFigureCard,
+    │                            DisplayElementBoard, DisplayInitiativeColumn,
+    │                            DisplayTransitions, DisplayAMDSplash,
+    │                            DisplayLootSplash, DisplayScenarioFooter,
+    │                            DisplayCharacterSummary, AmbientParticles
+    └── styles/display.css
 ```
 
 Three parallel esbuild builds. Tree-shaking gives each device only what it uses.
@@ -189,6 +201,11 @@ Does NOT show: monsters, other characters, modifier decks, doors.
 
 ### Monitor / Display (portrait, 1080×1920 vertical tower)
 Read-only, zero interaction. Dark fantasy war table aesthetic.
+Production-wired to live WebSocket state with state-driven animation triggers.
+Registers as `role: 'display'` with server. Auto-connects from localStorage on
+page load; auto-reconnects silently on any connection loss. Connection status
+shown as tiny dot (top-right), no error modals. Prototype mode at `?prototype=true`
+uses mock data with keyboard controls (Tab/1-6/a/l/v/d/r).
 
 **Layout:** Sticky header (round/level/elements) → initiative column → completed
 figure tray → fixed footer (special rules, victory/defeat conditions).
@@ -222,7 +239,16 @@ looting character's portrait).
 Fog layers, vignette, candlelight flicker on text.
 
 **Edition theming:** GH warm gold (#d3a663) vs FH ice blue (#77aadd) via CSS custom
-properties affecting accents, glows, borders, particles.
+properties affecting accents, glows, borders, particles. Applied from `state.edition`
+via `data-edition` attribute on document root.
+
+**State-driven animations:** `useStateTransition` hook detects changes in:
+- `state.round` → round increment flourish
+- `state.finish` → victory/defeat overlay (pending, confirmed, cancelled)
+- `state.monsterAttackModifierDeck.lastDrawn` → AMD card flip splash
+- `state.lootDeck.current` → loot card draw splash (targets active character)
+- Element state changes → infusion burst / consumption vortex (handled in DisplayElementBoard)
+Animations suppressed on reconnect (only fire on live state changes).
 
 ---
 

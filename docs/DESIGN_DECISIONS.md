@@ -486,3 +486,63 @@ badge at bottom-right, rather than showing the condition icon alone.
 **Rationale:** A standalone condition icon under the monster name is ambiguous — it could
 mean the monster is immune to it, applies it, or starts with it. The composite clearly
 communicates "attacks from this monster cause this condition."
+
+### 50. Prototype mode gated on URL param (2026-04-15)
+**Decision:** Display client's `PROTOTYPE_MODE` changed from a hardcoded `true` constant
+to `new URLSearchParams(window.location.search).get('prototype') === 'true'`. Default is
+production (live WebSocket data). Accessible at `/display?prototype=true`.
+**Rationale:** The prototype mode with mock data and keyboard controls (Tab for active
+figure cycling, a/l/v/d/r for splash demos, 1-6 for element cycling) is valuable for
+future design iteration. A URL param preserves this workflow without build-time flags or
+conditional compilation. The mock data module is only imported in prototype mode.
+
+### 51. State transition detection via useStateTransition hook (2026-04-15)
+**Decision:** Created `useStateTransition<T>(value, callback, suppressUntilReady)` hook
+that compares previous and current values via `useRef`, firing a callback on change.
+Skips the first render to avoid false triggers on initial state load.
+**Rationale:** The display needs to trigger animations (AMD card flip, loot splash,
+round flourish, victory/defeat overlay) when specific state fields change. A generic
+comparison hook keeps ScenarioView clean — each transition is one `useStateTransition`
+call rather than manual `useEffect` + ref tracking. The `suppressUntilReady` parameter
+prevents animations from firing on reconnect (where current state arrives as a bulk
+update, not incremental changes).
+
+### 52. Unattended auto-reconnect for display client (2026-04-15)
+**Decision:** Display registers as `role: 'display'` with the server. Auto-connects on
+page load from `localStorage` game code. Connection status shown as a tiny dot (10px)
+in the top-right corner: hidden when connected, amber pulse when reconnecting, red when
+disconnected. No error modals, no banners, no toast notifications.
+**Rationale:** The display is a TV/monitor with no keyboard or mouse. Any UI that
+requires user interaction to dismiss (modals, banners with close buttons) would block
+the display indefinitely. The connection dot is visible from across the room for
+debugging but doesn't interfere with gameplay. Errors are logged to console only.
+
+### 53. Hidden config menu on display client (2026-04-15)
+**Decision:** Display client has a config menu overlay accessible by clicking the
+Round number (scenario mode), edition title (lobby), or "Town Phase" title (town).
+The menu shows the current game code and a Disconnect button that clears localStorage
+and returns to the connection screen.
+**Rationale:** The display is read-only with no visible UI controls, but users need a
+way to disconnect and switch game codes without restarting the browser. Making the
+Round number clickable keeps the menu hidden from casual observers at the table while
+remaining accessible to the person setting up the display. The menu trigger varies by
+mode so it works regardless of game state.
+
+### 54. Cert file validation guards against empty files (2026-04-15)
+**Decision:** `findCerts()` in `server/src/index.ts` now validates cert files are non-empty
+via `statSync().size > 0` before using them. Empty files trigger a console warning and the
+server falls back to the next cert source in the search order (Certbot → mkcert → HTTP).
+**Rationale:** Certbot on Windows creates 0-byte placeholder files in `live/` when it
+fails to create symlinks to `archive/` (symlinks require admin privileges). The previous
+`existsSync()` check passed for 0-byte files, causing the server to serve a broken cert.
+Chrome caches bad cert state aggressively (HSTS), so even after fixing the files, users
+had to manually clear Chrome's security cache. Preventing the server from ever serving an
+empty cert eliminates this class of problem entirely.
+
+### 55. Scenario rules footer placeholder (2026-04-15)
+**Decision:** In production mode, the scenario footer shows "See Scenario Book" for
+special rules, victory conditions, and loss conditions. In prototype mode, mock rules
+text is displayed.
+**Rationale:** Real scenario rules text is not in the GHS JSON data files — it requires
+a scenario database (deferred to Batch 18). The placeholder keeps the footer visible
+and structurally correct while clearly directing players to the physical book.

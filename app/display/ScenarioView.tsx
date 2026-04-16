@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useContext, useState, useEffect, useRef } from 'preact/hooks';
+import type { RefObject } from 'preact';
 import { AppContext } from '../shared/context';
 import { AmbientParticles } from './components/AmbientParticles';
 import { DisplayScenarioHeader } from './components/DisplayScenarioHeader';
@@ -11,6 +12,10 @@ import { DisplayAMDSplash } from './components/DisplayAMDSplash';
 import { DisplayLootSplash } from './components/DisplayLootSplash';
 import type { TransitionType } from './components/DisplayTransitions';
 import { useDisplayMonsterData } from './hooks/useDisplayMonsterData';
+import { useStateTransition } from './hooks/useStateTransitions';
+
+// ── Prototype-only imports (keyboard demo controls) ─────────────────────────
+
 import { mockAbilities, mockScenarioRules, mockMonsterStats } from './mockData';
 
 const AMD_DEMO_CARDS = ['plus1', 'minus1', 'plus2', 'minus2', 'bless', 'curse', 'double', 'null'];
@@ -29,14 +34,24 @@ const ELEMENT_CYCLE: Record<string, string> = {
   consumed: 'inert',
 };
 
-export function ScenarioView() {
+// ── Props ──────────────────────────────────────────────────────────────────
+
+interface ScenarioViewProps {
+  prototypeMode?: boolean;
+  isReconnect?: RefObject<boolean>;
+  onOpenMenu?: () => void;
+}
+
+export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: ScenarioViewProps) {
   const { state } = useContext(AppContext);
-  const [demoTransition, setDemoTransition] = useState<TransitionType>(null);
+  const [transition, setTransition] = useState<TransitionType>(null);
   const [amdSplash, setAmdSplash] = useState<string | null>(null);
   const [lootSplash, setLootSplash] = useState<{ type: string; coinValue?: number; playerName?: string } | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // ── Prototype-only state ────────────────────────────────────────────────
   const [elementOverrides, setElementOverrides] = useState<Record<string, string>>({});
   const [demoActiveIdx, setDemoActiveIdx] = useState<number | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   // Fetch real monster data from API
   const monsterDataMap = useDisplayMonsterData(
@@ -45,8 +60,57 @@ export function ScenarioView() {
     state?.level ?? 2,
   );
 
-  // Demo keyboard triggers for splash animations + element cycling
+  // ── Live state transition detection (production only) ───────────────────
+
+  // Round change → round flourish
+  useStateTransition(state?.round, (prev, curr) => {
+    if (prototypeMode || isReconnect?.current) return;
+    if (prev !== undefined && curr !== undefined && curr > prev) {
+      setTransition('round');
+    }
+  });
+
+  // Scenario finish → victory/defeat overlay
+  useStateTransition(state?.finish, (prev, curr) => {
+    if (prototypeMode || isReconnect?.current) return;
+    if (curr === 'pending:victory') setTransition('victory');
+    else if (curr === 'pending:failure') setTransition('defeat');
+    else if (curr === 'success') setTransition('victory');
+    else if (curr === 'failure') setTransition('defeat');
+    else if (!curr && prev) setTransition(null); // cancelled
+  });
+
+  // AMD card draw → flip animation
+  useStateTransition(state?.monsterAttackModifierDeck?.lastDrawn, (prev, curr) => {
+    if (prototypeMode || isReconnect?.current) return;
+    if (prev !== undefined && curr && !amdSplash) {
+      // Map card ID to display type
+      const cardType = resolveAMDCardType(curr);
+      setAmdSplash(cardType);
+    }
+  });
+
+  // Loot card draw → shrink-to-character animation
+  useStateTransition(state?.lootDeck?.current, (prev, curr) => {
+    if (prototypeMode || isReconnect?.current) return;
+    if (prev !== undefined && curr !== undefined && curr > prev && !lootSplash) {
+      // The drawn card is at index prev (before current incremented)
+      const drawnCard = state?.lootDeck?.cards?.[prev];
+      // Active character is the one who drew
+      const activeChar = state?.characters?.find(c => c.active && !c.exhausted && !c.absent);
+      setLootSplash({
+        type: drawnCard?.type || 'money',
+        coinValue: drawnCard?.type === 'money' ? (drawnCard as any)?.value4P : undefined,
+        playerName: activeChar?.name,
+      });
+    }
+  });
+
+  // ── Prototype keyboard controls ─────────────────────────────────────────
+
   useEffect(() => {
+    if (!prototypeMode) return;
+
     let amdIdx = 0;
     let lootIdx = 0;
     const elementKeys = ['fire', 'ice', 'air', 'earth', 'light', 'dark'];
@@ -61,12 +125,10 @@ export function ScenarioView() {
         setLootSplash(demo);
         lootIdx++;
       }
-      // Transition demos
-      if (e.key === 'v') setDemoTransition('victory');
-      if (e.key === 'd') setDemoTransition('defeat');
-      if (e.key === 'r') setDemoTransition('round');
+      if (e.key === 'v') setTransition('victory');
+      if (e.key === 'd') setTransition('defeat');
+      if (e.key === 'r') setTransition('round');
 
-      // Element cycling: keys 1-6 cycle fire/ice/air/earth/light/dark
       const keyNum = parseInt(e.key);
       if (keyNum >= 1 && keyNum <= 6) {
         const elType = elementKeys[keyNum - 1];
@@ -77,17 +139,13 @@ export function ScenarioView() {
         });
       }
 
-      // Tab / Shift+Tab: cycle active figure forward/backward
       if (e.key === 'Tab') {
         e.preventDefault();
         setDemoActiveIdx(prev => {
-          // Total figure count from state
           const total = state?.figures?.length || 0;
           if (total === 0) return null;
           if (prev === null) return 0;
-          if (e.shiftKey) {
-            return prev <= 0 ? total - 1 : prev - 1;
-          }
+          if (e.shiftKey) return prev <= 0 ? total - 1 : prev - 1;
           return prev >= total - 1 ? 0 : prev + 1;
         });
       }
@@ -95,7 +153,7 @@ export function ScenarioView() {
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [amdSplash, lootSplash, state?.elementBoard]);
+  }, [prototypeMode, amdSplash, lootSplash, state?.elementBoard]);
 
   // Auto-scroll to active figure
   useEffect(() => {
@@ -160,8 +218,8 @@ export function ScenarioView() {
     monster?: any;
   }>;
 
-  // Apply demo active index override
-  const displayEntries = demoActiveIdx !== null
+  // Apply demo active index override (prototype only)
+  const displayEntries = (prototypeMode && demoActiveIdx !== null)
     ? figureEntries.map((entry, i) => ({
         ...entry,
         active: i === demoActiveIdx,
@@ -173,7 +231,7 @@ export function ScenarioView() {
   let activeFigures = displayEntries;
   let completedFigures: typeof displayEntries = [];
 
-  if (isPending && demoActiveIdx === null) {
+  if (isPending && (!prototypeMode || demoActiveIdx === null)) {
     const chars = displayEntries.filter(f => f.type === 'character');
     const others = displayEntries.filter(f => f.type !== 'character');
     activeFigures = [...chars, ...others];
@@ -185,6 +243,13 @@ export function ScenarioView() {
 
   const edition = state.edition || 'gh';
 
+  // Elements: use overrides in prototype mode, live state in production
+  const elements = prototypeMode
+    ? state.elementBoard.map(el =>
+        elementOverrides[el.type] ? { ...el, state: elementOverrides[el.type] as any } : el
+      )
+    : state.elementBoard;
+
   // Find target character portrait position for loot animation
   const getLootTargetPosition = (playerName: string): { x: number; y: number } | null => {
     const el = document.querySelector(`[data-character-name="${playerName}"]`) as HTMLElement;
@@ -192,6 +257,30 @@ export function ScenarioView() {
     const rect = el.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
   };
+
+  // Resolve ability data for a monster — API first, mock fallback in prototype
+  const getMonsterAbility = (monsterName: string) => {
+    const apiData = monsterDataMap.get(monsterName);
+    if (apiData?.ability) return apiData.ability;
+    if (prototypeMode) return mockAbilities[monsterName];
+    return null;
+  };
+
+  const getMonsterBaseStats = (monsterName: string) => {
+    const apiData = monsterDataMap.get(monsterName);
+    if (apiData?.baseStats) return apiData.baseStats;
+    if (prototypeMode) return mockMonsterStats[monsterName];
+    return undefined;
+  };
+
+  // Scenario footer: placeholder text in production, mock text in prototype
+  const footerRules = prototypeMode
+    ? mockScenarioRules
+    : {
+        specialRules: 'See Scenario Book',
+        winConditions: 'See Scenario Book',
+        lossConditions: 'See Scenario Book',
+      };
 
   return (
     <div class="display" data-edition={edition}>
@@ -205,21 +294,16 @@ export function ScenarioView() {
           scenarioIndex={scenarioIndex}
           round={state.round}
           level={state.level}
-          elements={state.elementBoard.map(el =>
-            elementOverrides[el.type] ? { ...el, state: elementOverrides[el.type] as any } : el
-          )}
+          elements={elements}
           isPending={isPending}
+          onOpenMenu={onOpenMenu}
         />
 
         <DisplayInitiativeColumn>
           {activeFigures.map(entry => {
-            const monsterData = entry.type === 'monster' ? monsterDataMap.get(entry.name) : undefined;
-            // Merge real API ability with mock name fallback
-            const apiAbility = monsterData?.ability;
-            const mockAbility = entry.type === 'monster' ? mockAbilities[entry.name] : undefined;
-            const ability = apiAbility
-              ? { ...apiAbility, name: mockAbility?.name || apiAbility.name }
-              : mockAbility;
+            const ability = entry.type === 'monster' ? getMonsterAbility(entry.name) : undefined;
+            const baseStats = entry.type === 'monster' ? getMonsterBaseStats(entry.name) : undefined;
+            const innateStats = entry.type === 'monster' ? monsterDataMap.get(entry.name)?.innateStats : undefined;
             return (
               <DisplayFigureCard
                 key={`${entry.edition}-${entry.name}`}
@@ -232,8 +316,8 @@ export function ScenarioView() {
                 character={entry.character}
                 monster={entry.monster}
                 ability={ability}
-                baseStats={monsterData?.baseStats || (entry.type === 'monster' ? mockMonsterStats[entry.name] : undefined)}
-                innateStats={monsterData?.innateStats}
+                baseStats={baseStats}
+                innateStats={innateStats}
               />
             );
           })}
@@ -245,7 +329,6 @@ export function ScenarioView() {
           return (
             <div class="display-completed-tray">
               <div class="display-completed-tray__layout">
-                {/* Standees bottom-left, grouped by monster type */}
                 {completedMonsters.length > 0 && (
                   <div class="display-completed-tray__standees">
                     {completedMonsters.map(entry => {
@@ -273,15 +356,11 @@ export function ScenarioView() {
                   </div>
                 )}
 
-                {/* Compact cards bottom-right, stacked vertically */}
                 <div class="display-completed-tray__cards">
                   {completedFigures.map(entry => {
-                    const monsterData = entry.type === 'monster' ? monsterDataMap.get(entry.name) : undefined;
-                    const apiAbility = monsterData?.ability;
-                    const mockAbility = entry.type === 'monster' ? mockAbilities[entry.name] : undefined;
-                    const ability = apiAbility
-                      ? { ...apiAbility, name: mockAbility?.name || apiAbility.name }
-                      : mockAbility;
+                    const ability = entry.type === 'monster' ? getMonsterAbility(entry.name) : undefined;
+                    const baseStats = entry.type === 'monster' ? getMonsterBaseStats(entry.name) : undefined;
+                    const innateStats = entry.type === 'monster' ? monsterDataMap.get(entry.name)?.innateStats : undefined;
                     return (
                       <DisplayFigureCard
                         key={`${entry.edition}-${entry.name}-compact`}
@@ -295,8 +374,8 @@ export function ScenarioView() {
                         character={entry.character}
                         monster={entry.monster}
                         ability={ability}
-                        baseStats={monsterData?.baseStats || (entry.type === 'monster' ? mockMonsterStats[entry.name] : undefined)}
-                        innateStats={monsterData?.innateStats}
+                        baseStats={baseStats}
+                        innateStats={innateStats}
                       />
                     );
                   })}
@@ -308,9 +387,9 @@ export function ScenarioView() {
       </div>
 
       <DisplayScenarioFooter
-        specialRules={mockScenarioRules.specialRules}
-        winConditions={mockScenarioRules.winConditions}
-        lossConditions={mockScenarioRules.lossConditions}
+        specialRules={footerRules.specialRules}
+        winConditions={footerRules.winConditions}
+        lossConditions={footerRules.lossConditions}
       />
 
       {amdSplash && (
@@ -324,18 +403,35 @@ export function ScenarioView() {
         <DisplayLootSplash
           lootType={lootSplash.type}
           coinValue={lootSplash.coinValue}
-          playerName={lootSplash.playerName || 'Drifter'}
-          targetPosition={getLootTargetPosition(lootSplash.playerName || 'Drifter')}
+          playerName={lootSplash.playerName || 'Unknown'}
+          targetPosition={getLootTargetPosition(lootSplash.playerName || '')}
           onComplete={() => setLootSplash(null)}
         />
       )}
 
       <DisplayTransitions
-        transition={demoTransition}
+        transition={transition}
         roundNumber={state.round}
         scenarioName={scenarioName}
-        onComplete={() => setDemoTransition(null)}
+        onComplete={() => setTransition(null)}
       />
     </div>
   );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Map AMD card ID string to display card type */
+function resolveAMDCardType(cardId: string): string {
+  const id = cardId.toLowerCase();
+  if (id.includes('bless')) return 'bless';
+  if (id.includes('curse')) return 'curse';
+  if (id === '2x' || id.includes('double') || id.includes('2x')) return 'double';
+  if (id === 'null' || id.includes('miss') || id.includes('null')) return 'null';
+  if (id.includes('+2')) return 'plus2';
+  if (id.includes('-2')) return 'minus2';
+  if (id.includes('+1')) return 'plus1';
+  if (id.includes('-1')) return 'minus1';
+  if (id.includes('+0') || id === '0') return 'plus0';
+  return 'plus0';
 }

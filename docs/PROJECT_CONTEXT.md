@@ -34,6 +34,9 @@ Server validates, applies via shared engine, persists to SQLite, broadcasts diff
   Completed figures collapse to compact tray (cards right, standees left).
   AMD card draw splash (3D flip), loot card splash (targets character portrait),
   element board with infusion/consumption animations, transition overlays.
+  Production-wired: live WebSocket state, state-driven animation triggers,
+  auto-reconnect (no user interaction needed), display role registration,
+  PWA manifest + content-hashed SW. Prototype mode at `?prototype=true`.
 
 ### Key Files for Understanding the System
 - Types: `packages/shared/src/types/gameState.ts` — all data structures
@@ -99,7 +102,7 @@ See `docs/COMMAND_PROTOCOL.md` for full spec.
 
 ## Current Phase
 Phase R COMPLETE (13 fix batches). Phase 3 Phone ScenarioView — Batch 16 COMPLETE.
-Phase 4 Display Client — Design Exploration COMPLETE.
+Phase 4 Display Client — Design Exploration COMPLETE. Production wiring COMPLETE (Batch 17).
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,

@@ -17,7 +17,7 @@ const FH_STEPS = [
   'Construction',
 ];
 
-export function TownView() {
+export function TownView({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { state } = useContext(AppContext);
   const edition = state?.edition || 'gh';
   const isFH = edition === 'fh';
@@ -32,7 +32,7 @@ export function TownView() {
       <div class="display__vignette" />
 
       <div class="display-town__content">
-        <h1 class="display-town__title">Town Phase</h1>
+        <h1 class="display-town__title" onClick={onOpenMenu} style={{ cursor: onOpenMenu ? 'pointer' : undefined }}>Town Phase</h1>
         <p class="display-town__subtitle">{subtitle}</p>
 
         <div class="display-town__steps">

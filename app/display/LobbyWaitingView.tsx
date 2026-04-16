@@ -5,7 +5,7 @@ import { AmbientParticles } from './components/AmbientParticles';
 import { editionLogo } from '../shared/assets';
 import { formatName } from '../shared/formatName';
 
-export function LobbyWaitingView() {
+export function LobbyWaitingView({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { state } = useContext(AppContext);
 
   const edition = state?.edition || 'gh';
@@ -42,7 +42,7 @@ export function LobbyWaitingView() {
           class="display-lobby__logo"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
-        <h1 class="display-lobby__title">{editionTitle}</h1>
+        <h1 class="display-lobby__title" onClick={onOpenMenu} style={{ cursor: onOpenMenu ? 'pointer' : undefined }}>{editionTitle}</h1>
 
         {phaseLabel ? (
           <>

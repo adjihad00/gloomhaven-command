@@ -47,6 +47,13 @@ const SW_CSS = {
     '/app/shared/styles/connection.css',
     '/app/phone/styles/phone.css',
   ],
+  display: [
+    '/app/shared/styles/theme.css',
+    '/app/shared/styles/typography.css',
+    '/app/shared/styles/components.css',
+    '/app/shared/styles/connection.css',
+    '/app/display/styles/display.css',
+  ],
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { resolve, join } from 'path';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { networkInterfaces } from 'os';
 import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
@@ -169,10 +169,16 @@ app.get('/api/data/level-calc', (req, res) => {
 // 3. Local mkcert: certs/ directory in project root
 // 4. No certs found → plain HTTP
 
+/** Check that a cert file exists AND is non-empty (guards against broken Windows symlinks) */
+function certFileValid(path: string): boolean {
+  if (!existsSync(path)) return false;
+  try { return statSync(path).size > 0; } catch { return false; }
+}
+
 function findCerts(): { cert: string; key: string } | null {
   // Env vars (highest priority)
   if (process.env.SSL_CERT_PATH && process.env.SSL_KEY_PATH) {
-    if (existsSync(process.env.SSL_CERT_PATH) && existsSync(process.env.SSL_KEY_PATH)) {
+    if (certFileValid(process.env.SSL_CERT_PATH) && certFileValid(process.env.SSL_KEY_PATH)) {
       return { cert: process.env.SSL_CERT_PATH, key: process.env.SSL_KEY_PATH };
     }
   }
@@ -190,8 +196,11 @@ function findCerts(): { cert: string; key: string } | null {
       for (const dir of dirs) {
         const cert = join(base, dir, 'fullchain.pem');
         const key = join(base, dir, 'privkey.pem');
-        if (existsSync(cert) && existsSync(key)) {
+        if (certFileValid(cert) && certFileValid(key)) {
           return { cert, key };
+        }
+        if (existsSync(cert) || existsSync(key)) {
+          console.warn(`  Warning: Cert files in ${join(base, dir)} exist but are empty — skipping`);
         }
       }
     }
@@ -203,7 +212,7 @@ function findCerts(): { cert: string; key: string } | null {
     const files = readdirSync(localCert);
     const certFile = files.find(f => f.endsWith('.pem') && !f.includes('-key') && !f.includes('rootCA'));
     const keyFile = files.find(f => f.endsWith('-key.pem'));
-    if (certFile && keyFile) {
+    if (certFile && keyFile && certFileValid(join(localCert, certFile)) && certFileValid(join(localCert, keyFile))) {
       return { cert: join(localCert, certFile), key: join(localCert, keyFile) };
     }
   }

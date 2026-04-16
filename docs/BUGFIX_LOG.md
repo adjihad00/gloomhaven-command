@@ -146,6 +146,15 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 
 ## 2026-04-14 — HTTPS + LAN Connectivity Investigation
 
+## 2026-04-15 — Batch 17: Cert Validation Fix
+
+### B17.1: Server serves broken HTTPS with empty cert files
+**Symptom:** `https://game.gh-command.com:3000` shows "Not Secure" in Chrome with HTTPS crossed out. Incognito works after fixing cert files, but main profile caches the bad cert state.
+**Root cause:** Certbot on Windows stores real certs in `C:\Certbot\archive\` and creates symlinks in `C:\Certbot\live\`. Windows failed to create symlinks (requires admin privileges), leaving 0-byte placeholder files. The server's `findCerts()` used `existsSync()` which returns true for 0-byte files, so it loaded an empty cert. Chrome cached the broken cert's security state, requiring manual HSTS/cache clearing even after the cert was fixed.
+**Fix:** Added `certFileValid()` helper that checks both `existsSync()` AND `statSync().size > 0`. All cert file checks in `findCerts()` now use this helper. If Certbot cert files exist but are empty, the server logs a warning and falls back to mkcert certs instead of serving a broken cert. Also copied valid certs from `archive/` to `live/` manually, and set up a Windows scheduled task for weekly Certbot renewal with a PowerShell script (`scripts/renew-cert.ps1`) that handles the archive→live copy on Windows.
+
+---
+
 ### INF1: game.gh-command.com unreachable from LAN devices
 **Symptom:** After setting up Let's Encrypt certs + Cloudflare DNS, `https://game.gh-command.com:3000` fails to load from Chrome PC and phones. localhost works. LAN IP works from dev PC but cert mismatch on other devices.
 **Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.

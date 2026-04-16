@@ -126,6 +126,11 @@
 - [x] Pending initiative layout — characters top, monsters bottom, scenario name visible
 - [x] Transition overlays — victory, defeat, round, scenario start
 - [x] Lobby waiting view + town view with edition-specific steps
+- [x] Production wiring — live WebSocket state, state-driven animations, auto-reconnect
+- [x] Display role registration with server
+- [x] PWA manifest + content-hashed service worker
+- [x] Prototype mode preserved behind URL param (`?prototype=true`)
+- [x] Connection status indicator (tiny dot, no modals)
 - [ ] Scenario database — special rules, victory/loss conditions from scenario books (deferred)
 - [ ] Monster stat database — structured innate stats from stat card images (deferred, using GHS JSON)
 
