@@ -39,7 +39,9 @@ export interface DataContext {
   getScenario(edition: string, index: string): ScenarioData | null;
   resolveRoomSpawns(scenario: ScenarioData, roomNumber: number, playerCount: number): ResolvedSpawn[];
   getMonsterDeckForMonster(edition: string, monsterName: string): MonsterAbilityDeckData | null;
+  getMonsterDeck(edition: string, deckName: string): MonsterAbilityDeckData | null;
   getMonster(edition: string, name: string): MonsterData | null;
+  getBattleGoals?(edition: string): Array<{ cardId: string; name: string; checks: number }> | null;
 }
 
 const UNDO_LIMIT = 50;
@@ -214,6 +216,12 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'completeTownPhase':
       after.mode = 'lobby';
       after.finish = undefined;
+      break;
+    case 'dealBattleGoals':
+      handleDealBattleGoals(after, command.payload, dataContext);
+      break;
+    case 'returnBattleGoals':
+      handleReturnBattleGoals(after, command.payload);
       break;
     default: {
       const _exhaustive: never = command;
@@ -507,12 +515,18 @@ function handleAdvancePhase(state: GameState, dataContext?: DataContext): GameSt
 // ── Auto-draw monster ability cards ─────────────────────────────────────────
 
 /** Group monsters by shared ability deck name. */
+/** Resolve the ability deck name for a monster, checking scenario override first */
+function getMonsterDeckName(monster: Monster, dataContext: DataContext): string {
+  if (monster.overrideDeck) return monster.overrideDeck;
+  const monsterData = dataContext.getMonster(monster.edition, monster.name);
+  return monsterData?.deck || monster.name;
+}
+
 function groupMonstersByDeck(monsters: Monster[], dataContext: DataContext): Map<string, Monster[]> {
   const deckGroups = new Map<string, Monster[]>();
   for (const monster of monsters) {
     if (!monster.entities.some((e) => !e.dead)) continue;
-    const monsterData = dataContext.getMonster(monster.edition, monster.name);
-    const deckName = monsterData?.deck || monster.name;
+    const deckName = getMonsterDeckName(monster, dataContext);
     const key = `${monster.edition}:${deckName}`;
     if (!deckGroups.has(key)) {
       deckGroups.set(key, []);
@@ -525,7 +539,13 @@ function groupMonstersByDeck(monsters: Monster[], dataContext: DataContext): Map
 /** Draw one ability card for a group of monsters sharing a deck. Sets ability + initiative on all. */
 function drawAbilityForDeckGroup(monsters: Monster[], dataContext: DataContext): void {
   const master = monsters[0];
-  const deckData = dataContext.getMonsterDeckForMonster(master.edition, master.name);
+  // Check for scenario-specific deck override first
+  let deckData = master.overrideDeck
+    ? dataContext.getMonsterDeck(master.edition, master.overrideDeck)
+    : null;
+  if (!deckData) {
+    deckData = dataContext.getMonsterDeckForMonster(master.edition, master.name);
+  }
   if (!deckData || deckData.abilities.length === 0) return;
 
   // Initialize abilities array if empty (first draw ever)
@@ -648,7 +668,12 @@ function processMonsterAbilityActions(
 ): void {
   if (!dataContext || monster.ability < 0) return;
 
-  const deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
+  let deckData = monster.overrideDeck
+    ? dataContext.getMonsterDeck(monster.edition, monster.overrideDeck)
+    : null;
+  if (!deckData) {
+    deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
+  }
   if (!deckData) return;
 
   const card = deckData.abilities[monster.ability];
@@ -753,13 +778,15 @@ function handleEndOfRoundShuffle(state: GameState, dataContext: DataContext): vo
   for (const monster of state.monsters) {
     if (monster.ability < 0) continue;
 
-    const deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
+    let deckData = monster.overrideDeck
+      ? dataContext.getMonsterDeck(monster.edition, monster.overrideDeck)
+      : null;
+    if (!deckData) deckData = dataContext.getMonsterDeckForMonster(monster.edition, monster.name);
     if (!deckData) continue;
 
     const drawnCard = deckData.abilities[monster.ability];
     if (drawnCard?.shuffle) {
-      const monsterData = dataContext.getMonster(monster.edition, monster.name);
-      const deckName = monsterData?.deck || monster.name;
+      const deckName = getMonsterDeckName(monster, dataContext);
       shuffledDecks.add(`${monster.edition}:${deckName}`);
     }
   }
@@ -767,8 +794,7 @@ function handleEndOfRoundShuffle(state: GameState, dataContext: DataContext): vo
   // Reshuffle decks that had a shuffle card drawn
   if (shuffledDecks.size > 0) {
     for (const monster of state.monsters) {
-      const monsterData = dataContext.getMonster(monster.edition, monster.name);
-      const deckName = monsterData?.deck || monster.name;
+      const deckName = getMonsterDeckName(monster, dataContext);
       if (shuffledDecks.has(`${monster.edition}:${deckName}`)) {
         shuffleArray(monster.abilities);
         monster.lastDraw = -1;
@@ -1493,6 +1519,83 @@ function handleDrawModifierCard(
   deck.lastVisible = deck.current - 1;
 }
 
+// ── Battle Goal Deck ─────────────────────────────────────────────────────────
+
+/**
+ * Deal battle goals from the persistent deck. If no deck exists yet,
+ * initializes it by fetching all goals for the edition and shuffling.
+ * Returns dealt card IDs via state.battleGoalDeck.
+ */
+function handleDealBattleGoals(
+  state: GameState,
+  payload: { edition: string; count: number },
+  dataContext?: DataContext,
+): void {
+  // Initialize deck if it doesn't exist yet (first scenario of campaign)
+  if (!state.battleGoalDeck || state.battleGoalDeck.cards.length === 0) {
+    const goals = dataContext?.getBattleGoals?.(payload.edition);
+    if (!goals || goals.length === 0) return;
+    const cardIds = goals.map(g => g.cardId);
+    shuffleArray(cardIds);
+    state.battleGoalDeck = { cards: cardIds, current: 0 };
+  }
+
+  const deck = state.battleGoalDeck;
+  // If we're near the end of the deck, wrap around (all cards have been dealt at least once)
+  if (deck.current + payload.count > deck.cards.length) {
+    deck.current = 0;
+  }
+  // Advance the pointer — the phone reads cards[current..current+count] for its dealt hand
+  deck.current += payload.count;
+}
+
+/**
+ * Return unused battle goal cards to the bottom of the deck.
+ * Per rules: unkept cards go to the bottom (not reshuffled).
+ */
+function handleReturnBattleGoals(
+  state: GameState,
+  payload: { cardIds: string[] },
+): void {
+  if (!state.battleGoalDeck) return;
+  const deck = state.battleGoalDeck;
+
+  // Remove returned cards from their current position and push to end
+  for (const cardId of payload.cardIds) {
+    const idx = deck.cards.indexOf(cardId);
+    if (idx >= 0) {
+      deck.cards.splice(idx, 1);
+      deck.cards.push(cardId);
+      // Adjust current pointer if we removed a card before it
+      if (idx < deck.current) deck.current--;
+    }
+  }
+}
+
+/**
+ * Parse scenario rules and apply deck overrides to spawned monsters.
+ * E.g., FH scenario 0: hounds use "hound-scenario-0" deck instead of "hound".
+ */
+function applyScenarioRuleDeckOverrides(state: GameState, scenario: ScenarioData): void {
+  if (!scenario.rules || !Array.isArray(scenario.rules)) return;
+
+  for (const rule of scenario.rules as any[]) {
+    if (!rule.statEffects || !Array.isArray(rule.statEffects)) continue;
+    for (const effect of rule.statEffects) {
+      const ident = effect.identifier;
+      const deckOverride = effect.statEffect?.deck;
+      if (!ident || !deckOverride || ident.type !== 'monster') continue;
+
+      // Find matching monster groups and apply the deck override
+      for (const monster of state.monsters) {
+        if (monster.name === ident.name && monster.edition === (ident.edition || state.scenario?.edition)) {
+          monster.overrideDeck = deckOverride;
+        }
+      }
+    }
+  }
+}
+
 function handleSetScenario(
   state: GameState,
   payload: { scenarioIndex: string; edition: string; group?: string },
@@ -1554,6 +1657,9 @@ function handleSetScenario(
         spawnRoomMonsters(state, payload.edition, scenario, initialRoom.roomNumber, playerCount, dataContext);
         state.scenario.revealedRooms!.push(initialRoom.roomNumber);
       }
+
+      // Apply scenario rule stat effects (e.g., deck overrides)
+      applyScenarioRuleDeckOverrides(state, scenario);
 
       // Build loot deck from scenario config (FH)
       if (scenario.lootDeckConfig && Object.keys(scenario.lootDeckConfig).length > 0) {

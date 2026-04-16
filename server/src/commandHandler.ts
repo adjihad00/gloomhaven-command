@@ -26,7 +26,9 @@ export class CommandHandler {
         getScenario: (ed, index) => dataManager.getScenario(ed, index),
         resolveRoomSpawns: (scenario, room, count) => dataManager.resolveRoomSpawns(scenario, room, count),
         getMonsterDeckForMonster: (ed, name) => dataManager.getMonsterDeckForMonster(ed, name),
+        getMonsterDeck: (ed, deckName) => dataManager.getMonsterDeck(ed, deckName),
         getMonster: (ed, name) => dataManager.getMonster(ed, name),
+        getBattleGoals: (ed) => dataManager.getBattleGoals(ed),
       };
     }
   }

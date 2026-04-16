@@ -23,6 +23,7 @@ export class DataManager {
   private monsters: Map<string, MonsterData> = new Map();              // "edition:name"
   private monsterDecks: Map<string, MonsterAbilityDeckData> = new Map(); // "edition:deckName"
   private scenarios: Map<string, ScenarioData> = new Map();            // "edition:index"
+  private battleGoals: Map<string, Array<{ cardId: string; name: string; checks: number }>> = new Map();
 
   constructor(loader: DataLoader) {
     this.loader = loader;
@@ -74,6 +75,16 @@ export class DataManager {
         data.edition = edition;
         this.scenarios.set(scenarioKeyOf(edition, data.index, data.group), data);
       }
+    }
+
+    // 6. Load battle goals
+    if (await this.loader.exists(`${edition}/battle-goals.json`)) {
+      try {
+        const bgData = await this.loader.loadJson<Array<{ cardId: string; name: string; checks: number }>>(
+          `${edition}/battle-goals.json`,
+        );
+        this.battleGoals.set(edition, bgData);
+      } catch { /* optional data */ }
     }
 
     this.loadedEditions.add(edition);
@@ -188,6 +199,12 @@ export class DataManager {
 
   getScenario(edition: string, index: string, group?: string): ScenarioData | null {
     return this.scenarios.get(scenarioKeyOf(edition, index, group)) ?? null;
+  }
+
+  // ── Battle goal lookups ───────────────────────────────────────────────
+
+  getBattleGoals(edition: string): Array<{ cardId: string; name: string; checks: number }> | null {
+    return this.battleGoals.get(edition) ?? null;
   }
 
   // ── Spawn resolution ──────────────────────────────────────────────────

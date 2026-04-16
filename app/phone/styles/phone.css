@@ -3375,25 +3375,16 @@
 }
 
 .phone-lobby__goal-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  background: var(--bg-secondary);
-  border: 1px solid var(--accent-gold-dim);
   border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
-.phone-lobby__goal-name {
-  font-family: 'Cinzel', serif;
-  font-size: 0.9rem;
-  color: var(--accent-gold);
-  font-weight: 600;
-}
-
-.phone-lobby__goal-checks {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+.phone-lobby__goal-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-gold-dim);
 }
 
 .phone-lobby__edition-note {

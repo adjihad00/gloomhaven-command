@@ -48,6 +48,13 @@ export function configureStaticRoutes(app: Express, rootDir: string): void {
   // Game assets — long cache
   app.use('/assets', express.static(join(rootDir, 'assets'), { maxAge: '1d' }));
 
+  // Fallback: serve .staging/worldhaven/images at /assets/worldhaven/images
+  // (Worldhaven assets may not be copied to assets/ yet)
+  const stagingWorldhaven = join(rootDir, '.staging/worldhaven/images');
+  if (existsSync(stagingWorldhaven)) {
+    app.use('/assets/worldhaven/images', express.static(stagingWorldhaven, { maxAge: '1d' }));
+  }
+
   // Root CA download for mobile device trust (mkcert)
   app.get('/ca.pem', (_req, res) => {
     const caPath = join(rootDir, 'certs', 'rootCA.pem');

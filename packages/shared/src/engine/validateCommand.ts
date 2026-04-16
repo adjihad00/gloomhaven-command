@@ -381,6 +381,12 @@ export function validateCommand(state: GameState, command: Command): ValidationR
     case 'completeTownPhase':
       return OK;
 
+    case 'dealBattleGoals':
+      return OK;
+
+    case 'returnBattleGoals':
+      return OK;
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

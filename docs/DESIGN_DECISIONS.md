@@ -678,3 +678,28 @@ but NOT human-readable goal/win/loss condition text. This text exists only in th
 scenario books (PDFs available in `.staging/worldhaven/images/books/`). A follow-up Phase 5.x
 task will extract all scenario text (introductions, goals, conditions, conclusions, story
 summaries) from these PDFs comprehensively, rather than attempting partial extraction now.
+
+### 69. Monster ability deck overrides via scenario rules (2026-04-16)
+**Decision:** Added `overrideDeck?: string` field to `Monster` interface. After spawning monsters,
+`applyScenarioRuleDeckOverrides()` parses `scenario.rules[].statEffects[].statEffect.deck` and
+sets the override on matching monster groups. All deck lookup functions check `overrideDeck` first.
+**Rationale:** GHS scenario JSON files already encode scenario-specific ability deck assignments
+(e.g., FH scenario 0: hounds use `hound-scenario-0` instead of `hound`). The engine previously
+ignored this data, causing monsters to always use their default deck. The override pattern is
+minimal (one optional field) and doesn't require changing the deck data model or DataManager.
+
+### 70. Battle goal deck server-side infrastructure (2026-04-16)
+**Decision:** Added `BattleGoalDeck` type (`cards: string[], current: number`) to GameState.
+Added `dealBattleGoals` and `returnBattleGoals` commands. Deck is shuffled once on first deal
+and persists across scenarios. `returnBattleGoals` appends unused cards to the bottom.
+**Rationale:** Per rules, the battle goal deck is shuffled once and unused cards go to the bottom
+after each scenario. The previous implementation dealt client-side (random shuffle per scenario),
+which violated this rule. Server-side deck state enables proper persistence. Phone client-side
+dealing remains as a fallback until per-player state tracking is implemented.
+
+### 71. Worldhaven staging fallback static route (2026-04-16)
+**Decision:** Added a fallback `express.static()` route serving `.staging/worldhaven/images/` at
+`/assets/worldhaven/images/` when the directory exists. Primary route remains `assets/worldhaven/`.
+**Rationale:** Battle goal card images (and other Worldhaven assets) are in `.staging/worldhaven/`
+but `assets/worldhaven/` may not be populated. Rather than requiring manual copy, the fallback
+route serves the staging images directly. The primary `assets/` route takes priority if populated.

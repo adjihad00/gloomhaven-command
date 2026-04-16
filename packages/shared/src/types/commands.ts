@@ -67,7 +67,9 @@ export type CommandAction =
   | 'proceedToRules'
   | 'proceedToBattleGoals'
   | 'cancelScenarioSetup'
-  | 'completeTownPhase';
+  | 'completeTownPhase'
+  | 'dealBattleGoals'
+  | 'returnBattleGoals';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -341,6 +343,16 @@ export interface CompleteTownPhaseCommand {
   payload: Record<string, never>;
 }
 
+export interface DealBattleGoalsCommand {
+  action: 'dealBattleGoals';
+  payload: { edition: string; count: number };
+}
+
+export interface ReturnBattleGoalsCommand {
+  action: 'returnBattleGoals';
+  payload: { cardIds: string[] };
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -391,7 +403,9 @@ export type Command =
   | ProceedToRulesCommand
   | ProceedToBattleGoalsCommand
   | CancelScenarioSetupCommand
-  | CompleteTownPhaseCommand;
+  | CompleteTownPhaseCommand
+  | DealBattleGoalsCommand
+  | ReturnBattleGoalsCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

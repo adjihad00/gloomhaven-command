@@ -57,7 +57,7 @@ export function diffStates(before: GameState, after: GameState): StateChange[] {
   }
 
   // 7. Decks — emit entire deck if anything changed
-  for (const deckKey of ['monsterAttackModifierDeck', 'allyAttackModifierDeck', 'lootDeck', 'challengeDeck'] as const) {
+  for (const deckKey of ['monsterAttackModifierDeck', 'allyAttackModifierDeck', 'lootDeck', 'challengeDeck', 'battleGoalDeck'] as const) {
     if (JSON.stringify(before[deckKey]) !== JSON.stringify(after[deckKey])) {
       changes.push({ path: deckKey, value: after[deckKey] });
     }

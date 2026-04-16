@@ -205,6 +205,32 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 
 ---
 
+---
+
+## 2026-04-16 — Phase 5 Bugfix
+
+### B5.1: Label icon SVGs oversized on controller
+**Symptom:** Inline action icons in scenario special rules text appear much larger on the controller than on the phone.
+**Root cause:** `.label-icon` used `1.1em` sizing which scales with parent font-size. The controller's `lobby__rules-text` at `0.9rem` produced ~16px icons, but the raw SVGs have large intrinsic dimensions and `em`-based sizing was inconsistent across layout contexts.
+**Fix:** Changed `.label-icon` from `width: 1.1em` to `width: 16px; height: 16px` for consistent sizing across all clients.
+
+### B5.2: Display monster ability names missing after Phase 5.2
+**Symptom:** Monster ability cards on the display show no name after switching to `/api/ref/ability-cards`.
+**Root cause:** Most ability cards in the reference DB have `name: null` (label-resolved names only exist for some editions). The Phase 5.2 refactor dropped the `Card ${cardId}` fallback.
+**Fix:** Added fallback `card.name || 'Card ${card.card_id}'` in `useDisplayMonsterData.ts`.
+
+### B5.3: Display sticky header not locking on small viewports
+**Symptom:** The scenario header's sticky row (round, level, elements) scrolls out of view on viewports smaller than 1920px.
+**Root cause:** `.display__content` had `height: 100vh` (fixed) instead of filling available flex space. Combined with top padding, the sticky header's `top: 0` didn't align with the visible scroll boundary.
+**Fix:** Changed `.display__content` from `height: 100vh` to `flex: 1; min-height: 0;`. Removed top padding so sticky `top: 0` aligns with the scroll container's visible edge.
+
+### B5.4: Monster ability deck overrides from scenario rules not applied
+**Symptom:** FH scenario 0 hounds use the normal hound ability deck instead of the scenario-specific `hound-scenario-0` deck (fixed ability: Move 2, Attack 2 at initiative 26 every round).
+**Root cause:** Scenario `rules[].statEffects[].statEffect.deck` was present in the GHS JSON data but never parsed or applied during scenario setup. All deck lookups used the static `MonsterData.deck` field.
+**Fix:** Added `overrideDeck?: string` to `Monster` type. `applyScenarioRuleDeckOverrides()` runs after `spawnRoomMonsters()` in `handleSetScenario()`, parsing scenario rules and setting deck overrides on matching monster groups. Updated `groupMonstersByDeck()`, `drawAbilityForDeckGroup()`, `processMonsterAbilityActions()`, and `handleEndOfRoundShuffle()` to check `monster.overrideDeck` before the default deck. Added `getMonsterDeck()` to `DataContext` interface.
+
+---
+
 ### INF1: game.gh-command.com unreachable from LAN devices
 **Symptom:** After setting up Let's Encrypt certs + Cloudflare DNS, `https://game.gh-command.com:3000` fails to load from Chrome PC and phones. localhost works. LAN IP works from dev PC but cert mismatch on other devices.
 **Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.

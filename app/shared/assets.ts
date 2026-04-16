@@ -41,6 +41,23 @@ export function amCardImage(type: string): string {
   return `/assets/ghs/images/attackmodifier/${type}.png`;
 }
 
+/** Edition directory names for Worldhaven battle goal images */
+const EDITION_DIRS: Record<string, string> = {
+  gh: 'gloomhaven', fh: 'frosthaven', jotl: 'jaws-of-the-lion',
+  cs: 'crimson-scales', toa: 'trail-of-ashes',
+};
+
+export function battleGoalCard(edition: string, goalName: string): string {
+  const dir = EDITION_DIRS[edition] || edition;
+  const slug = goalName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return `/assets/worldhaven/images/battle-goals/${dir}/${edition}-${slug}.png`;
+}
+
+export function battleGoalCardBack(edition: string): string {
+  const dir = EDITION_DIRS[edition] || edition;
+  return `/assets/worldhaven/images/battle-goals/${dir}/${edition}-battle-goals-back.png`;
+}
+
 export function lootCardIcon(type: string, coinValue?: number): string {
   if (type === 'money' && coinValue) {
     return `/assets/ghs/images/fh/loot/loot-money${coinValue}.png`;

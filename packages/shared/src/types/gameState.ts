@@ -117,6 +117,15 @@ export interface LootDeck {
   active: boolean;
 }
 
+// ── Battle goal deck ────────────────────────────────────────────────────────
+
+export interface BattleGoalDeck {
+  /** Card IDs in deck order (shuffled once, then persistent) */
+  cards: string[];
+  /** Index of the next card to deal */
+  current: number;
+}
+
 // ── Challenge deck ──────────────────────────────────────────────────────────
 
 export interface ChallengeCard {
@@ -319,6 +328,8 @@ export interface Monster {
   isAlly: boolean;
   isAllied: boolean;
   tags: string[];
+  /** Scenario-specific ability deck override (e.g., "hound-scenario-0") */
+  overrideDeck?: string;
 }
 
 // ── Objective container ─────────────────────────────────────────────────────
@@ -562,6 +573,8 @@ export interface GameState {
   party: Party;
   parties: Party[];
   lootDeck: LootDeck;
+  /** Persistent battle goal deck — shuffled once per campaign, unused cards returned to bottom */
+  battleGoalDeck?: BattleGoalDeck;
   lootDeckEnhancements: LootCard[];
   lootDeckFixed: LootType[];
   lootDeckSections: string[];

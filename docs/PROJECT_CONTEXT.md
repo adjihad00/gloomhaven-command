@@ -167,7 +167,7 @@ setMonsterLevel, importGhsState, updateCampaign,
 prepareScenarioEnd, cancelScenarioEnd, completeScenario,
 prepareScenarioSetup, confirmChore, proceedToRules,
 proceedToBattleGoals, cancelScenarioSetup, startScenario,
-completeTownPhase
+completeTownPhase, dealBattleGoals, returnBattleGoals
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw

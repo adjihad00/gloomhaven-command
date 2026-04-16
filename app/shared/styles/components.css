@@ -2103,8 +2103,8 @@ a,
 
 .label-icon {
     display: inline-block;
-    width: 1.1em;
-    height: 1.1em;
+    width: 16px;
+    height: 16px;
     vertical-align: text-bottom;
     filter: invert(1) brightness(0.85);
 }

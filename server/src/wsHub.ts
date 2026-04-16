@@ -33,6 +33,8 @@ const PHONE_ALLOWED_ACTIONS: ReadonlySet<CommandAction> = new Set([
 const PHONE_GLOBAL_ACTIONS: ReadonlySet<CommandAction> = new Set([
   'moveElement',
   'drawLootCard',
+  'dealBattleGoals',
+  'returnBattleGoals',
 ]);
 
 /**

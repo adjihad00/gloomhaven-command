@@ -6,7 +6,7 @@ import { useDataApi } from '../hooks/useDataApi';
 import { deriveLevelValues } from '@gloomhaven-command/shared';
 import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../shared/formatName';
-import { monsterThumbnail, characterThumbnail } from '../shared/assets';
+import { monsterThumbnail, characterThumbnail, battleGoalCard } from '../shared/assets';
 import { useScenarioText } from '../hooks/useScenarioText';
 
 interface LobbyViewProps {
@@ -182,11 +182,12 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
             <div class="phone-lobby__goals-grid">
               {dealtGoals.map((goal: any) => (
                 <div key={goal.cardId} class="phone-lobby__goal-card">
-                  <span class="phone-lobby__goal-name">{goal.name}</span>
-                  <span class="phone-lobby__goal-checks">
-                    {Array.from({ length: goal.checks || 1 }, (_, i) => '\u2610').join(' ')}
-                    {' '}{goal.checks || 1} check{(goal.checks || 1) > 1 ? 's' : ''}
-                  </span>
+                  <img
+                    src={battleGoalCard(setupData.edition, goal.name)}
+                    alt={goal.name}
+                    class="phone-lobby__goal-image"
+                    loading="lazy"
+                  />
                 </div>
               ))}
             </div>
