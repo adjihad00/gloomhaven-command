@@ -6,6 +6,7 @@ import { ConnectionScreen } from './ConnectionScreen';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import { LobbyWaitingView } from './LobbyWaitingView';
+import { DisplayRewardsOverlay } from './overlays/DisplayRewardsOverlay';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 import { mockState } from './mockData';
 
@@ -144,6 +145,15 @@ export function App() {
               gameCode={gameCode}
               onDisconnect={handleDisconnect}
               onClose={() => setShowMenu(false)}
+            />
+          )}
+
+          {/* Phase T1: rewards tableau — layered above whichever view is current,
+              stays visible from prepareScenarioEnd through completeTownPhase. */}
+          {state.finishData && (
+            <DisplayRewardsOverlay
+              finishData={state.finishData}
+              edition={state.edition || 'gh'}
             />
           )}
         </div>

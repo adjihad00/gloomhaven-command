@@ -1947,6 +1947,13 @@
   border-radius: var(--radius-sm);
 }
 
+.phone-rewards__resource-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: invert(1) brightness(1.05);
+}
+
 .phone-rewards__resource-count {
   font-family: 'Cinzel', serif;
   font-size: 0.85rem;
@@ -1997,6 +2004,145 @@
 
 .phone-rewards__dismiss:active {
   background: rgba(211, 166, 99, 0.2);
+}
+
+/* ── Phase T1: XP threshold bar, battle-goal stepper, treasures, inspiration ── */
+
+.phone-rewards__threshold {
+  margin-top: var(--space-3);
+}
+
+.phone-rewards__threshold-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.phone-rewards__threshold-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--accent-copper), var(--accent-gold));
+  transition: width 300ms ease;
+}
+
+.phone-rewards__threshold-label {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.phone-rewards__battle-goal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.phone-rewards__stepper {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.phone-rewards__stepper-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+.phone-rewards__stepper-btn--active {
+  background: rgba(211, 166, 99, 0.15);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: 0 0 10px rgba(211, 166, 99, 0.25);
+}
+
+.phone-rewards__treasures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.phone-rewards__treasure {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.phone-rewards__treasure--claimed {
+  opacity: 0.8;
+}
+
+.phone-rewards__treasure-id {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-copper);
+}
+
+.phone-rewards__treasure-narrative {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.phone-rewards__treasure-claim {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  background: rgba(211, 166, 99, 0.12);
+  border: 1px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  color: var(--accent-gold);
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.phone-rewards__treasure-pill {
+  padding: 2px var(--space-2);
+  background: rgba(86, 156, 86, 0.18);
+  border: 1px solid rgba(86, 156, 86, 0.4);
+  border-radius: 999px;
+  color: var(--health-green, #6bbf6b);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.phone-rewards__inspiration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  font-family: 'Cinzel', serif;
+}
+
+.phone-rewards__inspiration-value {
+  color: var(--accent-gold);
+  font-weight: 700;
 }
 
 /* ================================================================

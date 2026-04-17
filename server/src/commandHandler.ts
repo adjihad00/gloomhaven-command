@@ -3,6 +3,7 @@ import type { Command, DiffMessage, ErrorMessage, DataContext } from '@gloomhave
 import { validateCommand, applyCommand, DataManager } from '@gloomhaven-command/shared';
 import { GameStore } from './gameStore.js';
 import { SessionManager } from './sessionManager.js';
+import type { ReferenceDb } from './referenceDb.js';
 
 export class CommandHandler {
   public broadcastFn: ((
@@ -17,6 +18,7 @@ export class CommandHandler {
     private gameStore: GameStore,
     private sessionManager: SessionManager,
     dataManager?: DataManager,
+    refDb?: ReferenceDb,
   ) {
     if (dataManager) {
       this.dataContext = {
@@ -29,6 +31,24 @@ export class CommandHandler {
         getMonsterDeck: (ed, deckName) => dataManager.getMonsterDeck(ed, deckName),
         getMonster: (ed, name) => dataManager.getMonster(ed, name),
         getBattleGoals: (ed) => dataManager.getBattleGoals(ed),
+        ...(refDb ? {
+          getCampaignData: (ed: string, key: string) => refDb.getCampaignData(ed, key),
+          getTreasure: (ed: string, idx: string) => refDb.getTreasure(ed, idx),
+        } : {}),
+      };
+    } else if (refDb) {
+      // Ref-DB-only context (no edition data loaded). Rare but valid.
+      this.dataContext = {
+        getCharacterMaxHealth: () => 0,
+        getMonsterMaxHealth: () => 0,
+        getMonsterStats: () => null,
+        getScenario: () => null,
+        resolveRoomSpawns: () => [],
+        getMonsterDeckForMonster: () => null,
+        getMonsterDeck: () => null,
+        getMonster: () => null,
+        getCampaignData: (ed, key) => refDb.getCampaignData(ed, key),
+        getTreasure: (ed, idx) => refDb.getTreasure(ed, idx),
       };
     }
   }

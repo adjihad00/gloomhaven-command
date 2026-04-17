@@ -255,6 +255,26 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 **Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.
 **Fix:** Added `192.168.50.96 game.gh-command.com` to Windows hosts file (`C:\Windows\System32\drivers\etc\hosts`) for dev PC. For LAN-wide resolution: added entry to router's `/etc/hosts` and signaled dnsmasq with `kill -HUP` (not `service restart_dnsmasq`, which regenerates `/etc/hosts`). Created `/jffs/scripts/services-start` on the router to persist the entry across reboots. Note: `/jffs/configs/dnsmasq.conf.add` does NOT work on this ASUS firmware — dnsmasq's config never includes it. Created `docs/HTTPS_LAN_SETUP.md` documenting the full setup. No server code changes were needed — the server was correctly binding to `0.0.0.0:3000` with a valid Let's Encrypt cert.
 
+---
+
+## 2026-04-17 — Phase T1: Scenario End Rewards
+
+### T1-B1: Scenario summary hid exhausted and absent characters
+**Symptom:** Controller's scenario-end summary listed only non-absent, non-exhausted characters. Per rules §11 / §15.18, exhausted characters still gain XP, gold, and loot when the scenario completes — their rewards were invisible to the GM.
+**Root cause:** `ScenarioSummaryOverlay.tsx` filtered with `state.characters.filter(c => !c.absent && !c.exhausted)` when deriving rewards rows.
+**Fix:** Refactored the overlay to read from `state.finishData.characters` (built by `buildScenarioFinishData` over the full `state.characters` list — rules §11 compliant). Absent/exhausted characters now appear in the summary with their actual earned values.
+
+### T1-B2: Rewards overlays read live state, drifted after completeScenario
+**Symptom:** Phone rewards overlay showed pre-completion values while pending, then fell back to generic "Rewards claimed" text after completeScenario. Numbers could disagree between phone/controller/display because each derived from live state in its own way.
+**Root cause:** Each overlay derived rewards from `state.characters` independently; no single source of truth.
+**Fix:** Introduced `state.finishData` snapshot populated on `prepareScenarioEnd`, mutated during the pending window by `setBattleGoalComplete` / `claimTreasure` / `dismissRewards`, and applied atomically by `completeScenario`. `handleCompleteScenario` reads the snapshot when present (fallback path preserves old derivation for pre-T1 saves). The snapshot stays alive through the scenario→town transition and is cleared on `cancelScenarioEnd` / `completeTownPhase` / `startScenario`.
+
+
+### T1-B3: `state.finishData` never reached clients (Phase T1 regression before first release)
+**Symptom:** Controller Scenario Summary stuck on "Preparing rewards…"; phone and display rewards overlays never rendered; non-controller devices stayed on the scenario view.
+**Root cause:** `diffStates.ts` broadcasts a whitelist of top-level `GameState` keys. When `finishData` was added to `GameState`, it was not added to the whitelist — so `prepareScenarioEnd` set the field server-side but the broadcast diff only carried `finish`. Clients received `finish = 'pending:victory'` with `finishData` still `undefined`, and every overlay fell through to the no-snapshot fallback branch. Same failure mode as Batch 16b's `setupPhase`/`setupData` bug.
+**Fix:** Added `'finishData'` to the diff key list at [diffStates.ts:67-73](packages/shared/src/engine/diffStates.ts:67). Verified via engine smoke test that `applyCommand(prepareScenarioEnd)` now emits `finishData` in its `changes[]`.
+
 
 ## 2026-04-17 — Phase 6: Service Worker Unbrick + Self-Healing
 
@@ -265,7 +285,7 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 1. **Unbrick route** — added `app/unregister.html` served at `/unregister` with `Cache-Control: no-store`. The page unregisters every SW, deletes every cache, and clears local/session storage. A stuck device navigates to `https://<server>/unregister` once and self-heals. Route is registered **before** the `/app` static middleware in [staticServer.ts](server/src/staticServer.ts:57-59) so no SW can intercept it.
 2. **Self-healing SWs** — rewrote all three SWs (phone, controller, new `app/display/sw.js`) from cache-first to **network-first for navigations AND static assets**. Cache is now only a fallback for offline use. `CACHE_NAME` is version-keyed (`gc-<role>-<SW_VERSION>`) and `SW_VERSION` is injected by the server at request time via a prepended `self.GC_SW_VERSION_INJECTED=...` line in [staticServer.ts:76-92](server/src/staticServer.ts:76). `activate` now fetches `/sw-version.json` and self-destructs (unregister + delete all caches + `postMessage({type:'sw-self-destructed'})`) when the server version has moved on.
 3. **Client watchdog** — `app/shared/swRegistration.ts` fetches `/sw-version.json` **before** registering the SW and compares against an esbuild-baked `process.env.GC_BUILD_VERSION`. Mismatch → `caches.delete` all + `getRegistrations().unregister` all + `location.reload()`. Also subscribes to `sw-self-destructed` postMessage (reload on receipt) and polls `reg.update()` every 5 minutes. `updateViaCache: 'none'` ensures the browser always fetches the SW file fresh.
-4. **Version plumbing** — `app/build.mjs` writes `app/<role>/dist/build-version.txt` and defines `process.env.GC_BUILD_VERSION` for esbuild. The server reads the txt file **per request** (fallback: a fresh `srv-<ts>-<rand>` per boot). SW and client always agree on the version, the server is the source of truth, and a plain `npm run build` bumps it automatically. Per-request reads also eliminate a startup race between `npm run dev`'s concurrent server + `build.mjs --watch` processes.
+4. **Version plumbing** — `app/build.mjs` writes `app/<role>/dist/build-version.txt` and defines `process.env.GC_BUILD_VERSION` for esbuild. The server reads the txt file on startup (fallback: a fresh `srv-<ts>-<rand>` per boot). SW and client always agree on the version, the server is the source of truth, and a plain `npm run build` bumps it automatically.
 5. **Bypass list** — all three SWs unconditionally skip `/api/`, `/assets/`, `/sw-version.json`, `/unregister`, and any path ending in `/sw.js`. The escape hatches can never be intercepted by a broken SW.
 6. **SW registration moved** from inline `<script>` in each `index.html` to `registerServiceWorker()` in the corresponding `main.tsx` so the pre-register version check always runs, even on the first load after a rebuild.
 

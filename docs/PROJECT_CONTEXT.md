@@ -133,6 +133,15 @@ complete"/"only" phrasings; "Unknown at this time." fallback preserves intention
 content-aware `isCopyrightOnlyPage` check replaces book-specific skip. Solo scenario book
 (`fh-solo-scenario-book.pdf`) extracted to 17 entries under `group_name='solo'`; `scenario_book_data`
 PK extended with `group_name` column, `/api/ref/scenario-book` accepts optional `?group=` param.
+Phase T1 COMPLETE: Scenario end rewards experience unified across all three clients.
+`state.finishData` snapshot built on `prepareScenarioEnd`, mutated during the pending
+window via three new commands (`setBattleGoalComplete`, `claimTreasure`,
+`dismissRewards`), applied atomically on `completeScenario`, and cleared on
+cancel / completeTownPhase / startScenario. Phone, controller, and display all read
+the same snapshot. Includes XP threshold progress bar, per-character battle-goal
+stepper (0..3 checks), treasure claim flow (groundwork — in-scenario treasure
+discovery persistence is a later batch), FH inspiration banner (4 - playerCount).
+Controller summary now includes exhausted characters per rules §11.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
@@ -180,19 +189,31 @@ setMonsterLevel, importGhsState, updateCampaign,
 prepareScenarioEnd, cancelScenarioEnd, completeScenario,
 prepareScenarioSetup, confirmChore, proceedToRules,
 proceedToBattleGoals, cancelScenarioSetup, startScenario,
-completeTownPhase, dealBattleGoals, returnBattleGoals
+completeTownPhase, dealBattleGoals, returnBattleGoals,
+setBattleGoalComplete, claimTreasure, dismissRewards
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
   (returned to supply per rules §5). `lastDrawn` field tracks display.
 - **prepareScenarioEnd:** Sets `state.finish = 'pending:victory'` or
-  `'pending:failure'`. Broadcast to all clients — phones show rewards preview.
-- **cancelScenarioEnd:** Clears `state.finish` back to `undefined`. Phones
-  dismiss rewards overlay.
-- **completeScenario:** Transfers XP + gold, clears monsters/objectives,
-  resets character combat state (HP, conditions, initiative), resets round/phase,
-  sets elements inert. GH uses `char.loot` for gold; FH uses loot card system.
-  Sets `state.finish = 'success'/'failure'`. Phones transition to "claimed" state.
+  `'pending:failure'` AND builds `state.finishData` — the Phase T1 rewards
+  snapshot consumed by phone/controller/display overlays.
+- **cancelScenarioEnd:** Clears both `state.finish` and `state.finishData` back
+  to undefined. Phones dismiss rewards overlay.
+- **completeScenario:** Applies the `state.finishData` snapshot when present
+  (XP, gold, resources, battle-goal checks, claimed treasures, FH inspiration).
+  Falls back to live-state derivation for pre-T1 saves. Clears monsters/objectives,
+  resets character combat state (HP, conditions, initiative, in-scenario
+  treasures), resets round/phase, sets elements inert. GH uses `char.loot` for
+  gold; FH uses loot card system. Sets `state.finish = 'success'/'failure'` and
+  `state.mode = 'town'`. `finishData` persists through the transition and is
+  cleared by `completeTownPhase` / `startScenario`.
+- **setBattleGoalComplete (T1):** Character-scoped. Clamps `checks` to 0..3 and
+  records on the char's snapshot row. Rejected on defeat (rules §11).
+- **claimTreasure (T1):** Character-scoped. Moves a treasure id from pending to
+  claimed in the snapshot; resolves reward narrative via `DataContext.getTreasure`.
+- **dismissRewards (T1):** Character-scoped. Marks the snapshot row as dismissed
+  (per-phone local close; other phones unaffected).
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
   Monster activation triggers ability card consume + summon actions via
@@ -211,12 +232,13 @@ completeTownPhase, dealBattleGoals, returnBattleGoals
 Phone clients are restricted server-side to character-scoped commands
 (setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
 toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
-toggleTurn, renameCharacter, confirmChore). Each command's target must match
-the phone's registered characterName. Commands targeting summons are allowed
-if the summon owner matches. Additionally, `moveElement` and `drawLootCard`
-are in a `PHONE_GLOBAL_ACTIONS` set that bypasses character-name validation
-(these are game-global actions with no character target). All other commands
-are rejected with an error.
+toggleTurn, renameCharacter, confirmChore, setBattleGoalComplete, claimTreasure,
+dismissRewards). Each command's target must match the phone's registered
+characterName. Commands targeting summons are allowed if the summon owner
+matches. Additionally, `moveElement`, `drawLootCard`, `dealBattleGoals`, and
+`returnBattleGoals` are in a `PHONE_GLOBAL_ACTIONS` set that bypasses
+character-name validation (these are game-global actions with no character
+target). All other commands are rejected with an error.
 
 ## Build Process
 - `app/build.mjs` — builds all three Preact client apps via esbuild
@@ -229,7 +251,7 @@ are rejected with an error.
 - **SW versioning (Phase 6):** Each build emits `BUILD_VERSION` (overridable via
   `GC_BUILD_VERSION` env). The version is (a) baked into each client bundle via
   `esbuild` `define` and (b) written to `app/<role>/dist/build-version.txt`. The
-  server reads the txt file **per request** and serves it at `GET /sw-version.json`.
+  server reads the txt file on startup and serves it at `GET /sw-version.json`.
   Both the client watchdog (`app/shared/swRegistration.ts`) and the SW's
   `activate` hook compare against this endpoint and self-heal on mismatch.
   Source `app/<role>/sw.js` files are served with `self.GC_SW_VERSION_INJECTED`
@@ -265,4 +287,12 @@ GET /api/ref/scenario-book/:edition/:index     — scenario book data (goals, co
                                                  optional ?group= query param selects
                                                  solo scenarios (group='solo'); default ''
 GET /api/ref/section-narrative/:edition/:id     — section narrative text + rewards
+GET /api/ref/campaign/:edition/:key             — campaign_data blob (e.g. xpThresholds)
+GET /api/ref/treasure/:edition/:index           — single treasure reward string
 ```
+
+### Types Quick Reference
+`ScenarioFinishData` — Phase T1 rewards snapshot on `GameState.finishData`:
+per-character `ScenarioFinishCharacterReward[]` (XP/gold/resources/treasures/
+battle-goal checks + thresholds + dismissed flag), `outcome`, `scenarioIndex`,
+`scenarioLevel`, optional `inspirationGained` (FH victory), `createdAtRevision`.

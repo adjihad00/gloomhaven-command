@@ -182,6 +182,26 @@
   - [x] useScenarioBookData hook for all three clients
   - [x] Wire display footer, controller lobby, phone lobby/rules to real win/loss conditions
   - [x] Graceful fallback for non-FH editions and missing book data
+- [x] Phase T1: Scenario end rewards + cross-device overlays (2026-04-17)
+  - [x] `ScenarioFinishData` snapshot type + lifecycle (build on prepare, apply on
+        complete, clear on cancel/completeTownPhase/startScenario)
+  - [x] Three new commands: `setBattleGoalComplete` (0..3 checks), `claimTreasure`,
+        `dismissRewards` — all character-scoped, phone-allowed
+  - [x] Engine `applyTreasureReward` helper parsing reference-DB grammar
+        (`gold*:N`, `experience:N`, `item*:ID`, `resource:<t>-N`, `battleGoal:N`)
+  - [x] `handleCompleteScenario` reads from snapshot when present; fallback path
+        preserved for pre-T1 saves
+  - [x] ReferenceDb `getCampaignData` / `getTreasure` methods; `/api/ref/campaign/:ed/:key`
+        and `/api/ref/treasure/:ed/:index` routes
+  - [x] DataContext extended with optional `getCampaignData` / `getTreasure`;
+        CommandHandler wires refDb into DataContext
+  - [x] Phone `PhoneRewardsOverlay` refactored to read snapshot; adds battle-goal
+        stepper, XP-threshold progress bar, treasure claim UI, inspiration banner
+  - [x] Controller `ScenarioSummaryOverlay` refactored to card grid; per-character
+        battle-goal stepper + treasure claims; rules-§11 fix (includes exhausted chars)
+  - [x] New `DisplayRewardsOverlay` — full-bleed read-only tableau mounted from
+        App.tsx so it stays visible across scenario→town transition
+  - [x] `useFinishData` hook wraps snapshot access with phase flags
 - [x] Phase 5.x.1: Extraction cleanup (2026-04-17)
   - [x] Goal regex tolerates whitespace-split `at\s+the\s+end\s+of` and accepts `may be`/`only`
         phrasings (fixes scenarios 107, 115, 128)
@@ -210,6 +230,5 @@
   - [x] Client-side `app/shared/swRegistration.ts` watchdog (pre-register version check + `updateViaCache: 'none'` + 5-min poll + `sw-self-destructed` message handler)
   - [x] SW registration moved from inline `<script>` to `main.tsx` on all three clients
   - [x] `BYPASS_PATHS` guard for `/api/`, `/assets/`, `/sw-version.json`, `/unregister`, `/sw.js`
-  - [x] Per-request SW_VERSION resolution (eliminates `npm run dev` startup race)
 - [ ] Docker image for server deployment
 - [ ] README with setup instructions

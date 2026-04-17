@@ -45,48 +45,62 @@ If client is too far behind (>100 revisions), server sends full state instead.
 }
 ```
 
-### Command Actions (39 total)
-| Action                 | Payload                                                          |
-|------------------------|------------------------------------------------------------------|
-| changeHealth           | { target: CommandTarget, delta: number }                         |
-| changeMaxHealth        | { target: CommandTarget, delta: number }                         |
-| toggleCondition        | { target: CommandTarget, condition: ConditionName, value? }      |
-| setInitiative          | { characterName, edition, value }                                |
-| advancePhase           | { }                                                              |
-| toggleTurn             | { figure: FigureIdentifier }                                     |
-| addEntity              | { monsterName, edition, entityNumber, type: MonsterType }        |
-| removeEntity           | { monsterName, edition, entityNumber, type: MonsterType }        |
-| moveElement            | { element: ElementType, newState: ElementState }                 |
-| drawLootCard           | { }                                                              |
-| assignLoot             | { cardIndex, characterName, edition }                            |
-| drawMonsterAbility     | { monsterName, edition }                                         |
-| shuffleMonsterAbilities| { monsterName, edition }                                         |
-| shuffleModifierDeck    | { deck: 'monster' \| 'ally' \| { character, edition } }         |
-| drawModifierCard       | { deck: 'monster' \| 'ally' \| { character, edition } }         |
-| addModifierCard        | { deck: 'monster' \| 'ally' \| { character, edition }, cardType: 'bless' \| 'curse' } |
-| removeModifierCard     | { deck: 'monster' \| 'ally' \| { character, edition }, cardType: 'bless' \| 'curse' } |
-| revealRoom             | { roomId }                                                       |
-| undoAction             | { }                                                              |
-| setScenario            | { scenarioIndex, edition, group? }                               |
-| addCharacter           | { name, edition, level, player? }                                |
-| removeCharacter        | { name, edition }                                                |
-| setLevel               | { level }                                                        |
-| setExperience          | { characterName, edition, value }                                |
-| setLoot                | { characterName, edition, value }                                |
-| addSummon              | { characterName, edition, summonName, cardId, number, color }    |
-| removeSummon           | { characterName, edition, summonUuid }                           |
-| addMonsterGroup        | { name, edition }                                                |
-| removeMonsterGroup     | { name, edition }                                                |
-| setMonsterLevel        | { name, edition, level }                                         |
-| toggleExhausted        | { characterName, edition }                                       |
-| toggleAbsent           | { characterName, edition }                                       |
-| toggleLongRest         | { characterName, edition }                                       |
-| renameCharacter        | { characterName, edition, title }                                |
-| setLevelAdjustment     | { adjustment }                                                   |
-| setRound               | { round }                                                        |
-| importGhsState         | { ghsJson: string }                                              |
-| updateCampaign         | { field, value }                                                 |
-| completeScenario       | { outcome: 'victory' \| 'defeat' }                               |
+### Command Actions (49 total)
+| Action                  | Payload                                                          |
+|-------------------------|------------------------------------------------------------------|
+| changeHealth            | { target: CommandTarget, delta: number }                         |
+| changeMaxHealth         | { target: CommandTarget, delta: number }                         |
+| toggleCondition         | { target: CommandTarget, condition: ConditionName, value? }      |
+| setInitiative           | { characterName, edition, value }                                |
+| advancePhase            | { }                                                              |
+| toggleTurn              | { figure: FigureIdentifier }                                     |
+| addEntity               | { monsterName, edition, entityNumber, type: MonsterType }        |
+| removeEntity            | { monsterName, edition, entityNumber, type: MonsterType }        |
+| moveElement             | { element: ElementType, newState: ElementState }                 |
+| drawLootCard            | { }                                                              |
+| assignLoot              | { cardIndex, characterName, edition }                            |
+| drawMonsterAbility      | { monsterName, edition }                                         |
+| shuffleMonsterAbilities | { monsterName, edition }                                         |
+| shuffleModifierDeck     | { deck: 'monster' \| 'ally' \| { character, edition } }         |
+| drawModifierCard        | { deck: 'monster' \| 'ally' \| { character, edition } }         |
+| addModifierCard         | { deck: …, cardType: 'bless' \| 'curse' }                        |
+| removeModifierCard      | { deck: …, cardType: 'bless' \| 'curse' }                        |
+| revealRoom              | { roomId }                                                       |
+| undoAction              | { }                                                              |
+| setScenario             | { scenarioIndex, edition, group? }                               |
+| addCharacter            | { name, edition, level, player? }                                |
+| removeCharacter         | { name, edition }                                                |
+| setLevel                | { level }                                                        |
+| setExperience           | { characterName, edition, value }                                |
+| setLoot                 | { characterName, edition, value }                                |
+| addSummon               | { characterName, edition, summonName, cardId, number, color }    |
+| removeSummon            | { characterName, edition, summonUuid }                           |
+| addMonsterGroup         | { name, edition }                                                |
+| removeMonsterGroup      | { name, edition }                                                |
+| setMonsterLevel         | { name, edition, level }                                         |
+| toggleExhausted         | { characterName, edition }                                       |
+| toggleAbsent            | { characterName, edition }                                       |
+| toggleLongRest          | { characterName, edition }                                       |
+| renameCharacter         | { characterName, edition, title }                                |
+| setLevelAdjustment      | { adjustment }                                                   |
+| setRound                | { round }                                                        |
+| importGhsState          | { ghsJson: string }                                              |
+| updateCampaign          | { field, value }                                                 |
+| prepareScenarioEnd      | { outcome: 'victory' \| 'defeat' } — builds state.finishData     |
+| cancelScenarioEnd       | { } — clears finish + finishData                                 |
+| completeScenario        | { outcome: 'victory' \| 'defeat' } — applies finishData atomically |
+| startScenario           | { scenarioIndex, edition, group? } — also clears finishData      |
+| prepareScenarioSetup    | { scenarioIndex, edition, group?, chores }                       |
+| confirmChore            | { characterName, edition }                                       |
+| proceedToRules          | { }                                                              |
+| proceedToBattleGoals    | { }                                                              |
+| cancelScenarioSetup     | { }                                                              |
+| completeTownPhase       | { } — clears finishData, mode → 'lobby'                          |
+| dealBattleGoals         | { edition, count }                                               |
+| returnBattleGoals       | { cardIds: string[] }                                            |
+| setBattleGoalComplete   | { characterName, edition, checks: 0..3 } *(T1, phone-allowed)*   |
+| claimTreasure           | { characterName, edition, treasureId } *(T1, phone-allowed)*     |
+| dismissRewards          | { characterName, edition } *(T1, phone-allowed)*                 |
 
 ### Side Effects
 
@@ -136,11 +150,15 @@ Phone clients (`role: "phone"`) are restricted to these commands:
 - `setInitiative`, `toggleLongRest`, `changeHealth`, `toggleCondition`
 - `setExperience`, `setLoot`, `toggleExhausted`, `toggleAbsent`
 - `addSummon`, `removeSummon`, `toggleTurn`, `renameCharacter`
+- `confirmChore`
+- `setBattleGoalComplete`, `claimTreasure`, `dismissRewards` *(Phase T1)*
+- Global (no character target): `moveElement`, `drawLootCard`, `dealBattleGoals`, `returnBattleGoals`
 
-Each command's target character must match the registered `characterName`.
+Each character-scoped command's target must match the registered `characterName`.
 For `changeHealth`/`toggleCondition`: summon targets are allowed if the summon
 owner (`target.characterName`) matches. Monster/objective targets are blocked.
 For `toggleTurn`: only `figure.type === 'character'` with matching name.
+`PHONE_GLOBAL_ACTIONS` commands skip the character-name check entirely.
 All other commands (advancePhase, revealRoom, completeScenario, etc.) are blocked.
 Rejected commands receive an error response; the client is NOT disconnected.
 

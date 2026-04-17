@@ -168,9 +168,6 @@ export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: Scenari
 
   if (!state) return null;
 
-  const scenarioName = state.scenario
-    ? `Scenario ${state.scenario.index}`
-    : 'Unknown Scenario';
   const scenarioIndex = state.scenario?.index ?? '?';
 
   // Detect pending initiative state
@@ -276,10 +273,13 @@ export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: Scenari
   };
 
   // Scenario footer: real rules from reference DB, or mock in prototype mode
-  const { specialRules: refRules } = useScenarioText(
+  const { name: refScenarioName, specialRules: refRules } = useScenarioText(
     prototypeMode ? '' : (state?.edition || ''),
     prototypeMode ? '' : scenarioIndex,
   );
+  const scenarioName = prototypeMode
+    ? 'Prototype Scenario'
+    : (refScenarioName || (state.scenario ? `Scenario ${scenarioIndex}` : 'Unknown Scenario'));
   const bookData = useScenarioBookData(
     prototypeMode ? '' : (state?.edition || ''),
     prototypeMode ? '' : scenarioIndex,

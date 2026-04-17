@@ -454,6 +454,29 @@ export class ReferenceDb {
     }>;
   }
 
+  getCampaignData(edition: string, key: string): unknown | null {
+    const row = this.stmtCache('getCampaignData',
+      `SELECT value_json FROM campaign_data WHERE edition = ? AND key = ?`,
+    ).get(edition, key) as { value_json: string } | undefined;
+    if (!row) return null;
+    try {
+      return JSON.parse(row.value_json);
+    } catch {
+      return null;
+    }
+  }
+
+  getTreasure(edition: string, treasureIndex: string | number): { treasure_index: number; reward: string } | null {
+    const idx = typeof treasureIndex === 'string'
+      ? Number.parseInt(treasureIndex, 10)
+      : treasureIndex;
+    if (!Number.isFinite(idx)) return null;
+    const row = this.stmtCache('getTreasure',
+      `SELECT treasure_index, reward FROM treasures WHERE edition = ? AND treasure_index = ?`,
+    ).get(edition, idx) as { treasure_index: number; reward: string } | undefined;
+    return row ?? null;
+  }
+
   getItems(edition: string): Array<{
     item_id: number;
     name: string | null;

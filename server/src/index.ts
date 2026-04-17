@@ -211,6 +211,18 @@ app.get('/api/ref/items/:edition', (req, res) => {
   res.json(refDb.getItems(req.params.edition));
 });
 
+app.get('/api/ref/campaign/:edition/:key', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const data = refDb.getCampaignData(req.params.edition, req.params.key);
+  data !== null ? res.json(data) : res.status(404).json({ error: 'Campaign data not found' });
+});
+
+app.get('/api/ref/treasure/:edition/:index', (req, res) => {
+  if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
+  const data = refDb.getTreasure(req.params.edition, req.params.index);
+  data ? res.json(data) : res.status(404).json({ error: 'Treasure not found' });
+});
+
 app.get('/api/ref/assets/:edition/:category', (req, res) => {
   if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
   res.json(refDb.getAssets(req.params.edition, req.params.category));
@@ -307,8 +319,8 @@ const sessionManager = new SessionManager();
 const wsHub = new WsHub(httpServer, gameStore, sessionManager);
 wsHub.init();
 
-// Command handler pipeline (with data manager for auto-spawn)
-const commandHandler = new CommandHandler(gameStore, sessionManager, dataManager);
+// Command handler pipeline (with data manager for auto-spawn + ref DB for treasures/campaign data)
+const commandHandler = new CommandHandler(gameStore, sessionManager, dataManager, refDb ?? undefined);
 commandHandler.broadcastFn = (gameCode, diff) => {
   wsHub.broadcast(gameCode, diff);
 };

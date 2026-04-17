@@ -69,7 +69,7 @@ export function diffStates(before: GameState, after: GameState): StateChange[] {
     'discardedScenarioRules', 'conditions', 'battleGoalEditions',
     'filteredBattleGoals', 'entitiesCounter', 'roundResets', 'roundResetsHidden',
     'gameClock', 'lootDeckEnhancements', 'lootDeckFixed', 'lootDeckSections',
-    'unlockedCharacters', 'favors', 'setupData',
+    'unlockedCharacters', 'favors', 'setupData', 'finishData',
   ] as const) {
     if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) {
       changes.push({ path: key, value: after[key] });

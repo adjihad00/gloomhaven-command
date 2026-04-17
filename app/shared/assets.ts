@@ -64,3 +64,15 @@ export function lootCardIcon(type: string, coinValue?: number): string {
   }
   return `/assets/ghs/images/fh/loot/loot-${type}.png`;
 }
+
+/**
+ * Compact resource icon (black-and-white) for character-sheet / rewards surfaces.
+ * Uses the Worldhaven `art/<edition>/icons/loot/` set — smaller, chip-friendly
+ * art than the full loot-card images returned by `lootCardIcon`.
+ *
+ * Falls back to the FH icon set for non-FH editions because those editions have
+ * no resource system in the rules anyway.
+ */
+export function resourceIcon(type: string): string {
+  return `/assets/worldhaven/images/art/frosthaven/icons/loot/fh-${type}-bw-icon.png`;
+}

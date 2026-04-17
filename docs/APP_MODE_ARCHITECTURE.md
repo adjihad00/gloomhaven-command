@@ -72,7 +72,8 @@ app/
 │   └── styles/phone.css
 └── display/              # Monitor — portrait, read-only, production-wired
     ├── main.tsx, index.html, manifest.json
-    ├── App.tsx               # connection + mode routing, display registration
+    ├── App.tsx               # connection + mode routing, display registration,
+    │                           mounts DisplayRewardsOverlay when state.finishData present
     ├── ConnectionScreen.tsx   # game code input
     ├── LobbyWaitingView.tsx   # setup-phase-aware waiting screen
     ├── ScenarioView.tsx       # live state + state-driven animations
@@ -86,6 +87,7 @@ app/
     │                            DisplayTransitions, DisplayAMDSplash,
     │                            DisplayLootSplash, DisplayScenarioFooter,
     │                            DisplayCharacterSummary, AmbientParticles
+    ├── overlays/              # DisplayRewardsOverlay (Phase T1)
     └── styles/display.css
 ```
 
@@ -313,16 +315,44 @@ to selected mission. Road event card overlay.
 
 ## MODE TRANSITIONS
 
-### Scenario End → Town → Lobby
-1. Win/loss determination (`prepareScenarioEnd` → pending state on all devices)
-2. XP from dial → each character
-3. Gold from loot (gold × conversion rate)
-4. FH: Resources from loot cards
-5. Treasure claims, battle goals
-6. Scenario rewards (achievements, unlocks)
-7. FH: Inspiration (4 − character count)
-8. `completeScenario` → `state.mode = 'town'`
-9. Town phase checklist (placeholder) → `completeTownPhase` → `state.mode = 'lobby'`
+### Scenario End → Town → Lobby (Phase T1)
+1. **`prepareScenarioEnd`** builds `state.finishData` — a per-character rewards
+   snapshot containing XP (scenario + bonus + career delta), gold (coins ×
+   conversion), FH resources, treasures revealed during play, XP thresholds per
+   rules §12, battle-goal check slot, FH inspiration (`4 - playerCount` on
+   victory), and a `dismissed` flag per row. `state.finish` becomes
+   `pending:victory` or `pending:failure`. Broadcast to all clients.
+2. **Pending window** — snapshot is mutated in place:
+   - `setBattleGoalComplete({ characterName, edition, checks: 0..3 })` —
+     character-scoped. Defeat rejected. GM can toggle from controller, player
+     from own phone.
+   - `claimTreasure({ characterName, edition, treasureId })` — moves id from
+     `treasuresPending` to `treasuresClaimed` on the snapshot row; resolves
+     reward text via `DataContext.getTreasure`.
+   - `dismissRewards({ characterName, edition })` — per-phone local close (other
+     phones unaffected).
+   - `cancelScenarioEnd` — clears both `finish` and `finishData`, snapshots
+     everywhere dismiss.
+3. **`completeScenario`** atomically applies the snapshot to `char.progress`
+   (experience, gold, loot resources, battleGoals checks on victory, treasure
+   rewards via `applyTreasureReward`). FH inspiration rolls into
+   `state.party.inspiration`. In-scenario counters (experience, loot, lootCards,
+   treasures) reset. Mode → `'town'`; `finish` → `success`/`failure`.
+   `finishData` is intentionally preserved through the transition so all three
+   clients continue showing the rewards tableau.
+4. **Rewards surfaces stay visible through town:**
+   - Phone `PhoneRewardsOverlay` mounts from `app/phone/ScenarioView.tsx` while
+     `finishData` exists; Continue button fires `dismissRewards` and hides locally.
+   - Controller `ScenarioSummaryOverlay` — lifecycle unchanged (open on
+     `prepareScenarioEnd`, close on cancel/confirm). Confirm fires
+     `completeScenario`.
+   - Display `DisplayRewardsOverlay` mounts from `app/display/App.tsx` as a
+     sibling to the mode view so it survives the scenario→town transition;
+     full-bleed read-only tableau with edition-themed particles.
+5. Town phase checklist (placeholder) → **`completeTownPhase`** →
+   `state.mode = 'lobby'` AND `state.finishData = undefined` (rewards clear).
+6. **`startScenario`** on the next run also clears `finishData` defensively, so
+   no stale rewards leak between scenarios.
 
 ### Lobby → Scenario
 1. Controller steps through lobby flow (edition → party → scenario → preview → chores → rules → goals)

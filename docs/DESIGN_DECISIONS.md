@@ -757,6 +757,61 @@ better than a bounded-window search: pages 17-18 of the solo book have both a ne
 ("Recharge") and a continuation of the prior scenario ("CONT. • Under the Ice") on the same page —
 only the two-line inspection catches both.
 
+### 2026-04-17 — Phase T1: `state.finishData` snapshot separates rewards model from live engine state
+**Decision:** Introduce `ScenarioFinishData` — a persisted snapshot populated on
+`prepareScenarioEnd`, mutated in place during the pending window by the three new
+commands (`setBattleGoalComplete`, `claimTreasure`, `dismissRewards`), applied
+atomically by `completeScenario`, and cleared on `cancelScenarioEnd` /
+`completeTownPhase` / `startScenario`. Phone, controller, and display rewards
+overlays all read the same snapshot instead of re-deriving from live state.
+**Rationale:** Prior to T1, each client derived rewards (XP, gold, resources,
+threshold progress) from live state with its own logic. After `completeScenario`
+transferred rewards to `char.progress`, the live-state view went to zero — so
+each overlay had to juggle a "claimed" fallback branch. The three views could
+disagree on edge cases. A snapshot separates the presentational rewards model
+from the live engine state, so rewards can be read uniformly pending and
+post-claim, and so per-character battle-goal / treasure choices accumulate in
+one place before atomic application.
+
+### 2026-04-17 — Phase T1: Battle-goal checks persist as a count, not per-card identity
+**Decision:** `setBattleGoalComplete` takes a `checks: 0..3` integer per
+character, stored on `ScenarioFinishCharacterReward.battleGoalChecks` and
+applied as `char.progress.battleGoals += checks` on victory at
+`completeScenario`. Per-card dealt-goal tracking (which specific card a player
+was dealt and whether they completed *that* card) is deferred.
+**Rationale:** Today, battle goals are dealt client-side in
+`app/phone/LobbyView.tsx` via a `useMemo` shuffle and the selected card lives
+only in a local `useState`. The selection is never persisted to state, so a
+card-keyed `setBattleGoalComplete(cardId, completed)` would always target an
+empty list. Rules §12 only cares about checkmark count for perk progression —
+a count-based command works today and upgrades cleanly to card-keyed persistence
+in a future batch that wires up dealt-goal server-side state.
+
+### 2026-04-17 — Phase T1: Treasure reward grammar parsed from reference DB
+**Decision:** `applyTreasureReward(char, rewardText)` parses pipe-separated
+`key:value` entries from the reference DB's `treasures.reward` column. MVP
+keys: `gold`/`goldFh`/`goldGh`, `experience`, `item`/`itemFh`/`itemGh`/
+`itemBlueprint`, `resource:<type>-N`, `battleGoal:N`. Unrecognized entries
+(`custom:…`, `randomItemBlueprint`, `lootCards:N`, `condition:…`, `damage:…`,
+`randomScenarioFh`, etc.) pass through as narrative text for the table to
+resolve manually.
+**Rationale:** The original T1 prompt assumed text like `+15g` / `N gold` /
+`<Item 200>`, but the actual DB grammar from `scripts/import-data.ts` is
+`goldFh:15` / `experience:5` / `itemFh:200` / `resource:lumber-3` / etc.
+Parsing the real grammar is straightforward; anything exotic stays visible to
+the table rather than being silently dropped or misapplied.
+
+### 2026-04-17 — Phase T1: Display rewards overlay mounts at App.tsx
+**Decision:** `DisplayRewardsOverlay` mounts from `app/display/App.tsx` as a
+sibling to the mode view (lobby/scenario/town), gated only on
+`state.finishData`. It layers above the active view.
+**Rationale:** `completeScenario` transitions `state.mode` from `'scenario'`
+to `'town'`, so mounting the overlay from `ScenarioView` would unmount it
+mid-ceremony. Hoisting it to the App shell keeps the rewards tableau visible
+from `prepareScenarioEnd` through `completeTownPhase`, matching the phone and
+controller behavior and letting the table savor the results without the view
+switching out from under them.
+
 ### 2026-04-17 — Service worker strategy: network-first + server kill-switch
 **Decision:** All three service workers (phone, controller, display) use
 **network-first** for both navigations and static assets, with cache only as an
@@ -782,17 +837,12 @@ already stuck under the old cache-first SW.
 **Decision:** `app/build.mjs` generates a single `BUILD_VERSION` string per
 run and (a) writes it to `app/<role>/dist/build-version.txt`, (b) bakes it into
 each client bundle via `esbuild` `define: { 'process.env.GC_BUILD_VERSION': ... }`.
-The server reads the same txt file **per request** at `/sw-version.json` and
-when serving the SW files (so the injected `SW_VERSION` always matches).
+The server reads the same txt file on startup and serves it at `/sw-version.json`.
 **Rationale:** The SW version, the client watchdog version, and the server
 version must agree for the self-heal logic to be meaningful — otherwise
 legitimate matches look like mismatches or vice versa. Env-var piping (`GC_BUILD_ID=$(date +%s) npm run build && ... node dist/server/...`) is a bash-ism that's
 fragile on Windows (the primary dev platform here). The file-based approach
 works identically in dev and prod, survives process boundaries, and a plain
-`npm run build` bumps it automatically. Reading the file per-request rather
-than once on startup eliminates a startup race in `npm run dev` where
-`concurrently` might boot the server before `build.mjs --watch` has written
-the file: the first response picks up the txt the instant it appears, with no
-server restart required. The server falls back to a fresh `srv-<ts>-<rand>`
-computed once at boot when no file and no env var are present (covers the
-edge case of starting the server without ever running the build).
+`npm run build` bumps it automatically. The server falls back to a fresh
+`srv-<ts>-<rand>` per boot when no file is present (covers the edge case of
+starting the server without ever running the build).

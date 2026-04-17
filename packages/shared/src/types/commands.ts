@@ -69,7 +69,10 @@ export type CommandAction =
   | 'cancelScenarioSetup'
   | 'completeTownPhase'
   | 'dealBattleGoals'
-  | 'returnBattleGoals';
+  | 'returnBattleGoals'
+  | 'setBattleGoalComplete'
+  | 'claimTreasure'
+  | 'dismissRewards';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -353,6 +356,32 @@ export interface ReturnBattleGoalsCommand {
   payload: { cardIds: string[] };
 }
 
+// ── Scenario end rewards (Phase T1) ────────────────────────────────────────
+
+export interface SetBattleGoalCompleteCommand {
+  action: 'setBattleGoalComplete';
+  payload: {
+    characterName: string;
+    edition: string;
+    /** 0..3 checks earned this scenario; clamped server-side. */
+    checks: number;
+  };
+}
+
+export interface ClaimTreasureCommand {
+  action: 'claimTreasure';
+  payload: {
+    characterName: string;
+    edition: string;
+    treasureId: string;
+  };
+}
+
+export interface DismissRewardsCommand {
+  action: 'dismissRewards';
+  payload: { characterName: string; edition: string };
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -405,7 +434,10 @@ export type Command =
   | CancelScenarioSetupCommand
   | CompleteTownPhaseCommand
   | DealBattleGoalsCommand
-  | ReturnBattleGoalsCommand;
+  | ReturnBattleGoalsCommand
+  | SetBattleGoalCompleteCommand
+  | ClaimTreasureCommand
+  | DismissRewardsCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

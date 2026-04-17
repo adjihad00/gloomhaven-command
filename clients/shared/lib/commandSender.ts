@@ -239,6 +239,20 @@ export class CommandSender {
     this.send({ action: 'completeTownPhase', payload: {} as Record<string, never> });
   }
 
+  // ── Scenario end rewards (Phase T1) ──
+
+  setBattleGoalComplete(characterName: string, edition: string, checks: number): void {
+    this.send({ action: 'setBattleGoalComplete', payload: { characterName, edition, checks } });
+  }
+
+  claimTreasure(characterName: string, edition: string, treasureId: string): void {
+    this.send({ action: 'claimTreasure', payload: { characterName, edition, treasureId } });
+  }
+
+  dismissRewards(characterName: string, edition: string): void {
+    this.send({ action: 'dismissRewards', payload: { characterName, edition } });
+  }
+
   // ── Internal ──
 
   private send(command: Command): void {

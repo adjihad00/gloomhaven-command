@@ -15,6 +15,8 @@ import type {
   LootCard,
   LootDeck,
   LootType,
+  ScenarioFinishData,
+  ScenarioFinishCharacterReward,
 } from '../types/gameState.js';
 import type { Command, CommandTarget } from '../types/commands.js';
 import type { StateChange } from '../types/protocol.js';
@@ -24,7 +26,7 @@ import { canAdvancePhase, startRound, endRound, getInitiativeOrder } from './tur
 import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.js';
 import { diffStates } from './diffStates.js';
 import { importGhsState as importGhs, buildStandardModifierDeck } from '../utils/ghsCompat.js';
-import { getPlayerCount, calculateScenarioLevel, getMinXPForLevel } from '../data/levelCalculation.js';
+import { getPlayerCount, calculateScenarioLevel, getMinXPForLevel, deriveLevelValues } from '../data/levelCalculation.js';
 
 export interface ApplyResult {
   state: GameState;
@@ -42,6 +44,8 @@ export interface DataContext {
   getMonsterDeck(edition: string, deckName: string): MonsterAbilityDeckData | null;
   getMonster(edition: string, name: string): MonsterData | null;
   getBattleGoals?(edition: string): Array<{ cardId: string; name: string; checks: number }> | null;
+  getCampaignData?(edition: string, key: string): unknown | null;
+  getTreasure?(edition: string, treasureIndex: string): { treasure_index: number; reward: string } | null;
 }
 
 const UNDO_LIMIT = 50;
@@ -168,9 +172,11 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
       break;
     case 'prepareScenarioEnd':
       after.finish = `pending:${command.payload.outcome}` as any;
+      after.finishData = buildScenarioFinishData(after, command.payload.outcome, dataContext);
       break;
     case 'cancelScenarioEnd':
       after.finish = undefined;
+      after.finishData = undefined;
       break;
     case 'completeScenario':
       handleCompleteScenario(after, command.payload);
@@ -181,6 +187,7 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
       after.mode = 'scenario';
       after.setupPhase = undefined;
       after.setupData = undefined;
+      after.finishData = undefined;
       break;
     case 'prepareScenarioSetup':
       after.edition = command.payload.edition;
@@ -216,12 +223,22 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'completeTownPhase':
       after.mode = 'lobby';
       after.finish = undefined;
+      after.finishData = undefined;
       break;
     case 'dealBattleGoals':
       handleDealBattleGoals(after, command.payload, dataContext);
       break;
     case 'returnBattleGoals':
       handleReturnBattleGoals(after, command.payload);
+      break;
+    case 'setBattleGoalComplete':
+      handleSetBattleGoalComplete(after, command.payload);
+      break;
+    case 'claimTreasure':
+      handleClaimTreasure(after, command.payload, dataContext);
+      break;
+    case 'dismissRewards':
+      handleDismissRewards(after, command.payload);
       break;
     default: {
       const _exhaustive: never = command;
@@ -1828,63 +1845,265 @@ function buildLootDeck(config: Record<string, number>): LootDeck {
   return { current: 0, cards, active: true };
 }
 
+// ── Phase T1: scenario end rewards snapshot ────────────────────────────────
+
+/**
+ * Check whether a state has Frosthaven-style loot/resources.
+ * FH uses the loot-deck card system; GH uses a flat `char.loot` counter.
+ */
+function isFHLootContext(state: GameState): boolean {
+  return (state.edition === 'fh' || state.party?.edition === 'fh');
+}
+
+/**
+ * Build the ScenarioFinishData snapshot at `prepareScenarioEnd` time.
+ * Reads live state + DataContext; never mutates.
+ *
+ * See docs/GAME_RULES_REFERENCE.md §11 (rewards) and §12 (XP thresholds).
+ */
+function buildScenarioFinishData(
+  state: GameState,
+  outcome: 'victory' | 'defeat',
+  _dataContext?: DataContext,
+): ScenarioFinishData {
+  const isVictory = outcome === 'victory';
+  const level = state.level ?? 0;
+  const { bonusXP: bonusXPFull, goldConversion } = deriveLevelValues(level);
+  const bonusXP = isVictory ? bonusXPFull : 0;
+  const playerCount = getPlayerCount(state.characters);
+
+  const characters: ScenarioFinishCharacterReward[] = state.characters.map((char) => {
+    const scenarioXP = char.experience || 0;
+    const totalXPGained = scenarioXP + bonusXP;
+    const careerXPBefore = char.progress?.experience ?? 0;
+    const careerGoldBefore = char.progress?.gold ?? 0;
+
+    // Gold + resources (FH via loot cards, GH via flat counter)
+    let totalCoins = 0;
+    const resources: Partial<Record<LootType, number>> = {};
+    const lootCardIndexes = char.lootCards ? [...char.lootCards] : [];
+    if (lootCardIndexes.length > 0 && state.lootDeck?.cards?.length > 0) {
+      for (const idx of lootCardIndexes) {
+        const card = state.lootDeck.cards[idx];
+        if (!card) continue;
+        if (card.type === 'money') {
+          totalCoins += playerCount <= 2 ? card.value2P
+            : playerCount === 3 ? card.value3P
+            : card.value4P;
+        } else {
+          resources[card.type] = (resources[card.type] ?? 0) + 1;
+        }
+      }
+    } else {
+      totalCoins = char.loot || 0;
+    }
+    const goldGained = totalCoins * goldConversion;
+
+    // XP thresholds — rules §12
+    const currentLevel = char.level ?? 1;
+    const currentFloor = getMinXPForLevel(currentLevel);
+    const nextThreshold = currentLevel >= 9 ? null : getMinXPForLevel(currentLevel + 1);
+
+    return {
+      name: char.name,
+      edition: char.edition,
+      title: char.title || char.name,
+      scenarioXP,
+      bonusXP,
+      totalXPGained,
+      careerXPBefore,
+      careerXPAfter: careerXPBefore + totalXPGained,
+      scenarioLevel: level,
+      goldConversion,
+      totalCoins,
+      goldGained,
+      careerGoldBefore,
+      careerGoldAfter: careerGoldBefore + goldGained,
+      resources,
+      lootCardIndexes,
+      treasuresPending: char.treasures ? [...char.treasures] : [],
+      treasuresClaimed: [],
+      xpThresholds: { currentLevel, currentFloor, nextThreshold },
+      battleGoalChecks: 0,
+      dismissed: false,
+    };
+  });
+
+  const isFH = isFHLootContext(state);
+  const inspirationGained = (isFH && isVictory)
+    ? Math.max(0, 4 - Math.max(playerCount, 1))
+    : undefined;
+
+  return {
+    outcome,
+    scenarioIndex: state.scenario?.index ?? '',
+    scenarioEdition: state.scenario?.edition ?? state.edition ?? '',
+    scenarioLevel: level,
+    characters,
+    ...(inspirationGained !== undefined ? { inspirationGained } : {}),
+    createdAtRevision: state.revision,
+  };
+}
+
+/**
+ * Parse a treasure reward string from the reference DB and apply the MVP
+ * reward types to character progress. Grammar is pipe-separated entries of
+ * `key:value` (e.g. `goldFh:15|experience:5`).
+ *
+ * Returns a human-readable summary of what was applied for UI display.
+ */
+function applyTreasureReward(char: Character, rewardText: string): string {
+  const notes: string[] = [];
+  const entries = rewardText.split('|').map((s) => s.trim()).filter(Boolean);
+
+  for (const entry of entries) {
+    const colonIdx = entry.indexOf(':');
+    const key = colonIdx >= 0 ? entry.slice(0, colonIdx) : entry;
+    const value = colonIdx >= 0 ? entry.slice(colonIdx + 1) : '';
+
+    switch (key) {
+      case 'gold':
+      case 'goldFh':
+      case 'goldGh': {
+        const n = parseInt(value, 10);
+        if (Number.isFinite(n)) {
+          char.progress.gold = (char.progress.gold ?? 0) + n;
+          notes.push(`+${n} gold`);
+        }
+        break;
+      }
+      case 'experience': {
+        const n = parseInt(value, 10);
+        if (Number.isFinite(n)) {
+          char.progress.experience = (char.progress.experience ?? 0) + n;
+          notes.push(`+${n} XP`);
+        }
+        break;
+      }
+      case 'item':
+      case 'itemFh':
+      case 'itemGh':
+      case 'itemBlueprint': {
+        if (value) {
+          if (!char.progress.items) char.progress.items = [];
+          char.progress.items.push({ name: value, edition: char.edition });
+          notes.push(`Item ${value}`);
+        }
+        break;
+      }
+      case 'resource': {
+        // format: "<type>-N" e.g. "lumber-3"
+        const dashIdx = value.lastIndexOf('-');
+        if (dashIdx > 0) {
+          const resType = value.slice(0, dashIdx) as LootType;
+          const n = parseInt(value.slice(dashIdx + 1), 10);
+          if (Number.isFinite(n)) {
+            if (!char.progress.loot) char.progress.loot = {};
+            char.progress.loot[resType] = (char.progress.loot[resType] ?? 0) + n;
+            notes.push(`+${n} ${resType}`);
+          }
+        }
+        break;
+      }
+      case 'battleGoal': {
+        const n = parseInt(value, 10);
+        if (Number.isFinite(n)) {
+          char.progress.battleGoals = (char.progress.battleGoals ?? 0) + n;
+          notes.push(`+${n} battle goal check${n === 1 ? '' : 's'}`);
+        }
+        break;
+      }
+      default:
+        // lootCards / randomItemBlueprint / randomScenarioFh / custom / condition / damage
+        // surface as-is for manual resolution by the table.
+        notes.push(entry);
+    }
+  }
+  return notes.join(' · ');
+}
+
 function handleCompleteScenario(
   state: GameState,
   payload: { outcome: 'victory' | 'defeat' },
 ): void {
   const isVictory = payload.outcome === 'victory';
+  const snapshot = state.finishData;
   const level = state.level ?? 0;
-  const bonusXP = isVictory ? (4 + 2 * level) : 0;
-  const goldConversion = [2, 2, 3, 3, 4, 4, 5, 6][level] ?? 2;
-
+  const { bonusXP: bonusXPFull, goldConversion } = deriveLevelValues(level);
+  const bonusXP = isVictory ? bonusXPFull : 0;
   const playerCount = getPlayerCount(state.characters);
 
   for (const char of state.characters) {
-    // Transfer in-scenario XP → total XP (always, even on defeat per rules)
-    const scenarioXP = char.experience || 0;
-    char.progress.experience += scenarioXP + bonusXP;
-
-    // Transfer loot → gold and resources
-    let totalCoins = 0;
     if (!char.progress.loot) char.progress.loot = {};
 
-    if (char.lootCards && char.lootCards.length > 0 && state.lootDeck?.cards?.length > 0) {
-      // FH system: derive gold and resources from loot cards
-      for (const cardIndex of char.lootCards) {
-        const card = state.lootDeck.cards[cardIndex];
-        if (!card) continue;
-
-        if (card.type === 'money') {
-          const coinValue = playerCount <= 2 ? card.value2P
-            : playerCount === 3 ? card.value3P
-            : card.value4P;
-          totalCoins += coinValue;
-        } else {
-          char.progress.loot[card.type] = (char.progress.loot[card.type] || 0) + 1;
+    if (snapshot) {
+      // T1: read pre-computed totals from the snapshot so GM/phone mutations
+      // during the pending window (e.g. battle-goal checks) are reflected.
+      const row = snapshot.characters.find(
+        (r) => r.name === char.name && r.edition === char.edition,
+      );
+      if (row) {
+        char.progress.experience += row.totalXPGained;
+        char.progress.gold += row.goldGained;
+        for (const [type, n] of Object.entries(row.resources)) {
+          if (!n) continue;
+          char.progress.loot[type as LootType] =
+            (char.progress.loot[type as LootType] ?? 0) + n;
+        }
+        if (isVictory) {
+          char.progress.battleGoals =
+            (char.progress.battleGoals ?? 0) + (row.battleGoalChecks ?? 0);
+          // Apply claimed treasures (once — see validateCommand guard)
+          if (row.treasuresClaimed?.length) {
+            for (const tid of row.treasuresClaimed) {
+              const resolved = row.treasuresResolved?.[tid] ?? '';
+              if (resolved) applyTreasureReward(char, resolved);
+            }
+          }
         }
       }
     } else {
-      // GH system: char.loot is a simple coin count (each = 1 coin)
-      totalCoins = char.loot || 0;
-    }
+      // Fallback (pre-T1 save with no snapshot): derive live.
+      const scenarioXP = char.experience || 0;
+      char.progress.experience += scenarioXP + bonusXP;
 
-    // Convert total coins to gold at scenario level rate
-    char.progress.gold += totalCoins * goldConversion;
+      let totalCoins = 0;
+      if (char.lootCards && char.lootCards.length > 0 && state.lootDeck?.cards?.length > 0) {
+        for (const cardIndex of char.lootCards) {
+          const card = state.lootDeck.cards[cardIndex];
+          if (!card) continue;
+          if (card.type === 'money') {
+            const coinValue = playerCount <= 2 ? card.value2P
+              : playerCount === 3 ? card.value3P
+              : card.value4P;
+            totalCoins += coinValue;
+          } else {
+            char.progress.loot[card.type] = (char.progress.loot[card.type] || 0) + 1;
+          }
+        }
+      } else {
+        totalCoins = char.loot || 0;
+      }
+      char.progress.gold += totalCoins * goldConversion;
+    }
 
     // Reset in-scenario counters
     char.experience = 0;
     char.loot = 0;
     char.lootCards = [];
+    char.treasures = [];
+  }
+
+  // FH inspiration (rules §11) — victory only
+  if (snapshot && snapshot.inspirationGained && snapshot.inspirationGained > 0) {
+    if (!state.party) state.party = {} as any;
+    state.party.inspiration = (state.party.inspiration ?? 0) + snapshot.inspirationGained;
   }
 
   // Record scenario completion in party data
   if (isVictory && state.scenario) {
-    if (!state.party) {
-      state.party = {} as any;
-    }
-    if (!state.party.scenarios) {
-      state.party.scenarios = [];
-    }
+    if (!state.party) state.party = {} as any;
+    if (!state.party.scenarios) state.party.scenarios = [];
     const alreadyComplete = state.party.scenarios.some(
       (s: any) => s.index === state.scenario!.index && s.edition === state.scenario!.edition,
     );
@@ -1928,9 +2147,61 @@ function handleCompleteScenario(
     }
   }
 
-  // Store finish state and transition to town phase
+  // Store finish state and transition to town phase.
+  // NOTE: finishData is intentionally preserved through the town transition
+  // so rewards overlays stay visible until completeTownPhase fires.
   state.finish = isVictory ? 'success' : 'failure';
   state.mode = 'town';
+}
+
+// ── Phase T1 command handlers ─────────────────────────────────────────────
+
+function handleSetBattleGoalComplete(
+  state: GameState,
+  payload: { characterName: string; edition: string; checks: number },
+): void {
+  if (!state.finishData) return;
+  const row = state.finishData.characters.find(
+    (r) => r.name === payload.characterName && r.edition === payload.edition,
+  );
+  if (!row) return;
+  const clamped = Math.max(0, Math.min(3, Math.floor(payload.checks)));
+  row.battleGoalChecks = clamped;
+}
+
+function handleClaimTreasure(
+  state: GameState,
+  payload: { characterName: string; edition: string; treasureId: string },
+  dataContext?: DataContext,
+): void {
+  if (!state.finishData) return;
+  const row = state.finishData.characters.find(
+    (r) => r.name === payload.characterName && r.edition === payload.edition,
+  );
+  if (!row) return;
+  const idx = row.treasuresPending.indexOf(payload.treasureId);
+  if (idx < 0) return;
+  row.treasuresPending.splice(idx, 1);
+  if (!row.treasuresClaimed.includes(payload.treasureId)) {
+    row.treasuresClaimed.push(payload.treasureId);
+  }
+  const treasure = dataContext?.getTreasure?.(row.edition, payload.treasureId);
+  if (treasure?.reward) {
+    if (!row.treasuresResolved) row.treasuresResolved = {};
+    row.treasuresResolved[payload.treasureId] = treasure.reward;
+  }
+}
+
+function handleDismissRewards(
+  state: GameState,
+  payload: { characterName: string; edition: string },
+): void {
+  if (!state.finishData) return;
+  const row = state.finishData.characters.find(
+    (r) => r.name === payload.characterName && r.edition === payload.edition,
+  );
+  if (!row) return;
+  row.dismissed = true;
 }
 
 function handleAddModifierCard(

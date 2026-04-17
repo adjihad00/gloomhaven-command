@@ -528,6 +528,82 @@ export interface SetupData {
   choreConfirmations: Record<string, boolean>;
 }
 
+// ── Scenario finish rewards snapshot ───────────────────────────────────────
+
+/**
+ * Per-character reward snapshot captured at `prepareScenarioEnd` time.
+ * Read by rewards overlays and mutated in place during the pending window
+ * before `completeScenario` atomically applies it to character progress.
+ */
+export interface ScenarioFinishCharacterReward {
+  /** Character identity — matches `Character.name` / `Character.edition`. */
+  name: string;
+  edition: string;
+  /** Display label at time of snapshot. */
+  title: string;
+  /** XP scored on the initiative dial during the scenario. */
+  scenarioXP: number;
+  /** Scenario-level bonus XP (4 + 2 * level), zero on defeat. */
+  bonusXP: number;
+  /** Sum of scenarioXP + bonusXP — what gets added to career XP. */
+  totalXPGained: number;
+  /** Career XP before this scenario. */
+  careerXPBefore: number;
+  /** Career XP after applying totalXPGained. */
+  careerXPAfter: number;
+  /** Scenario level (for display of gold conversion). */
+  scenarioLevel: number;
+  /** Gold conversion rate at scenario level (e.g. 2/2/3/3/4/4/5/6). */
+  goldConversion: number;
+  /** Total coin value looted (FH from cards, GH from char.loot counter). */
+  totalCoins: number;
+  /** Gold gained = totalCoins * goldConversion. */
+  goldGained: number;
+  /** Career gold before/after. */
+  careerGoldBefore: number;
+  careerGoldAfter: number;
+  /** FH resource counts drawn from loot cards (lumber, metal, hide, herbs). */
+  resources: Partial<Record<LootType, number>>;
+  /** Loot-deck indexes drawn by this character at snapshot time. */
+  lootCardIndexes: number[];
+  /** Treasure ids revealed by this character (moves to claimed on claim). */
+  treasuresPending: string[];
+  /** Treasure ids the character has already claimed this pending window. */
+  treasuresClaimed: string[];
+  /** Parsed narrative per resolved treasure id (populated at claim time). */
+  treasuresResolved?: Record<string, string>;
+  /** XP thresholds for progression display. */
+  xpThresholds: {
+    currentLevel: number;
+    /** Minimum XP for current level. */
+    currentFloor: number;
+    /** Minimum XP for next level, or null at max level. */
+    nextThreshold: number | null;
+  };
+  /**
+   * Battle goal checks earned this scenario (0..3). Applied as
+   * `char.progress.battleGoals += battleGoalChecks` on victory at
+   * `completeScenario`. Persisted per-card dealt-goal tracking is
+   * deferred; see docs/DESIGN_DECISIONS.md (Phase T1 entry).
+   */
+  battleGoalChecks: number;
+  /** Whether this player has dismissed their phone rewards overlay. */
+  dismissed: boolean;
+}
+
+export interface ScenarioFinishData {
+  outcome: 'victory' | 'defeat';
+  scenarioIndex: string;
+  scenarioEdition: string;
+  scenarioLevel: number;
+  /** Per-character snapshot at `prepareScenarioEnd` time. */
+  characters: ScenarioFinishCharacterReward[];
+  /** FH inspiration reward (4 - playerCount) on victory only; omitted in GH. */
+  inspirationGained?: number;
+  /** Captured at pending; persisted through completeScenario. */
+  createdAtRevision: number;
+}
+
 // ── Top-level game state ────────────────────────────────────────────────────
 
 export interface GameState {
@@ -581,6 +657,8 @@ export interface GameState {
   unlockedCharacters: string[];
   server: boolean;
   finish?: ScenarioFinish;
+  /** Rewards snapshot populated during pending scenario end; cleared on cancel/complete-town/new-scenario */
+  finishData?: ScenarioFinishData;
   setupPhase?: SetupPhase;
   setupData?: SetupData;
   gameClock: GameClockTimestamp[];

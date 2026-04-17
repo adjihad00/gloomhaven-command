@@ -387,6 +387,45 @@ export function validateCommand(state: GameState, command: Command): ValidationR
     case 'returnBattleGoals':
       return OK;
 
+    // ── Phase T1: scenario end rewards ──────────────────────────────────
+    case 'setBattleGoalComplete': {
+      if (!state.finishData) return fail('No active scenario end');
+      const isPending = typeof state.finish === 'string' && state.finish.startsWith('pending:');
+      if (!isPending) return fail('Scenario end not pending');
+      if (state.finishData.outcome !== 'victory') {
+        return fail('Battle goal checks only award on victory');
+      }
+      const row = state.finishData.characters.find(
+        (r) => r.name === command.payload.characterName && r.edition === command.payload.edition,
+      );
+      if (!row) return fail(`Character "${command.payload.characterName}" not in rewards snapshot`);
+      if (!Number.isFinite(command.payload.checks)) return fail('checks must be a number');
+      return OK;
+    }
+
+    case 'claimTreasure': {
+      if (!state.finishData) return fail('No active scenario end');
+      const isPending = typeof state.finish === 'string' && state.finish.startsWith('pending:');
+      if (!isPending) return fail('Scenario end not pending');
+      const row = state.finishData.characters.find(
+        (r) => r.name === command.payload.characterName && r.edition === command.payload.edition,
+      );
+      if (!row) return fail(`Character "${command.payload.characterName}" not in rewards snapshot`);
+      if (!row.treasuresPending.includes(command.payload.treasureId)) {
+        return fail(`Treasure "${command.payload.treasureId}" not pending for character`);
+      }
+      return OK;
+    }
+
+    case 'dismissRewards': {
+      if (!state.finishData) return fail('No active scenario end');
+      const row = state.finishData.characters.find(
+        (r) => r.name === command.payload.characterName && r.edition === command.payload.edition,
+      );
+      if (!row) return fail(`Character "${command.payload.characterName}" not in rewards snapshot`);
+      return OK;
+    }
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);
