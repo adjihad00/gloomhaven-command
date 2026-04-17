@@ -3,6 +3,11 @@
  * Each theme has: bg (dark background tint), accent (primary highlight),
  * flair (secondary/tertiary color for additional visual interest).
  * Fallback uses the GHS `color` field from edition data.
+ *
+ * Shared across phone / controller / display. Prior to Phase T0a this lived
+ * at `app/phone/characterThemes.ts` and was cross-imported by the display
+ * client — moved to `app/shared/` to remove the cross-client import smell
+ * and give the new Player Sheet surface a single source of truth.
  */
 
 export interface CharacterTheme {
@@ -73,6 +78,18 @@ export function getCharacterTheme(name: string, fallbackColor?: string): Charact
 
   // Ultimate fallback — warm gold
   return { bg: '#1a1410', accent: '#d3a663', flair: '#b87333' };
+}
+
+/**
+ * Append an alpha byte to a `#rrggbb` hex string. Returns `#rrggbbaa`.
+ * `alpha` is 0..1 (inclusive); clamped and rounded to a 0..255 integer.
+ * Pass-through on malformed input so callers never crash on bad data.
+ */
+export function withAlpha(hex: string, alpha: number): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  const clamped = Math.max(0, Math.min(1, alpha));
+  const byte = Math.round(clamped * 255);
+  return `${hex}${byte.toString(16).padStart(2, '0')}`;
 }
 
 function darkenColor(hex: string, amount: number): string {

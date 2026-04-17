@@ -4,7 +4,7 @@ import type { MonsterLevelStats, MonsterStatAction } from '@gloomhaven-command/s
 import type { MonsterAbilityAction } from '@gloomhaven-command/shared';
 import { characterThumbnail, monsterThumbnail, conditionIcon, actionIcon, elementIcon } from '../../shared/assets';
 import { formatName } from '../../shared/formatName';
-import { getCharacterTheme } from '../../phone/characterThemes';
+import { getCharacterTheme } from '../../shared/characterThemes';
 import type { DisplayAbility, DisplayBaseStats } from '../hooks/useDisplayMonsterData';
 
 // ── Types for real monster stat data ───────────────────────────────────────

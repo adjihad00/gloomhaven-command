@@ -8,7 +8,7 @@ import { CharacterPicker } from './CharacterPicker';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import { LobbyView } from './LobbyView';
-import { getCharacterTheme } from './characterThemes';
+import { getCharacterTheme } from '../shared/characterThemes';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
 export function App() {
