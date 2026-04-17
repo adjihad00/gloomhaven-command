@@ -30,6 +30,7 @@ const PHONE_ALLOWED_ACTIONS: ReadonlySet<CommandAction> = new Set([
   'setBattleGoalComplete',
   'claimTreasure',
   'dismissRewards',
+  'setCharacterProgress',
 ]);
 
 /** Phone commands that are global (not character-targeted) — skip character-name check. */

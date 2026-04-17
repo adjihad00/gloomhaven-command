@@ -12,7 +12,7 @@ import { FigureList } from '../components/FigureList';
 import { ScenarioHeader } from '../components/ScenarioHeader';
 import { ScenarioFooter } from '../components/ScenarioFooter';
 import { CharacterDetailOverlay } from './overlays/CharacterDetailOverlay';
-import { CharacterSheetOverlay } from './overlays/CharacterSheetOverlay';
+import { PlayerSheetQuickView } from './overlays/PlayerSheetQuickView';
 import { MenuOverlay } from './overlays/MenuOverlay';
 import { LootDeckOverlay } from './overlays/LootDeckOverlay';
 import { ScenarioSummaryOverlay } from './overlays/ScenarioSummaryOverlay';
@@ -177,7 +177,7 @@ export function ScenarioView() {
       {activeOverlay.type === 'characterSheet' && (() => {
         const character = characters.find(c => c.name === activeOverlay.characterName);
         return character ? (
-          <CharacterSheetOverlay
+          <PlayerSheetQuickView
             character={character}
             edition={edition}
             onClose={() => setActiveOverlay({ type: 'none' })}

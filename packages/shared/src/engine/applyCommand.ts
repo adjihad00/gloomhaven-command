@@ -240,6 +240,9 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'dismissRewards':
       handleDismissRewards(after, command.payload);
       break;
+    case 'setCharacterProgress':
+      handleSetCharacterProgress(after, command.payload);
+      break;
     default: {
       const _exhaustive: never = command;
       throw new Error(`Unknown command action: ${(_exhaustive as Command).action}`);
@@ -1812,6 +1815,48 @@ function handleUpdateCampaign(
   if (payload.field in state.party) {
     (state.party as unknown as Record<string, unknown>)[payload.field] = payload.value;
   }
+}
+
+// ── Player Sheet (Phase T0a) ───────────────────────────────────────────────
+
+/**
+ * Allowed character-progress fields for `setCharacterProgress`. Expand
+ * deliberately — every field here is phone-writable. validateCommand mirrors
+ * this list and type-checks the value shape.
+ */
+const SET_CHARACTER_PROGRESS_FIELDS = {
+  sheetIntroSeen: 'boolean',
+  notes: 'string',
+} as const;
+
+export function isSetCharacterProgressField(
+  field: string,
+): field is keyof typeof SET_CHARACTER_PROGRESS_FIELDS {
+  return field in SET_CHARACTER_PROGRESS_FIELDS;
+}
+
+export function setCharacterProgressFieldExpectsType(
+  field: keyof typeof SET_CHARACTER_PROGRESS_FIELDS,
+): 'boolean' | 'string' {
+  return SET_CHARACTER_PROGRESS_FIELDS[field];
+}
+
+function handleSetCharacterProgress(
+  state: GameState,
+  payload: {
+    characterName: string;
+    edition: string;
+    field: 'sheetIntroSeen' | 'notes';
+    value: boolean | string;
+  },
+): void {
+  const char = state.characters.find(
+    (c) => c.name === payload.characterName && c.edition === payload.edition,
+  );
+  if (!char) return;
+  // Field allow-list already enforced by validateCommand; this is defence-in-depth.
+  if (!isSetCharacterProgressField(payload.field)) return;
+  (char.progress as unknown as Record<string, unknown>)[payload.field] = payload.value;
 }
 
 function buildLootDeck(config: Record<string, number>): LootDeck {

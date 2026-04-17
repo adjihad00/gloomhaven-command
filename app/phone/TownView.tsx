@@ -2,23 +2,30 @@ import { h } from 'preact';
 import { useState } from 'preact/hooks';
 import { useGameState } from '../hooks/useGameState';
 import { characterThumbnail } from '../shared/assets';
-import { PhoneDisconnectOverlay } from './components/PhoneDisconnectMenu';
+import { PlayerSheet } from './sheets/PlayerSheet';
 
 interface TownViewProps {
   selectedCharacter: string;
+  onSwitchCharacter?: () => void;
 }
 
-export function TownView({ selectedCharacter }: TownViewProps) {
+export function TownView({ selectedCharacter, onSwitchCharacter }: TownViewProps) {
   const { state } = useGameState();
-  const [showMenu, setShowMenu] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
 
   const isVictory = state?.finish === 'success';
   const edition = state?.edition ?? 'gh';
+  const myChar = state?.characters?.find(c => c.name === selectedCharacter);
+  const charEdition = myChar?.edition || edition;
 
   return (
     <div class="phone-lobby phone-lobby--waiting">
-      <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
-        <img src={characterThumbnail(edition, selectedCharacter)} alt="" />
+      <button
+        class="phone-lobby__menu-portrait"
+        onClick={() => setShowSheet(true)}
+        aria-label="Open character sheet"
+      >
+        <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
       </button>
       <h2 class="phone-lobby__heading">
         {isVictory ? 'Victory!' : state?.finish === 'failure' ? 'Defeat' : 'Town Phase'}
@@ -29,9 +36,13 @@ export function TownView({ selectedCharacter }: TownViewProps) {
       <p class="phone-lobby__waiting-text">
         Waiting for GM to proceed...
       </p>
-      {showMenu && (
-        <PhoneDisconnectOverlay characterName={selectedCharacter} edition={edition}
-          onClose={() => setShowMenu(false)} />
+      {showSheet && myChar && (
+        <PlayerSheet
+          character={myChar}
+          edition={charEdition}
+          onClose={() => setShowSheet(false)}
+          onSwitchCharacter={onSwitchCharacter}
+        />
       )}
     </div>
   );

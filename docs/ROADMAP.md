@@ -182,6 +182,36 @@
   - [x] useScenarioBookData hook for all three clients
   - [x] Wire display footer, controller lobby, phone lobby/rules to real win/loss conditions
   - [x] Graceful fallback for non-FH editions and missing book data
+- [x] Phase T0a: Player Sheet shell + Overview tab (2026-04-17)
+  - [x] `characterThemes.ts` promoted to `app/shared/` (+ `withAlpha` helper);
+        display + phone imports updated, cross-client smell removed
+  - [x] Design tokens extended in `theme.css` (parchment / leather / gilt /
+        class-accent defaults / motion easings / sheet radii)
+  - [x] New `setCharacterProgress` command (character-scoped, phone-allowed)
+        with whitelisted fields `sheetIntroSeen: boolean` and `notes: string`
+  - [x] `CharacterProgress.sheetIntroSeen?` added; pre-T0a saves unaffected
+  - [x] `app/phone/sheets/` tree: PlayerSheet container + header + tabs +
+        IlluminatedCapital + menu + intro; `tabs/` Overview +
+        5 structural placeholders
+  - [x] Overview tab: XP bar (wax-seal level-up cue + near-threshold pulse +
+        MAX state), 4-up stat medallions (Gold/HP/Scenarios/Perks with
+        number-change flash + haptics), **Active Scenario** section
+        absorbing all PhoneCharacterDetail controls, Hand preview stub
+  - [x] 3-second intro animation ("Your story begins…") persists via
+        `setCharacterProgress(sheetIntroSeen, true)`; skip-tap + reduced-motion
+        paths both set the flag
+  - [x] Controller `PlayerSheetQuickView` replaces `CharacterSheetOverlay`;
+        `readOnly` gates progression tabs but preserves Active Scenario
+        interactivity for GM
+  - [x] Portrait buttons on Lobby / Scenario / Town now open PlayerSheet;
+        disconnect flow moved into the sheet header's `⋯` menu
+  - [x] `app/shared/styles/sheets.css` (~500 lines) with BEM; wired into
+        phone + controller `index.html` and SW precache
+  - [x] Removed: `PhoneCharacterDetail.tsx`, `PhoneDisconnectMenu.tsx`,
+        `CharacterSheetOverlay.tsx` (absorbed)
+- [ ] Phase T0b: Party Sheet on controller (+ display decorative)
+- [ ] Phase T0c: Campaign Sheet on controller (+ display decorative)
+- [ ] Phase T0d: Notes + History tabs (engine additions to `CharacterProgress`)
 - [x] Phase T1.1: Display rewards auto-hide when all phones dismiss (2026-04-17)
   - [x] `shouldShowRewards` decoupled from `finishData` lifetime —
         hides once `finish` is final AND every non-absent character

@@ -292,6 +292,39 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 Verified on startup: `GET /sw-version.json` → `{"version":"<build-version>"}`; `GET /app/{phone,controller,display}/sw.js` → `Service-Worker-Allowed: /<role>`, `Cache-Control: no-store`, body prefixed with `self.GC_SW_VERSION_INJECTED="<build-version>"`; all three main bundles contain the same version string via esbuild define. Worst case after this ships: one page load may still serve stale, but the next load always recovers.
 
 
+## 2026-04-17 — Phase T0a Smoke Test
+
+### T0a-B1: XP bar near-threshold pulse missed 40/45
+**Symptom:** Character at 40 career XP vs level-2 threshold of 45 (→ 5 XP to level) did not trigger the class-accent pulse on the XP bar.
+**Root cause:** `OverviewXPBar.tsx` used `progress >= 0.9` to decide near-threshold state. 40/45 = 0.888 — just under the 0.9 gate. The design brief says "within 10%", which read most naturally as 10% of the span but catches fewer small-span cases than an absolute remaining count.
+**Fix:** Switched trigger to `(nextThreshold - careerXP) <= 10` — absolute XP remaining, not a percentage. Catches 40/45 cleanly and matches the brief's "within 10" phrasing more literally.
+
+### T0a-B2: Wax seal muddled the XP numerator/denominator
+**Symptom:** When a character reached or exceeded the threshold, the "LEVEL UP" seal painted over the right side of the parchment strip but the underlying `45 / 45` numeric label still showed through.
+**Root cause:** The seal had a solid `--gilt-gold` background and 50% border-radius, but its footprint was smaller than the text label behind it. Text extended past the seal's rounded edge into visible negative space.
+**Fix:** When `readyToLevel` is true, the XP numerator/threshold text is suppressed entirely — only the left-side `XP` label + right-side seal remain. The seal speaks for itself; numbers aren't needed at that moment.
+
+### T0a-B3: Header menu backdrop was translucent + tap-outside didn't close
+**Symptom:** Two bugs: (a) the `⋯` menu's backdrop was only 35% opaque, so the header title/subtitle and tab strip read clearly through it, muddling the menu's visual hierarchy. (b) Tapping anywhere outside the menu panel did not close the menu.
+**Root cause (a):** `.player-sheet__menu` backdrop used `rgba(26, 20, 16, 0.35)` — too sheer for a modal occluder.
+**Root cause (b):** The backdrop was a sibling `<button>` to the panel, both wrapped in a `display: flex` parent. Clicks in the empty regions of the flex container didn't land on the backdrop button's hit zone reliably.
+**Fix (a):** Backdrop bumped to `rgba(26, 20, 16, 0.72)` + `backdrop-filter: blur(2px)` (both prefixed).
+**Fix (b):** Restructured to the click-catcher pattern (same as `app/controller/overlays/OverlayBackdrop.tsx`): `handleBackdropClick` on the container `div`, `e.target === e.currentTarget` gates the close; panel uses `stopPropagation` on its own clicks.
+
+### T0a-B4: Header menu's backdrop didn't dim tabs/content behind it
+**Symptom:** After T0a-B3 landed, the menu's backdrop covered the header correctly but left the tab strip, XP bar, stat medallions, and Active Scenario section at full brightness — the menu appeared "on the same layer" as the sheet content instead of above it.
+**Root cause:** Stacking-context trap. `PlayerSheetMenu` was rendered inside `PlayerSheetHeader`, which is a direct child of `.player-sheet`. The rule `.player-sheet > * { position: relative; z-index: 1 }` forced the header into a z-index-1 stacking context; any z-index the menu declared was trapped inside that context. Tabs and content, as later-DOM-order siblings of the header at the same z-index 1, painted over the menu.
+**Fix:** Lifted `menuOpen` state from `PlayerSheetHeader` to `PlayerSheet`. The header now takes `menuOpen`/`onToggleMenu` as props. `PlayerSheet` renders `<PlayerSheetMenu>` as a direct child of `.player-sheet`, sibling to header/tabs/content. Added `:not(.player-sheet__menu)` to the `> *` z-index rule so the menu's own `z-index: 70` wins the cascade. The menu now correctly paints above all sheet content.
+
+### T0a-B5: Controller quick-view had no exit and Active Scenario was inert
+**Symptom:** Two bugs: (a) opening `PlayerSheetQuickView` on the controller left no way to close it — the sheet's `←` button was hidden because of `readOnly`, and the `OverlayBackdrop`'s X was occluded by the sheet's own fixed-position layer. (b) The Active Scenario section on the quick-view was read-only despite the spec calling for the GM to still adjust HP / conditions / long rest from there.
+**Root cause (a):** `PlayerSheetHeader` treated the `←` close button as an editable affordance (gated on `!readOnly`). It's navigation, not a value mutation.
+**Root cause (b):** `PlayerSheetQuickView` didn't thread any of the `onChangeHealth` / `onToggleCondition` / etc. props through to `PlayerSheet`, so the Active Scenario controls had no handlers and rendered `disabled`.
+**Fix (a):** Show `←` close button unconditionally; only the `⋯` menu is hidden in read-only. Dropped the `OverlayBackdrop` wrapper since `PlayerSheet` is already a fixed-position full-screen modal.
+**Fix (b):** `PlayerSheetQuickView` now calls `useCommands()` + `useGameState()` and wires HP / XP / condition / long rest / absent / exhaust / element handlers directly, using the same command pattern as the phone `ScenarioView`. Controller retains full GM control over the scenario-live character state.
+
+---
+
 ### T1.1-B1: Display rewards tableau clung for the entire town phase
 **Symptom:** After scenario completion, the full-bleed rewards tableau on the display stayed on screen through the whole town phase, blocking the (future) outpost map / town surfaces until the GM hit Town Phase Complete.
 **Root cause:** Display overlay visibility was gated only on `state.finishData` existing, and per T1 design `finishData` persists from `prepareScenarioEnd` through `completeTownPhase` so phones can reconnect and still read the claimed snapshot. The display inherited that long lifetime by accident.

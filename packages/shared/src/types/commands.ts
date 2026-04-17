@@ -72,7 +72,8 @@ export type CommandAction =
   | 'returnBattleGoals'
   | 'setBattleGoalComplete'
   | 'claimTreasure'
-  | 'dismissRewards';
+  | 'dismissRewards'
+  | 'setCharacterProgress';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -382,6 +383,27 @@ export interface DismissRewardsCommand {
   payload: { characterName: string; edition: string };
 }
 
+// ── Player Sheet (Phase T0a) ──────────────────────────────────────────────
+
+/**
+ * Character-scoped progress field mutation. Restricted to a whitelist of
+ * safe fields; unknown fields are rejected by validateCommand.
+ *
+ * - `sheetIntroSeen` (boolean): one-time Player Sheet intro animation flag.
+ * - `notes` (string): freeform per-character journal (T0d surface).
+ */
+export type SetCharacterProgressField = 'sheetIntroSeen' | 'notes';
+
+export interface SetCharacterProgressCommand {
+  action: 'setCharacterProgress';
+  payload: {
+    characterName: string;
+    edition: string;
+    field: SetCharacterProgressField;
+    value: boolean | string;
+  };
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -437,7 +459,8 @@ export type Command =
   | ReturnBattleGoalsCommand
   | SetBattleGoalCompleteCommand
   | ClaimTreasureCommand
-  | DismissRewardsCommand;
+  | DismissRewardsCommand
+  | SetCharacterProgressCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

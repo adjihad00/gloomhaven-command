@@ -847,6 +847,99 @@ works identically in dev and prod, survives process boundaries, and a plain
 `srv-<ts>-<rand>` per boot when no file is present (covers the edge case of
 starting the server without ever running the build).
 
+### 2026-04-17 — Phase T0a: Player Sheet as canonical character home
+**Decision:** Introduced the **Player Sheet** — a full-screen 6-tab modal
+(Overview / Items / Progression / Personal Quest / Notes / History) reachable
+from every phone mode via the character-portrait button. Absorbs
+`PhoneCharacterDetail` into the Overview tab's **Active Scenario** section.
+Replaces the controller-side `CharacterSheetOverlay` with a read-only
+`PlayerSheetQuickView` rendering the same component with a `readOnly` context
+flag. Placeholder tabs ship with "Available in [batch]" bodies so the
+navigation pattern is final from T0a onward (one-time exception to the
+no-placeholders rule, granted because the shell needs to be settled before
+T2a–d build into it).
+**Rationale:** Phase T progression work (T2a–d) was about to build items,
+perks, level-up, enhancements, crafting, and personal quest into a `TownView`
+tab strip — which would make that the de-facto character home by accident.
+T0a establishes the canonical home first so all downstream progression work
+has a clear destination. Doing the surface before the features also means the
+design system (parchment + leather + gilt + class-accent inline tokens,
+Cinzel display / Crimson Pro body, BEM with `player-sheet__*` / `overview-tab__*`
+prefixes, motion easings) gets settled on a high-visibility surface that
+T0b/c (Party Sheet, Campaign Sheet) will inherit. This sets the bar for
+"artifacts worth keeping" across all three sheet types.
+
+### 2026-04-17 — Phase T0a: `setCharacterProgress` instead of widening `updateCampaign`
+**Decision:** Added a new character-scoped command
+`setCharacterProgress({ characterName, edition, field, value })` with a
+server-side field whitelist (`sheetIntroSeen: boolean`, `notes: string`).
+Validator rejects unknown fields and enforces the expected value type.
+**Rationale:** `handleUpdateCampaign` mutates `state.party[field]` only; it
+cannot touch `state.characters[i].progress`. Bending it to accept
+character-scoped updates would blur a clean invariant. A structured
+character-scoped command is also easier to whitelist in the phone
+permission enforcement — `updateCampaign` is not on the phone whitelist
+and arguably shouldn't be; `setCharacterProgress` is. This also gives T0d's
+Notes tab a ready-made write path (`field: 'notes'`).
+
+### 2026-04-17 — Phase T0a: Class accent CSS vars set inline, not via `[data-class=X]` rules
+**Decision:** The Player Sheet root sets `--class-accent`, `--class-accent-glow`,
+`--class-accent-dim`, `--class-bg`, and `--class-flair` as inline styles,
+sourced from the shared `characterThemes` map via a new `withAlpha(hex, alpha)`
+helper. No `[data-class='brute'] { --class-accent: ... }` CSS blocks.
+**Rationale:** The `characterThemes.ts` map is already the source of truth in
+TypeScript. Duplicating per-class colors in CSS would mean two places to edit
+every time a new class lands. Inline vars are zero-maintenance: a new class
+entry in the map automatically flows to every component that reads the vars.
+
+### 2026-04-17 — Phase T0a: `characterThemes.ts` promoted to `app/shared/`
+**Decision:** Moved `app/phone/characterThemes.ts` → `app/shared/characterThemes.ts`
+as a standalone logical change (landed before any sheet work). Updated the
+two consumers (`app/phone/App.tsx`, `app/display/components/DisplayFigureCard.tsx`).
+**Rationale:** The display client was already cross-importing from
+`app/phone/` — a directional violation of the client separation. With T0a
+introducing controller consumption (via `PlayerSheetQuickView`) the cross-
+client import would have become tri-directional. Shared is the correct home;
+doing it as a standalone refactor kept the sheet PR focused on the new
+surface.
+
+### 2026-04-17 — Phase T0a: Disconnect flow moved into sheet header menu
+**Decision:** Portrait buttons in Lobby / Scenario / Town now open the
+Player Sheet (previously opened `PhoneDisconnectOverlay` in lobby/town and
+`PhoneCharacterDetail` in scenario). Disconnect now lives in the sheet
+header's `⋯` menu as a `PlayerSheetMenu` dropdown. `PhoneDisconnectMenu.tsx`
+was deleted.
+**Rationale:** The portrait is the natural "me" affordance, and the sheet is
+the canonical "me" surface. Routing it anywhere else (a separate
+disconnect-only sheet, a long-press gesture) would split the model. The
+menu hosts disconnect + switch-character; future sheet-level actions
+(character settings, audio mute, etc.) have a defined home.
+
+### 2026-04-17 — Phase T0a: Stylized-modern illuminated capital
+**Decision:** `IlluminatedCapital` is an inline SVG with a single
+flowing corner flourish (vine/ribbon motif) + thin accent rule on the
+left margin. Letter in Cinzel 700 at `--class-accent` with class-glow
+text-shadow. NOT a heavy medieval manuscript frame.
+**Rationale:** Per the T0 design brief's explicit direction — "stylized-
+modern, reference modern book design (Penguin Classics covers), not
+medieval manuscripts." The full ornate frame would clash with the rest
+of the tabletop aesthetic (which leans warm fantasy, not illuminated-book
+fantasy). One minimal corner ornament + a marginal rule reads as "book"
+without becoming costume.
+
+### 2026-04-17 — Phase T0a: CSS lives in `app/shared/styles/sheets.css` (not `app/phone/styles/`)
+**Decision:** The ~500-line Player Sheet stylesheet lives in
+`app/shared/styles/sheets.css` and is `<link>`-ed from both
+`app/phone/index.html` and `app/controller/index.html`. Both clients also
+precache it in their service workers.
+**Rationale:** The controller's `PlayerSheetQuickView` renders the same
+`PlayerSheet` component and needs the same styles. Placing `sheets.css` in
+`app/phone/styles/` would force the controller to reach across client
+directories for a stylesheet — the same smell the `characterThemes.ts`
+migration resolved. `app/shared/styles/` is the documented home for
+cross-client CSS (`theme.css`, `typography.css`, `components.css`,
+`connection.css`).
+
 ### 2026-04-17 — Phase T1.1: Display rewards hide condition decoupled from finishData lifetime
 **Decision:** The display's `DisplayRewardsOverlay` mount is now gated by a
 dismissal check (`isFinal && every-non-absent-char.dismissed`) in

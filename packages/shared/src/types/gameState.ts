@@ -242,6 +242,10 @@ export interface CharacterProgress {
   scenarioStats: ScenarioStats[];
   deck: string[];
   enhancements: unknown[];
+  /** One-time Player Sheet intro animation shown flag. Persists per character
+   *  so the intro only plays once per character per campaign. Optional because
+   *  pre-T0a saves and GHS imports don't have it (undefined reads as falsy). */
+  sheetIntroSeen?: boolean;
 }
 
 // ── Character ───────────────────────────────────────────────────────────────

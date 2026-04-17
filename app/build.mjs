@@ -49,6 +49,7 @@ const SW_CSS = {
     '/app/shared/styles/typography.css',
     '/app/shared/styles/components.css',
     '/app/shared/styles/connection.css',
+    '/app/shared/styles/sheets.css',
     '/app/controller/styles/controller.css',
   ],
   phone: [
@@ -56,6 +57,7 @@ const SW_CSS = {
     '/app/shared/styles/typography.css',
     '/app/shared/styles/components.css',
     '/app/shared/styles/connection.css',
+    '/app/shared/styles/sheets.css',
     '/app/phone/styles/phone.css',
   ],
   display: [

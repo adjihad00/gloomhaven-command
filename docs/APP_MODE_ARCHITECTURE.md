@@ -67,8 +67,16 @@ app/
 │   │                       PhoneCounterRow, PhoneSummonSection,
 │   │                       PhoneElementRow, PhoneInitiativeTimeline
 │   ├── overlays/         # PhoneInitiativeNumpad, PhoneConditionPicker,
-│   │                       PhoneCharacterDetail, PhoneExhaustPopup,
-│   │                       PhoneLootDeckPopup, PhoneConditionSplash
+│   │                       PhoneExhaustPopup, PhoneLootDeckPopup,
+│   │                       PhoneConditionSplash, PhoneRewardsOverlay,
+│   │                       PhoneChoreOverlay, PhoneRulesOverlay,
+│   │                       PhoneBattleGoalOverlay
+│   ├── sheets/           # Phase T0a — Player Sheet (canonical character home,
+│   │                       reachable from every mode via portrait button).
+│   │                       PlayerSheet, header, tabs, intro, menu,
+│   │                       IlluminatedCapital. tabs/OverviewTab + 5 placeholders.
+│   │                       Absorbed PhoneCharacterDetail's controls into
+│   │                       OverviewActiveScenario.
 │   └── styles/phone.css
 └── display/              # Monitor — portrait, read-only, production-wired
     ├── main.tsx, index.html, manifest.json
@@ -188,9 +196,18 @@ detail overlay.
 Overlays:
 - **PhoneInitiativeNumpad** — 3×4 grid numpad, stone-tile keys, Long Rest button.
 - **PhoneConditionPicker** — Edition-aware grid split Positive/Negative.
-- **PhoneCharacterDetail** — Bottom sheet with swipe-to-close gesture (touch-based
-  panel dragging, >80px threshold). HP, XP (with career total + progress bar),
-  loot (read-only), full condition grid, Long Rest/Absent/Exhaust toggles.
+- **PlayerSheet** *(Phase T0a, replaces PhoneCharacterDetail)* — full-screen modal
+  reached via the character-portrait button in every mode. 6-tab strip
+  (Overview / Items / Progression / Personal Quest / Notes / History). Overview
+  is fully implemented; other tabs are structural placeholders pointing at
+  their implementation batch. Overview composes: XP bar with wax-seal level-up
+  cue, 4-up stat medallions (Gold/HP/Scenarios/Perks), **Active Scenario**
+  section (scenario mode only — absorbs all HP/XP/condition/element/long-rest/
+  exhaust controls from the old PhoneCharacterDetail), and a hand-preview
+  placeholder for T2b. One-time intro animation persists via
+  `CharacterProgress.sheetIntroSeen` + the new `setCharacterProgress` command.
+  Same surface renders read-only on controller via `PlayerSheetQuickView`
+  (replaces the old controller `CharacterSheetOverlay`).
 - **PhoneExhaustPopup** — Full-screen dramatic overlay when HP reaches 0. Skull icon,
   deep red accents, Cinzel typography. Confirm (exhaust) or Cancel (back to 1 HP).
 - **PhoneLootDeckPopup** — FH loot deck draw popup. Shows drawn card type,
@@ -292,14 +309,25 @@ After outpost: Scenario selection with world map + available scenarios.
 
 ### Phone (portrait)
 
-**Character Sheet — tabbed:**
-| Tab | Content |
-|-----|---------|
-| Items | Equipped (by slot), owned, shop (filtered by prosperity), FH crafting/alchemist |
-| Perks | Perk points, perk list with AMD modifications, applied vs unapplied |
-| Level Up | XP vs threshold, guided steps if eligible (pick card, HP increase, perks) |
-| Enhancements | Cost calculator, ability card browser with enhancement slots |
-| Personal Quest | Quest description, progress, retirement conditions |
+**Player Sheet — canonical character home (Phase T0a).** The same sheet shown
+in every mode (not town-only). Reachable from the character-portrait button
+in Lobby / Scenario / Town views. Tabs are stable across batches:
+
+| Tab | Content | Batch |
+|-----|---------|-------|
+| Overview | XP bar, stat medallions (Gold/HP/Scenarios/Perks), Active Scenario controls (scenario mode), Hand preview | ✓ T0a |
+| Items | Equipped (by slot), owned, shop (filtered by prosperity), FH crafting/alchemist | T2a |
+| Progression | Perks (AMD mods + applied status), Level Up flow, Enhancements, FH crafting/brewing | T2b + T2d |
+| Personal Quest | Quest description, progress markers, retirement conditions | T2c |
+| Notes | Freeform per-character journal (persistent via `CharacterProgress.notes`) | T0d |
+| History | Auto-generated timeline of scenarios, level-ups, major events | T0d |
+
+Non-Overview tabs ship as "Available in [batch]" placeholders so the shell is
+final and navigation patterns are settled from T0a onward. The controller
+renders the same sheet read-only via `PlayerSheetQuickView` (opened from
+`CharacterDetailOverlay.onOpenSheet`); the `readOnly` flag gates progression
+tabs but keeps the Active Scenario section interactive so the GM retains
+HP/condition controls.
 
 ### Monitor (portrait)
 

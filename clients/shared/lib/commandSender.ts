@@ -253,6 +253,25 @@ export class CommandSender {
     this.send({ action: 'dismissRewards', payload: { characterName, edition } });
   }
 
+  // ── Player Sheet (Phase T0a) ──
+
+  /**
+   * Set a whitelisted character-progress field. Current whitelist:
+   * `sheetIntroSeen` (boolean) — one-time intro animation flag.
+   * `notes` (string) — per-character journal (T0d).
+   */
+  setCharacterProgress(
+    characterName: string,
+    edition: string,
+    field: 'sheetIntroSeen' | 'notes',
+    value: boolean | string,
+  ): void {
+    this.send({
+      action: 'setCharacterProgress',
+      payload: { characterName, edition, field, value },
+    });
+  }
+
   // ── Internal ──
 
   private send(command: Command): void {

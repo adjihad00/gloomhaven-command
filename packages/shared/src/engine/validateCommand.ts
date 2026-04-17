@@ -426,6 +426,24 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'setCharacterProgress': {
+      const { characterName, edition, field, value } = command.payload;
+      const char = findCharacter(state, characterName, edition);
+      if (!char) return fail(`Character "${characterName}" not found`);
+      // Mirror the applyCommand whitelist — reject unknown fields server-side
+      // so a compromised client can't write to arbitrary CharacterProgress keys.
+      const expected: Record<string, 'boolean' | 'string'> = {
+        sheetIntroSeen: 'boolean',
+        notes: 'string',
+      };
+      const expectedType = expected[field];
+      if (!expectedType) return fail(`setCharacterProgress: unknown field "${field}"`);
+      if (typeof value !== expectedType) {
+        return fail(`setCharacterProgress: field "${field}" expects ${expectedType}, got ${typeof value}`);
+      }
+      return OK;
+    }
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

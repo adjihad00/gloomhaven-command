@@ -29,6 +29,56 @@
     --space-5: 20px;
     --space-6: 24px;
     --space-8: 32px;
+
+    /* ── Phase T0a: Player Sheet design tokens ── */
+    /* Parchment / paper */
+    --parchment-base: #e8d9b8;
+    --parchment-aged: #d4c094;
+    --parchment-dark: #b8a47a;
+    --parchment-ink: #3a2e1f;
+    --parchment-ink-dim: #5c4a33;
+
+    /* Leather / binding */
+    --leather-brown: #4a3020;
+    --leather-brown-deep: #2d1810;
+    --leather-seam: #6b4428;
+    --gilt-gold: #c9a961;
+    --gilt-gold-shadow: #8a6d2e;
+
+    /* Class-color accent defaults (overridden inline from characterThemes map) */
+    --class-accent: var(--accent-gold);
+    --class-accent-glow: rgba(211, 166, 99, 0.4);
+    --class-accent-dim: rgba(211, 166, 99, 0.15);
+
+    /* Sheet-specific surfaces */
+    --sheet-player-bg: radial-gradient(
+        ellipse at top,
+        var(--parchment-base) 0%,
+        var(--parchment-aged) 70%,
+        var(--parchment-dark) 100%
+    );
+    --sheet-party-bg: linear-gradient(
+        180deg,
+        var(--leather-brown) 0%,
+        var(--leather-brown-deep) 100%
+    );
+    --sheet-campaign-bg: radial-gradient(
+        circle at 30% 20%,
+        var(--leather-brown) 0%,
+        var(--leather-brown-deep) 60%,
+        #1a0f08 100%
+    );
+
+    /* Motion — gentle, physical, page-turn feel */
+    --ease-page-turn: cubic-bezier(0.4, 0.0, 0.2, 1);
+    --ease-ink-settle: cubic-bezier(0.2, 0.8, 0.3, 1);
+    --duration-page-turn: 400ms;
+    --duration-ink-settle: 240ms;
+
+    /* Sheet radii (crisp, not UI-library rounded) */
+    --radius-page-corner: 3px;
+    --radius-bookmark: 0 8px 8px 0;
+    --radius-wax-seal: 50%;
 }
 
 * {

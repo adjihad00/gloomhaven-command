@@ -13,7 +13,7 @@ import { PhoneInitiativeTimeline } from './components/PhoneInitiativeTimeline';
 import { PhoneActionBar } from './components/PhoneActionBar';
 import { PhoneInitiativeNumpad } from './overlays/PhoneInitiativeNumpad';
 import { PhoneConditionPicker } from './overlays/PhoneConditionPicker';
-import { PhoneCharacterDetail } from './overlays/PhoneCharacterDetail';
+import { PlayerSheet } from './sheets/PlayerSheet';
 import { PhoneExhaustPopup } from './overlays/PhoneExhaustPopup';
 import { PhoneLootDeckPopup } from './overlays/PhoneLootDeckPopup';
 import { PhoneConditionSplash } from './overlays/PhoneConditionSplash';
@@ -216,7 +216,7 @@ export function ScenarioView({ selectedCharacter, onSwitchCharacter }: ScenarioV
       )}
 
       {overlay.type === 'characterDetail' && (
-        <PhoneCharacterDetail
+        <PlayerSheet
           character={character}
           edition={ed}
           characterColor={characterColor}

@@ -56,10 +56,12 @@ server/src/             — HTTP + WebSocket server
   referenceDb.ts        — immutable SQLite reference data (schema + queries)
 app/components/         — shared Preact UI components
 app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands, useScenarioText)
-app/shared/             — shared non-component code (assets.ts, formatName.ts, labelRenderer.ts)
-app/shared/styles/      — CSS theme, typography, component styles
+app/shared/             — shared non-component code (assets.ts, formatName.ts, labelRenderer.ts, characterThemes.ts)
+app/shared/styles/      — CSS theme, typography, component styles, sheets.css (Phase T0a)
 app/controller/         — landscape tablet app (GM)
 app/phone/              — portrait phone app (player)
+app/phone/sheets/       — Player Sheet family (PlayerSheet, header, tabs, intro, menu,
+                          IlluminatedCapital) + tabs/ (Overview + placeholders). Phase T0a.
 app/display/            — portrait TV app (read-only)
 scripts/                — data import tooling
   import-data.ts        — populates data/reference.db from .staging/ sources
@@ -190,7 +192,8 @@ prepareScenarioEnd, cancelScenarioEnd, completeScenario,
 prepareScenarioSetup, confirmChore, proceedToRules,
 proceedToBattleGoals, cancelScenarioSetup, startScenario,
 completeTownPhase, dealBattleGoals, returnBattleGoals,
-setBattleGoalComplete, claimTreasure, dismissRewards
+setBattleGoalComplete, claimTreasure, dismissRewards,
+setCharacterProgress
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
@@ -214,6 +217,11 @@ setBattleGoalComplete, claimTreasure, dismissRewards
   claimed in the snapshot; resolves reward narrative via `DataContext.getTreasure`.
 - **dismissRewards (T1):** Character-scoped. Marks the snapshot row as dismissed
   (per-phone local close; other phones unaffected).
+- **setCharacterProgress (T0a):** Character-scoped, phone-allowed. Writes a
+  whitelisted field on `character.progress`. MVP fields: `sheetIntroSeen`
+  (boolean) and `notes` (string). Unknown fields rejected by `validateCommand`.
+  Powers the Player Sheet's one-time intro-seen flag (and the forthcoming T0d
+  notes tab) without widening `updateCampaign` beyond its party-level scope.
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
   Monster activation triggers ability card consume + summon actions via
@@ -233,7 +241,7 @@ Phone clients are restricted server-side to character-scoped commands
 (setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
 toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
 toggleTurn, renameCharacter, confirmChore, setBattleGoalComplete, claimTreasure,
-dismissRewards). Each command's target must match the phone's registered
+dismissRewards, setCharacterProgress). Each command's target must match the phone's registered
 characterName. Commands targeting summons are allowed if the summon owner
 matches. Additionally, `moveElement`, `drawLootCard`, `dealBattleGoals`, and
 `returnBattleGoals` are in a `PHONE_GLOBAL_ACTIONS` set that bypasses

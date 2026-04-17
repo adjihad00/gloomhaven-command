@@ -9,7 +9,7 @@ import { formatName } from '../shared/formatName';
 import { monsterThumbnail, characterThumbnail, battleGoalCard } from '../shared/assets';
 import { useScenarioText } from '../hooks/useScenarioText';
 import { useScenarioBookData } from '../hooks/useScenarioBookData';
-import { PhoneDisconnectOverlay } from './components/PhoneDisconnectMenu';
+import { PlayerSheet } from './sheets/PlayerSheet';
 
 interface LobbyViewProps {
   selectedCharacter: string;
@@ -18,7 +18,7 @@ interface LobbyViewProps {
 export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   const { state } = useGameState();
   const commands = useCommands();
-  const [showMenu, setShowMenu] = useState(false);
+  const [showSheet, setShowSheet] = useState(false);
 
   const setupPhase = state?.setupPhase;
   const setupData = state?.setupData;
@@ -26,6 +26,16 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
 
   const myChar = state?.characters?.find(c => c.name === selectedCharacter);
   const charEdition = myChar?.edition || edition;
+
+  // Single sheet instance reused across all lobby render branches. The
+  // portrait button in each branch flips `showSheet`; nothing else opens it.
+  const sheetOverlay = showSheet && myChar ? (
+    <PlayerSheet
+      character={myChar}
+      edition={charEdition}
+      onClose={() => setShowSheet(false)}
+    />
+  ) : null;
 
   // Fetch scenario data for rules display
   const scenarioApiPath = setupData
@@ -56,10 +66,10 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   if (setupPhase === 'chores' && setupData) {
     return (
       <div class="phone-lobby">
-                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowSheet(true)} aria-label="Open character sheet">
           <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
         </button>
-        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
+        {sheetOverlay}
         <h2 class="phone-lobby__heading">Your Setup Task</h2>
 
         {myChore ? (
@@ -122,10 +132,10 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   if (setupPhase === 'rules' && setupData) {
     return (
       <div class="phone-lobby">
-                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowSheet(true)} aria-label="Open character sheet">
           <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
         </button>
-        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
+        {sheetOverlay}
         <h2 class="phone-lobby__heading">Scenario Briefing</h2>
         <div class="phone-lobby__scenario-id">
           #{setupData.scenarioIndex}
@@ -188,10 +198,10 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
 
     return (
       <div class="phone-lobby">
-                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowSheet(true)} aria-label="Open character sheet">
           <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
         </button>
-        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
+        {sheetOverlay}
         <h2 class="phone-lobby__heading">Choose Your Battle Goal</h2>
 
         {dealtGoals.length > 0 ? (
@@ -248,8 +258,8 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   return (
     <div class="phone-lobby phone-lobby--waiting">
       {myChar && (
-        <button class="phone-lobby__char-portrait-btn" onClick={() => setShowMenu(true)}
-          aria-label="Open menu">
+        <button class="phone-lobby__char-portrait-btn" onClick={() => setShowSheet(true)}
+          aria-label="Open character sheet">
           <img src={characterThumbnail(charEdition, selectedCharacter)}
             alt={formatName(selectedCharacter)}
             class="phone-lobby__char-portrait" loading="lazy" />
@@ -259,10 +269,7 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
         {myChar ? formatName(selectedCharacter) : selectedCharacter}
       </h2>
       <p class="phone-lobby__waiting-text">Waiting for GM to set up scenario...</p>
-      {showMenu && (
-        <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition}
-          onClose={() => setShowMenu(false)} />
-      )}
+      {sheetOverlay}
     </div>
   );
 }

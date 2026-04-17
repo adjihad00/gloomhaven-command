@@ -101,6 +101,7 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | setBattleGoalComplete   | { characterName, edition, checks: 0..3 } *(T1, phone-allowed)*   |
 | claimTreasure           | { characterName, edition, treasureId } *(T1, phone-allowed)*     |
 | dismissRewards          | { characterName, edition } *(T1, phone-allowed)*                 |
+| setCharacterProgress    | { characterName, edition, field, value } *(T0a, phone-allowed)*  |
 
 ### Side Effects
 
@@ -114,6 +115,12 @@ If client is too far behind (>100 revisions), server sends full state instead.
   and type.
 - **advancePhase (next→draw)**: Removes dead monster entities and prunes empty groups
   before calling `endRound()`.
+- **setCharacterProgress** *(T0a)*: Character-scoped, phone-allowed. Writes a
+  whitelisted field on `character.progress`. Current whitelist: `sheetIntroSeen`
+  (boolean, one-time Player Sheet intro flag) and `notes` (string, per-character
+  journal — T0d surface). `validateCommand` rejects unknown fields and enforces
+  the expected value type. Does NOT use `updateCampaign` because that handler is
+  `state.party.*`-scoped only.
 
 ## Diffs (S→C broadcast)
 ```json
@@ -152,6 +159,7 @@ Phone clients (`role: "phone"`) are restricted to these commands:
 - `addSummon`, `removeSummon`, `toggleTurn`, `renameCharacter`
 - `confirmChore`
 - `setBattleGoalComplete`, `claimTreasure`, `dismissRewards` *(Phase T1)*
+- `setCharacterProgress` *(Phase T0a)*
 - Global (no character target): `moveElement`, `drawLootCard`, `dealBattleGoals`, `returnBattleGoals`
 
 Each character-scoped command's target must match the registered `characterName`.
