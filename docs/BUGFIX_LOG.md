@@ -291,3 +291,8 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 
 Verified on startup: `GET /sw-version.json` → `{"version":"<build-version>"}`; `GET /app/{phone,controller,display}/sw.js` → `Service-Worker-Allowed: /<role>`, `Cache-Control: no-store`, body prefixed with `self.GC_SW_VERSION_INJECTED="<build-version>"`; all three main bundles contain the same version string via esbuild define. Worst case after this ships: one page load may still serve stale, but the next load always recovers.
 
+
+### T1.1-B1: Display rewards tableau clung for the entire town phase
+**Symptom:** After scenario completion, the full-bleed rewards tableau on the display stayed on screen through the whole town phase, blocking the (future) outpost map / town surfaces until the GM hit Town Phase Complete.
+**Root cause:** Display overlay visibility was gated only on `state.finishData` existing, and per T1 design `finishData` persists from `prepareScenarioEnd` through `completeTownPhase` so phones can reconnect and still read the claimed snapshot. The display inherited that long lifetime by accident.
+**Fix:** [app/display/App.tsx](app/display/App.tsx) now hides the overlay once `state.finish` is final (`'success'`/`'failure'`) AND every non-absent character's `finishData.characters[i].dismissed` flag is set. `finishData` itself is still preserved (phones remain authoritative source of reconnect truth); only the display's presentation is scoped to the rewards moment.

@@ -116,6 +116,23 @@ export function App() {
     setTimeout(() => { isReconnectRef.current = false; }, 100);
   }
 
+  // Phase T1.1: hide the display rewards tableau once the pending window has
+  // closed (finish is final) AND every non-absent character's phone has
+  // dismissed. finishData itself is preserved until completeTownPhase so any
+  // phone that reconnects mid-town can still read the claimed snapshot.
+  const isFinal = state.finish === 'success' || state.finish === 'failure';
+  const allRelevantDismissed = (() => {
+    if (!state.finishData) return false;
+    const relevant = state.finishData.characters.filter((row) => {
+      const live = state.characters.find(
+        (c) => c.name === row.name && c.edition === row.edition,
+      );
+      return live && !live.absent;
+    });
+    return relevant.length > 0 && relevant.every((r) => r.dismissed);
+  })();
+  const shouldShowRewards = Boolean(state.finishData) && !(isFinal && allRelevantDismissed);
+
   return (
     <ErrorBoundary>
       <AppContext.Provider value={{
@@ -148,9 +165,10 @@ export function App() {
             />
           )}
 
-          {/* Phase T1: rewards tableau — layered above whichever view is current,
-              stays visible from prepareScenarioEnd through completeTownPhase. */}
-          {state.finishData && (
+          {/* Phase T1: rewards tableau — layered above whichever view is current.
+              Phase T1.1: hides once all connected phones have dismissed + finish
+              is final, but finishData itself persists until completeTownPhase. */}
+          {shouldShowRewards && state.finishData && (
             <DisplayRewardsOverlay
               finishData={state.finishData}
               edition={state.edition || 'gh'}

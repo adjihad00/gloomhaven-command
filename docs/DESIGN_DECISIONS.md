@@ -846,3 +846,18 @@ works identically in dev and prod, survives process boundaries, and a plain
 `npm run build` bumps it automatically. The server falls back to a fresh
 `srv-<ts>-<rand>` per boot when no file is present (covers the edge case of
 starting the server without ever running the build).
+
+### 2026-04-17 — Phase T1.1: Display rewards hide condition decoupled from finishData lifetime
+**Decision:** The display's `DisplayRewardsOverlay` mount is now gated by a
+dismissal check (`isFinal && every-non-absent-char.dismissed`) in
+`app/display/App.tsx`, not just by `state.finishData` existence. Phone and
+controller behavior are unchanged.
+**Rationale:** T1's "finishData persists through town" was the right call for
+phone-reconnect truth, but it inadvertently held the display tableau up for
+the entire town phase. Decoupling the display-side hide from the snapshot's
+lifetime keeps the reconnect story intact (phones + controller still see the
+snapshot) while letting the read-only ceremonial display hand off to the
+next surface naturally when the table indicates they're done (every phone
+taps Continue). Absent characters don't gate dismissal — their phones
+aren't connected, so requiring their `dismissed` flag would freeze the
+display forever for any party with a missing player.

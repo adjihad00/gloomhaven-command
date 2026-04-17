@@ -182,6 +182,12 @@
   - [x] useScenarioBookData hook for all three clients
   - [x] Wire display footer, controller lobby, phone lobby/rules to real win/loss conditions
   - [x] Graceful fallback for non-FH editions and missing book data
+- [x] Phase T1.1: Display rewards auto-hide when all phones dismiss (2026-04-17)
+  - [x] `shouldShowRewards` decoupled from `finishData` lifetime —
+        hides once `finish` is final AND every non-absent character
+        has `dismissed: true`
+  - [x] `finishData` itself still persists through town phase for
+        phone/controller reconnect consumption
 - [x] Phase T1: Scenario end rewards + cross-device overlays (2026-04-17)
   - [x] `ScenarioFinishData` snapshot type + lifecycle (build on prepare, apply on
         complete, clear on cancel/completeTownPhase/startScenario)
