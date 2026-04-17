@@ -202,5 +202,14 @@
 - [ ] Monster stat reference overlay
 - [x] PWA manifests for phone + controller (batch 11)
 - [x] Content-hashed JS bundles + auto-generated SW precache (batch 14)
+- [x] Phase 6: Service worker unbrick + self-healing (2026-04-17)
+  - [x] `/unregister` static reset page — clears SWs, caches, local/session storage
+  - [x] `/sw-version.json` server endpoint + `GC_BUILD_VERSION` file-based version pipeline
+  - [x] Network-first SWs for phone/controller/display (new source `app/display/sw.js`)
+  - [x] Activate-time server version check → self-destruct on mismatch
+  - [x] Client-side `app/shared/swRegistration.ts` watchdog (pre-register version check + `updateViaCache: 'none'` + 5-min poll + `sw-self-destructed` message handler)
+  - [x] SW registration moved from inline `<script>` to `main.tsx` on all three clients
+  - [x] `BYPASS_PATHS` guard for `/api/`, `/assets/`, `/sw-version.json`, `/unregister`, `/sw.js`
+  - [x] Per-request SW_VERSION resolution (eliminates `npm run dev` startup race)
 - [ ] Docker image for server deployment
 - [ ] README with setup instructions

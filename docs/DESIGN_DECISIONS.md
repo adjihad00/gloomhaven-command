@@ -756,3 +756,43 @@ loss / section-link helpers. The bottom-up "last two concrete lines" heuristic p
 better than a bounded-window search: pages 17-18 of the solo book have both a new base scenario
 ("Recharge") and a continuation of the prior scenario ("CONT. • Under the Ice") on the same page —
 only the two-line inspection catches both.
+
+### 2026-04-17 — Service worker strategy: network-first + server kill-switch
+**Decision:** All three service workers (phone, controller, display) use
+**network-first** for both navigations and static assets, with cache only as an
+offline fallback. `CACHE_NAME` is version-keyed by a server-issued `SW_VERSION`
+string, injected at request time. The server exposes a `/sw-version.json`
+endpoint; clients verify it before registering and SWs verify it on `activate`.
+Mismatch triggers an immediate self-destruct (unregister + delete all caches +
+`location.reload`).
+**Rationale:** The previous cache-first SW permanently bricked PWAs after the
+LAN HTTPS cert origin changed. Cache-first meant the SW never hit the network
+after the initial cache, so a stale app shell resurrected itself on every
+load. "Delete Website Data and reboot" was inconsistent on iOS.
+This app is **LAN-first, not offline-first**: players are at the table with the
+server metres away, and a dead SW is far worse than a slow first load. The
+network-first model costs one round-trip per navigation in exchange for
+structurally ruling out the stuck-PWA state. The kill-switch gives both server-
+and client-initiated recovery paths — on server restart, rebuild, or cert
+swap, every client converges to the current version within one page load.
+A sibling `/unregister` route serves a self-contained reset page for any device
+already stuck under the old cache-first SW.
+
+### 2026-04-17 — Build-time version stamping via file + esbuild define
+**Decision:** `app/build.mjs` generates a single `BUILD_VERSION` string per
+run and (a) writes it to `app/<role>/dist/build-version.txt`, (b) bakes it into
+each client bundle via `esbuild` `define: { 'process.env.GC_BUILD_VERSION': ... }`.
+The server reads the same txt file **per request** at `/sw-version.json` and
+when serving the SW files (so the injected `SW_VERSION` always matches).
+**Rationale:** The SW version, the client watchdog version, and the server
+version must agree for the self-heal logic to be meaningful — otherwise
+legitimate matches look like mismatches or vice versa. Env-var piping (`GC_BUILD_ID=$(date +%s) npm run build && ... node dist/server/...`) is a bash-ism that's
+fragile on Windows (the primary dev platform here). The file-based approach
+works identically in dev and prod, survives process boundaries, and a plain
+`npm run build` bumps it automatically. Reading the file per-request rather
+than once on startup eliminates a startup race in `npm run dev` where
+`concurrently` might boot the server before `build.mjs --watch` has written
+the file: the first response picks up the txt the instant it appears, with no
+server restart required. The server falls back to a fresh `srv-<ts>-<rand>`
+computed once at boot when no file and no env var are present (covers the
+edge case of starting the server without ever running the build).

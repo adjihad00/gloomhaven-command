@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Reset Gloomhaven Command</title>
+<style>
+  html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #1a1612; color: #e8d9b8; min-height: 100vh; }
+  main { max-width: 540px; margin: 0 auto; padding: 48px 24px; text-align: center; }
+  h1 { font-size: 28px; font-weight: 500; margin: 0 0 16px; color: #d3a663; }
+  p { line-height: 1.5; margin: 12px 0; font-size: 16px; }
+  .status { margin: 32px 0; padding: 20px; border: 1px solid #3d2f20; border-radius: 8px; background: #20180f; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 14px; text-align: left; white-space: pre-wrap; min-height: 120px; }
+  .ok { color: #7fb069; }
+  .err { color: #d88373; }
+  .busy { color: #d3a663; }
+  a.home { display: inline-block; margin: 12px 8px 0; padding: 12px 24px; background: #d3a663; color: #1a1612; text-decoration: none; border-radius: 6px; font-weight: 500; }
+  a.home[aria-disabled="true"] { opacity: 0.4; pointer-events: none; }
+  nav { margin-top: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Reset App State</h1>
+<p>This will clear cached files and service workers so your device can load the latest version of Gloomhaven Command.</p>
+<p>It&#39;s safe to run even if things look fine.</p>
+<div class="status" id="log" aria-live="polite">Starting&hellip;</div>
+<nav>
+  <a class="home" id="controller" href="/controller" aria-disabled="true">Controller</a>
+  <a class="home" id="phone" href="/phone" aria-disabled="true">Phone</a>
+  <a class="home" id="display" href="/display" aria-disabled="true">Display</a>
+</nav>
+</main>
+<script>
+(function () {
+  var log = document.getElementById('log');
+  var homes = [
+    document.getElementById('controller'),
+    document.getElementById('phone'),
+    document.getElementById('display'),
+  ];
+  function write(msg, cls) {
+    var span = document.createElement('span');
+    span.className = cls || '';
+    span.textContent = msg + '\n';
+    log.appendChild(span);
+  }
+  async function run() {
+    try {
+      write('Step 1: Unregister service workers', 'busy');
+      if ('serviceWorker' in navigator) {
+        var regs = await navigator.serviceWorker.getRegistrations();
+        if (regs.length === 0) {
+          write('  No service workers registered.', 'ok');
+        } else {
+          for (var i = 0; i < regs.length; i++) {
+            var scope = regs[i].scope;
+            var ok = await regs[i].unregister();
+            write('  ' + (ok ? 'Unregistered' : 'Failed to unregister') + ' ' + scope, ok ? 'ok' : 'err');
+          }
+        }
+      } else {
+        write('  serviceWorker API not available (OK).', 'ok');
+      }
+
+      write('\nStep 2: Delete caches', 'busy');
+      if ('caches' in self) {
+        var keys = await caches.keys();
+        if (keys.length === 0) {
+          write('  No caches to delete.', 'ok');
+        } else {
+          for (var j = 0; j < keys.length; j++) {
+            var ok2 = await caches.delete(keys[j]);
+            write('  ' + (ok2 ? 'Deleted' : 'Failed to delete') + ' cache: ' + keys[j], ok2 ? 'ok' : 'err');
+          }
+        }
+      } else {
+        write('  Caches API not available (OK).', 'ok');
+      }
+
+      write('\nStep 3: Clear local & session storage', 'busy');
+      try { localStorage.clear(); write('  localStorage cleared.', 'ok'); }
+      catch (e) { write('  localStorage unavailable: ' + e.message, 'err'); }
+      try { sessionStorage.clear(); write('  sessionStorage cleared.', 'ok'); }
+      catch (e) { write('  sessionStorage unavailable: ' + e.message, 'err'); }
+
+      write('\n\u2713 Reset complete. You can close this tab.', 'ok');
+      write('Tap a button below to reload the app fresh.', 'ok');
+      for (var h = 0; h < homes.length; h++) {
+        if (homes[h]) homes[h].setAttribute('aria-disabled', 'false');
+      }
+      if (homes[0]) homes[0].focus();
+    } catch (err) {
+      write('\nERROR: ' + (err && err.message ? err.message : String(err)), 'err');
+      write('Please force-quit the browser and delete site data manually.', 'err');
+    }
+  }
+  run();
+})();
+</script>
+</body>
+</html>

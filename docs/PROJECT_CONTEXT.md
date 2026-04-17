@@ -226,6 +226,24 @@ are rejected with an error.
 - Static server prefers `dist/` files when present, falls back to source for dev
 - `npm run import-data` — populates `data/reference.db` from `.staging/` source files
 - `npm run extract-books` — extracts scenario/section text from FH book PDFs into `data/reference.db`
+- **SW versioning (Phase 6):** Each build emits `BUILD_VERSION` (overridable via
+  `GC_BUILD_VERSION` env). The version is (a) baked into each client bundle via
+  `esbuild` `define` and (b) written to `app/<role>/dist/build-version.txt`. The
+  server reads the txt file **per request** and serves it at `GET /sw-version.json`.
+  Both the client watchdog (`app/shared/swRegistration.ts`) and the SW's
+  `activate` hook compare against this endpoint and self-heal on mismatch.
+  Source `app/<role>/sw.js` files are served with `self.GC_SW_VERSION_INJECTED`
+  prepended at request time by `server/src/staticServer.ts`.
+
+## Service Worker & Unbrick Page
+All three clients (phone, controller, display) register a self-healing
+service worker from their `main.tsx` entry via
+`app/shared/swRegistration.ts`. SWs are network-first for both navigations
+and static assets — cache is offline fallback only. If a device gets stuck
+on a stale install, navigate to `https://<server>/unregister` once. The
+page (served from `app/unregister.html` with `Cache-Control: no-store`)
+unregisters every SW, deletes every cache, and clears local/session
+storage, then offers links back to controller/phone/display.
 
 ## Reference Data System (Phase 5.1)
 Immutable SQLite database (`data/reference.db`) populated by `scripts/import-data.ts`.

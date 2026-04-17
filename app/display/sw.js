@@ -1,19 +1,19 @@
 // Self-healing service worker (dev-mode source).
 // SW_VERSION is injected by the server at request time via
 // `self.GC_SW_VERSION_INJECTED = "..."` prepended to the response body.
-// In production, app/build.mjs generates app/phone/dist/sw.js from a template
+// In production, app/build.mjs generates app/display/dist/sw.js from a template
 // with the same logic plus a baked-in fallback version.
 const SW_VERSION = self.GC_SW_VERSION_INJECTED || ('dev-' + Date.now());
-const CACHE_NAME = 'gc-phone-' + SW_VERSION;
-const SCOPE_ROOT = '/phone';
+const CACHE_NAME = 'gc-display-' + SW_VERSION;
+const SCOPE_ROOT = '/display';
 const APP_SHELL = [
-  '/phone',
+  '/display',
   '/app/shared/styles/theme.css',
   '/app/shared/styles/typography.css',
   '/app/shared/styles/components.css',
   '/app/shared/styles/connection.css',
-  '/app/phone/styles/phone.css',
-  '/app/phone/dist/main.js',
+  '/app/display/styles/display.css',
+  '/app/display/dist/main.js',
 ];
 
 // Paths the SW must NEVER intercept — escape hatches and non-cacheable data.

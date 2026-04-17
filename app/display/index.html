@@ -17,10 +17,5 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/app/display/dist/main.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/app/display/dist/sw.js').catch(function() {});
-      }
-    </script>
 </body>
 </html>

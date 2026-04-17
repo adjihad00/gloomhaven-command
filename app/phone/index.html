@@ -16,11 +16,5 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/app/phone/dist/main.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/app/phone/sw.js', { scope: '/phone' })
-          .catch(() => {});
-      }
-    </script>
 </body>
 </html>

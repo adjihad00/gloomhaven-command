@@ -21,6 +21,11 @@ New games start in `'lobby'` mode. `startScenario` transitions to `'scenario'`.
 
 Separate Preact entry points per device role, sharing a component library.
 
+Each role's `main.tsx` mounts its Preact `<App />` and then calls
+`registerServiceWorker({ swPath: '/app/<role>/sw.js', scope: '/<role>' })`
+from `app/shared/swRegistration.ts` (Phase 6 — self-healing SW with a
+pre-register version check against `/sw-version.json`).
+
 ```
 app/
 ├── components/           # Shared Preact components
@@ -41,7 +46,8 @@ app/
 │   └── useScenarioBookData.ts # fetch win/loss from /api/ref/scenario-book
 ├── shared/               # Non-component shared code
 │   ├── styles/           # theme.css, typography.css, components.css
-│   └── assets.ts         # asset URL helpers
+│   ├── assets.ts         # asset URL helpers
+│   └── swRegistration.ts # self-healing SW register + client watchdog (Phase 6)
 ├── controller/           # GM — iPad landscape, full control
 │   ├── main.tsx, index.html
 │   ├── LobbyView.tsx     # 8-step sequential setup flow
