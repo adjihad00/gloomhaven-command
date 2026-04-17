@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useMemo } from 'preact/hooks';
+import { useState, useMemo } from 'preact/hooks';
 import { useGameState } from '../hooks/useGameState';
 import { useCommands } from '../hooks/useCommands';
 import { useDataApi } from '../hooks/useDataApi';
@@ -8,6 +8,7 @@ import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../shared/formatName';
 import { monsterThumbnail, characterThumbnail, battleGoalCard } from '../shared/assets';
 import { useScenarioText } from '../hooks/useScenarioText';
+import { PhoneDisconnectOverlay } from './components/PhoneDisconnectMenu';
 
 interface LobbyViewProps {
   selectedCharacter: string;
@@ -16,6 +17,7 @@ interface LobbyViewProps {
 export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   const { state } = useGameState();
   const commands = useCommands();
+  const [showMenu, setShowMenu] = useState(false);
 
   const setupPhase = state?.setupPhase;
   const setupData = state?.setupData;
@@ -50,6 +52,10 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   if (setupPhase === 'chores' && setupData) {
     return (
       <div class="phone-lobby">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+          <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
+        </button>
+        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
         <h2 class="phone-lobby__heading">Your Setup Task</h2>
 
         {myChore ? (
@@ -112,6 +118,10 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   if (setupPhase === 'rules' && setupData) {
     return (
       <div class="phone-lobby">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+          <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
+        </button>
+        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
         <h2 class="phone-lobby__heading">Scenario Briefing</h2>
         <div class="phone-lobby__scenario-id">
           #{setupData.scenarioIndex}
@@ -167,29 +177,49 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   }, [battleGoals, setupData?.edition]);
 
   // ── Battle Goals Phase ──
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+
   if (setupPhase === 'goals' && setupData) {
     const dealCount = setupData.edition === 'fh' ? 3 : 2;
 
     return (
       <div class="phone-lobby">
+                <button class="phone-lobby__menu-portrait" onClick={() => setShowMenu(true)} aria-label="Open menu">
+          <img src={characterThumbnail(charEdition, selectedCharacter)} alt="" />
+        </button>
+        {showMenu && <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition} onClose={() => setShowMenu(false)} />}
         <h2 class="phone-lobby__heading">Choose Your Battle Goal</h2>
 
         {dealtGoals.length > 0 ? (
           <>
             <div class="phone-lobby__instructions">
-              <p class="phone-lobby__rule">Choose <strong>1</strong> to keep. Return the rest.</p>
+              <p class="phone-lobby__rule">
+                {selectedGoal
+                  ? 'Battle goal selected. Return the rest to the bottom of the deck.'
+                  : 'Tap a card to select it. Return the rest.'}
+              </p>
             </div>
             <div class="phone-lobby__goals-grid">
-              {dealtGoals.map((goal: any) => (
-                <div key={goal.cardId} class="phone-lobby__goal-card">
-                  <img
-                    src={battleGoalCard(setupData.edition, goal.name)}
-                    alt={goal.name}
-                    class="phone-lobby__goal-image"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
+              {dealtGoals.map((goal: any) => {
+                const isSelected = selectedGoal === goal.cardId;
+                const isUnselected = selectedGoal != null && !isSelected;
+                return (
+                  <button
+                    key={goal.cardId}
+                    class={`phone-lobby__goal-card${isSelected ? ' phone-lobby__goal-card--selected' : ''}${isUnselected ? ' phone-lobby__goal-card--dimmed' : ''}`}
+                    onClick={() => setSelectedGoal(isSelected ? null : goal.cardId)}
+                    aria-pressed={isSelected}
+                    aria-label={`Select battle goal: ${goal.name}`}
+                  >
+                    <img
+                      src={battleGoalCard(setupData.edition, goal.name)}
+                      alt={goal.name}
+                      class="phone-lobby__goal-image"
+                      loading="lazy"
+                    />
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : (
@@ -214,14 +244,21 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
   return (
     <div class="phone-lobby phone-lobby--waiting">
       {myChar && (
-        <img src={characterThumbnail(charEdition, selectedCharacter)}
-          alt={formatName(selectedCharacter)}
-          class="phone-lobby__char-portrait" loading="lazy" />
+        <button class="phone-lobby__char-portrait-btn" onClick={() => setShowMenu(true)}
+          aria-label="Open menu">
+          <img src={characterThumbnail(charEdition, selectedCharacter)}
+            alt={formatName(selectedCharacter)}
+            class="phone-lobby__char-portrait" loading="lazy" />
+        </button>
       )}
       <h2 class="phone-lobby__heading">
         {myChar ? formatName(selectedCharacter) : selectedCharacter}
       </h2>
       <p class="phone-lobby__waiting-text">Waiting for GM to set up scenario...</p>
+      {showMenu && (
+        <PhoneDisconnectOverlay characterName={selectedCharacter} edition={charEdition}
+          onClose={() => setShowMenu(false)} />
+      )}
     </div>
   );
 }

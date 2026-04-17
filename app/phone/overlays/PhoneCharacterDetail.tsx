@@ -1,5 +1,6 @@
 import { h } from 'preact';
-import { useState, useRef, useCallback } from 'preact/hooks';
+import { useState, useRef, useCallback, useContext } from 'preact/hooks';
+import { AppContext } from '../../shared/context';
 import { HealthIcon, XPIcon, GoldIcon, LongRestIcon } from '../../components/Icons';
 import { conditionIcon, elementIcon, lootCardIcon } from '../../shared/assets';
 import { formatName } from '../../shared/formatName';
@@ -52,6 +53,7 @@ export function PhoneCharacterDetail({
   onMoveElement, onSwitchCharacter,
   onClose,
 }: PhoneCharacterDetailProps) {
+  const { disconnect, gameCode } = useContext(AppContext);
   const [confirmExhaust, setConfirmExhaust] = useState(false);
   const [showLootCards, setShowLootCards] = useState(false);
 
@@ -302,9 +304,9 @@ export function PhoneCharacterDetail({
           </button>
         </div>
 
-        {/* Switch Character */}
-        {onSwitchCharacter && (
-          <div class="phone-detail__switch">
+        {/* Switch Character + Disconnect */}
+        <div class="phone-detail__switch">
+          {onSwitchCharacter && (
             <button
               class="phone-detail__switch-btn"
               onClick={() => { onSwitchCharacter(); onClose(); }}
@@ -312,8 +314,15 @@ export function PhoneCharacterDetail({
             >
               Switch Character
             </button>
-          </div>
-        )}
+          )}
+          <button
+            class="phone-detail__disconnect-btn"
+            onClick={() => { onClose(); disconnect(); }}
+            aria-label="Disconnect from game"
+          >
+            Disconnect{gameCode ? ` (${gameCode})` : ''}
+          </button>
+        </div>
       </div>
     </div>
   );

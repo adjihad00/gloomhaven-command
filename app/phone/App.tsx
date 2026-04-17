@@ -125,7 +125,7 @@ export function App() {
           {mode === 'lobby'
             ? <LobbyView selectedCharacter={selectedCharacter} />
             : mode === 'town'
-            ? <TownView />
+            ? <TownView selectedCharacter={selectedCharacter} />
             : <ScenarioView
                 selectedCharacter={selectedCharacter}
                 onSwitchCharacter={handleSwitchCharacter}

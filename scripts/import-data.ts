@@ -562,9 +562,12 @@ function importMonsterDecks(db: Database.Database, edition: string, edDir: strin
         `SELECT value FROM labels WHERE edition = ? AND key = ? AND locale = 'en'`,
       ).get(edition, labelKey) as { value: string } | undefined;
 
+      // Use label name first, then card's own name field (FH cards have names), then null
+      const cardName = labelRow?.value ?? (card.name as string | undefined) ?? null;
+
       cardStmt.run(
         edition, deckName, cardId,
-        labelRow?.value ?? null,
+        cardName,
         card.initiative as number,
         card.shuffle ? 1 : 0,
         JSON.stringify(card.actions || []),

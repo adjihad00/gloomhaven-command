@@ -162,6 +162,15 @@
   - [x] MonsterAbilityActions renderer handles all 30+ action types (conditions, elements, summons, sub-actions)
   - [x] Mock types replaced with shared MonsterAbilityAction — DisplayAbility/DisplayBaseStats types
   - [x] Win/loss conditions remain "See Scenario Book" (data not in DB — deferred to Phase 5.x PDF extraction)
+- [x] Phase 5 Bugfix
+  - [x] Fixed label icon sizing (16px fixed instead of 1.1em)
+  - [x] Phone battle goal card images from Worldhaven + tap-to-select interaction
+  - [x] Phone disconnect escape hatch (portrait tap on lobby, button in CharacterDetail for scenario)
+  - [x] Display sticky header scroll lock fix (flex layout)
+  - [x] Display ability card names from source data (926 FH cards with real names via import fix)
+  - [x] Monster ability deck overrides from scenario rules (overrideDeck field, FH scenario 0 hounds)
+  - [x] Battle goal deck server-side infrastructure (BattleGoalDeck type, deal/return commands)
+  - [x] Worldhaven staging fallback static route for card images
 - [ ] Phase 5.x: Scenario book PDF text extraction — goals, win/loss conditions, story text
 - [ ] Phase 5.y: Extend display ability card rendering with remaining edge cases
 - [ ] GHS save file import/export UI in controller

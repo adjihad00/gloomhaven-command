@@ -115,11 +115,14 @@ Batch 18b: Display UI polish COMPLETE (stat icon consolidation, hidden initiativ
 Phase 5.1: Reference data schema + import pipeline COMPLETE. SQLite reference database
 (`data/reference.db`) stores all GHS edition data (labels, scenarios, monsters, abilities,
 items, events, sections, assets) populated from `.staging/` sources via `scripts/import-data.ts`.
-Phase 5.2: Consumer wiring COMPLETE. All "See Scenario Book" placeholders for special rules
-replaced with real label text from reference DB (with inline icon interpolation). Display
+Phase 5.2: Consumer wiring + bugfix COMPLETE. All "See Scenario Book" placeholders for special
+rules replaced with real label text from reference DB (with inline icon interpolation). Display
 monster ability card renderer upgraded from 5 to 30+ action types (conditions, elements,
-summons, sub-actions). Ability card names from labels. Mock types replaced with shared types.
-Win/loss conditions remain placeholder (text not in GHS data — deferred to PDF extraction).
+summons, sub-actions). FH ability card names from source data (926 cards). Mock types replaced
+with shared types. Win/loss conditions remain placeholder (deferred to PDF extraction).
+Phase 5 Bugfix COMPLETE: display sticky header, phone battle goal card images with tap-to-select,
+phone disconnect escape hatch on all screens, monster ability deck overrides from scenario rules
+(FH scenario 0 hounds), battle goal deck server-side infrastructure, Worldhaven staging fallback.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,

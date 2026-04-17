@@ -4,10 +4,12 @@
 - **Special rules SVG are massive** — FIXED. Changed `.label-icon` from `1.1em` (which scales with parent font-size) to fixed `16px`. Icons now render at a consistent readable size across all clients.
 
 ## Phone:
+- **Escape hatch: disconnect from any screen** — FIXED. Lobby/setup screens: the character portrait (top-right corner on chores/rules/goals phases, center portrait on waiting screen) is tappable and opens a disconnect overlay with game code and disconnect button. Scenario mode: disconnect button added to the CharacterDetail overlay (opened by tapping the character header), alongside the existing Switch Character button. No floating icon — disconnect is accessed through existing UI elements.
 - **Battle goals: use actual card images** — FIXED. Phone LobbyView now renders Worldhaven battle goal card images (`/assets/worldhaven/images/battle-goals/{edition}/{edition}-{slug}.png`) instead of text boxes. Added `battleGoalCard()` helper to `app/shared/assets.ts`. Added static server fallback route to serve `.staging/worldhaven/images/` at `/assets/worldhaven/images/` when the `assets/worldhaven/` directory isn't populated. Updated CSS from text card layout to full-bleed image cards.
+- **Battle goals: unable to select a card** — FIXED. Cards are now `<button>` elements with tap-to-select. Selected card gets gold border glow, unselected cards dim to 35% opacity. Tap again to deselect. Instruction text updates to confirm selection. Uses `aria-pressed` for accessibility.
 
 ## Display:
-- **Monster ability names: No longer being displayed** — FIXED. After Phase 5.2 switched to `/api/ref/ability-cards`, most cards have `name: null` in the database (label-resolved names only exist for some editions). Added fallback: `card.name || 'Card ${card.card_id}'` in `useDisplayMonsterData.ts`.
+- **Monster ability names: not displayed** — FIXED. Root cause: the import script (`scripts/import-data.ts`) resolved card names only from labels (`deck.{name}.{cardId}` pattern) but ignored the `name` field on the card data itself. FH ability cards have names in their JSON data (e.g., "Warding Swipe", "Knockout Punch") but GH cards don't (GH physical cards have no printed names). Fixed the import to use `card.name` as fallback when label lookup returns null. Re-ran import: 926/1662 cards now have names (all FH editions). GH cards correctly show no name label since they have none in the source data.
 - **Scroll lock: Top header not locking** — FIXED. Changed `.display__content` from `height: 100vh` to `flex: 1; min-height: 0;` so it properly fills the flex column layout. Removed top padding that interfered with `position: sticky; top: 0;` on `.display-header__sticky`.
 
 ## Game Engine:

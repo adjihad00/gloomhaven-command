@@ -1635,6 +1635,26 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.phone-detail__disconnect-btn {
+  width: 100%;
+  height: 40px;
+  background: transparent;
+  border: 1px solid rgba(197, 48, 48, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--negative-red);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+  margin-top: var(--space-2);
+}
+
+.phone-detail__disconnect-btn:active {
+  background: rgba(197, 48, 48, 0.15);
+  border-color: var(--negative-red);
+}
+
 /* ================================================================
    PHONE ELEMENT ROW
    ================================================================ */
@@ -3184,9 +3204,9 @@
 .phone-lobby__char-portrait {
   width: 80px;
   height: 80px;
-  border-radius: var(--radius-lg);
-  object-fit: contain;
-  border: 2px solid var(--accent-gold-dim);
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-gold);
 }
 
 .phone-lobby__waiting-text {
@@ -3377,6 +3397,26 @@
 .phone-lobby__goal-card {
   border-radius: var(--radius-md);
   overflow: hidden;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.phone-lobby__goal-card:active {
+  transform: scale(0.97);
+}
+
+.phone-lobby__goal-card--selected .phone-lobby__goal-image {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 16px rgba(211, 166, 99, 0.5);
+}
+
+.phone-lobby__goal-card--dimmed {
+  opacity: 0.35;
+  transform: scale(0.95);
 }
 
 .phone-lobby__goal-image {
@@ -3384,7 +3424,8 @@
   height: auto;
   display: block;
   border-radius: var(--radius-md);
-  border: 1px solid var(--accent-gold-dim);
+  border: 2px solid var(--accent-gold-dim);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .phone-lobby__edition-note {
@@ -3394,4 +3435,122 @@
   padding: var(--space-2) var(--space-3);
   background: rgba(184, 115, 51, 0.08);
   border-radius: var(--radius-md);
+}
+
+/* ── Phone Disconnect Menu ──────────────────────────────────────────── */
+
+.phone-lobby__char-portrait-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.phone-lobby__menu-portrait {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold);
+  background: var(--bg-card);
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  overflow: hidden;
+}
+
+.phone-lobby__menu-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.phone-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-menu-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.phone-menu-overlay__panel {
+  position: relative;
+  background: var(--bg-card);
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  width: 280px;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.15), var(--shadow-heavy);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.phone-menu-overlay__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.phone-menu-overlay__portrait {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold);
+  object-fit: cover;
+}
+
+.phone-menu-overlay__name {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.phone-menu-overlay__code {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.phone-menu-overlay__disconnect {
+  width: 100%;
+  padding: var(--space-3);
+  border: 2px solid var(--negative-red);
+  border-radius: var(--radius-sm);
+  background: rgba(197, 48, 48, 0.1);
+  color: var(--negative-red);
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.phone-menu-overlay__disconnect:active {
+  background: var(--negative-red);
+  color: var(--text-primary);
+}
+
+.phone-menu-overlay__cancel {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--accent-copper);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  touch-action: manipulation;
 }

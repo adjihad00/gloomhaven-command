@@ -92,7 +92,7 @@ export function useDisplayMonsterData(monsters: Monster[], edition: string, leve
                 const actions: MonsterAbilityAction[] = JSON.parse(card.actions_json);
                 ability = {
                   monsterName: m.name,
-                  name: card.name || `Card ${card.card_id}`,
+                  name: card.name || null,
                   initiative: card.initiative,
                   actions,
                   shuffle: !!card.shuffle,
