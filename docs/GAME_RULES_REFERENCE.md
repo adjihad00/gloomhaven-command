@@ -455,3 +455,41 @@ These are rules frequently implemented incorrectly:
 18. **Exhausted characters still gain XP/gold/loot** if scenario completed
 19. **Monster focus uses infinite movement** to determine if a path exists
 20. **Monsters prefer paths with fewest negative hexes** even if longer
+
+---
+
+## 16. Reputation & Economy
+
+Party reputation is an integer tracked on `state.party.reputation`, range
+**−20 to +20**. It modifies item purchase prices at town shops.
+
+### Shop Price Modifier
+
+Applied per item sold. Positive modifier = surcharge; negative = discount.
+Item price floor is 0 gold (never below free — the floor-at-0 rule belongs
+to purchase logic, not the bracket helper).
+
+| Reputation | Price modifier per item |
+|------------|-------------------------|
+| ≥ +19 | **−5 g** |
+| +15 … +18 | −4 g |
+| +11 … +14 | −3 g |
+| +7 … +10 | −2 g |
+| +3 … +6 | −1 g |
+| −2 … +2 | **0 g** |
+| −3 … −6 | +1 g |
+| −7 … −10 | +2 g |
+| −11 … −14 | +3 g |
+| −15 … −18 | +4 g |
+| ≤ −19 | **+5 g** |
+
+Implementation: `getReputationPriceModifier(reputation)` in
+`packages/shared/src/data/reputationPrice.ts` returns an integer in
+[−5, +5]. Consumed by the Party Sheet's Standing tab (live chip) and by
+T2a shopping.
+
+### Reputation Change Sources
+
+Road events, city/outpost events, and specific scenario outcomes may
+award ±reputation. The engine does not automate event-driven reputation
+changes — they're GM-driven via `updateCampaign('reputation', value)`.

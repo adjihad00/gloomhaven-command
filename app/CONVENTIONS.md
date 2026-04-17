@@ -68,4 +68,41 @@ Load order (defined in each index.html):
 2. `shared/styles/typography.css` — self-hosted @font-face, heading classes
 3. `shared/styles/components.css` — shared component classes
 4. `shared/styles/connection.css` — shared connection/setup screen
-5. `{device}/styles/{device}.css` — device-specific overrides only
+5. `shared/styles/sheets.css` — Player Sheet (T0a) + Party Sheet (T0b) blocks;
+   linked from phone, controller, and display
+6. `{device}/styles/{device}.css` — device-specific overrides only
+
+## Shared code layout
+
+### `app/shared/sheets/` (Phase T0b)
+
+Canonical home for **multi-client sheet components** — sheets that are
+consumed by more than one client (phone, controller, display). The T0b
+Party Sheet lives here; T0c Campaign Sheet will too.
+
+Pattern:
+- `XxxSheet.tsx` — root component with `readOnly` / `autoCycle` /
+  `layout` props.
+- `XxxSheetContext.ts` — tiny context (`readOnly`, `edition`, `onClose`,
+  `autoCycle`) so child subtrees don't need to prop-drill.
+- `XxxSheetHeader.tsx`, `XxxSheetTabs.tsx`, `XxxSheetIntro.tsx` — header,
+  tab strip, one-time intro animation.
+- `tabs/*.tsx` — one file per tab.
+
+Each client mounts the shared sheet via a thin wrapper:
+- Controller: `app/controller/overlays/XxxSheetOverlay.tsx` with
+  `readOnly: false`.
+- Display: `app/display/views/DisplayXxxSheetView.tsx` with
+  `readOnly + autoCycle + skipIntro`.
+
+T0a's `PlayerSheet` still lives at `app/phone/sheets/` because it was
+authored phone-first; controller consumes it via
+`app/controller/overlays/PlayerSheetQuickView.tsx`. New multi-client
+sheets from T0b onward go in `app/shared/sheets/`.
+
+### `app/shared/hooks/` (Phase T0b)
+
+Cross-client hooks. Currently: `useCommitOnPause` (hybrid-commit for
+editable text — blur / Enter / 1000 ms typing pause). Hooks consumed by
+only one client's tree belong in that client's directory
+(`app/hooks/`, `app/controller/hooks/`, `app/display/hooks/`).

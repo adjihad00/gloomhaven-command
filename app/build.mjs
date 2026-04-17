@@ -65,6 +65,7 @@ const SW_CSS = {
     '/app/shared/styles/typography.css',
     '/app/shared/styles/components.css',
     '/app/shared/styles/connection.css',
+    '/app/shared/styles/sheets.css',
     '/app/display/styles/display.css',
   ],
 };

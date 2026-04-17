@@ -329,3 +329,27 @@ Verified on startup: `GET /sw-version.json` → `{"version":"<build-version>"}`;
 **Symptom:** After scenario completion, the full-bleed rewards tableau on the display stayed on screen through the whole town phase, blocking the (future) outpost map / town surfaces until the GM hit Town Phase Complete.
 **Root cause:** Display overlay visibility was gated only on `state.finishData` existing, and per T1 design `finishData` persists from `prepareScenarioEnd` through `completeTownPhase` so phones can reconnect and still read the claimed snapshot. The display inherited that long lifetime by accident.
 **Fix:** [app/display/App.tsx](app/display/App.tsx) now hides the overlay once `state.finish` is final (`'success'`/`'failure'`) AND every non-absent character's `finishData.characters[i].dismissed` flag is set. `finishData` itself is still preserved (phones remain authoritative source of reconnect truth); only the display's presentation is scoped to the rewards moment.
+
+---
+
+## 2026-04-17 — Phase T0b self-review fixes
+
+### T0b-B1: New floating `⋯` nav overlapped the scenario header element board
+**Symptom:** The initial T0b land mounted `ControllerNav`'s fixed-position `⋯` button in every controller mode. In scenario mode, its top-right position collided with the element board that already anchors the right side of `ScenarioHeader`, partially occluding element icons.
+**Root cause:** Scenario mode already has a `☰` in the header that opens `MenuOverlay`. Adding a second floating nav was redundant visual weight that happened to land on top of the element board.
+**Fix:** [app/controller/App.tsx](app/controller/App.tsx) only renders `ControllerNav` when `mode !== 'scenario'`. The Party Sheet opener is lifted to App.tsx state and threaded into [ScenarioView.tsx](app/controller/ScenarioView.tsx) via an `onOpenPartySheet` prop, then passed into the existing `MenuOverlay` mount — so the hamburger has the Party Sheet entry across every mode with zero duplicate affordance.
+
+### T0b-B2: No escape hatch on display during the decorative Party Sheet
+**Symptom:** When the display rendered `DisplayPartySheetView` in idle lobby / town, there was no way to reach the `DisplayConfigMenu` (game code + Disconnect). Other display views expose it via clickable text (round number / edition title / "Town Phase" title), but the decorative sheet fills the canvas with no text chrome of its own.
+**Root cause:** The view was built as read-only with zero tap targets, following the sheet's "no interactions on display" contract — but that contract left the display with no way out short of navigating to `/unregister`.
+**Fix:** [app/display/views/DisplayPartySheetView.tsx](app/display/views/DisplayPartySheetView.tsx) renders an invisible 96×96 `<button>` pinned to the top-left corner that forwards to `onOpenMenu` (same menu the other display views use). Matches the positional-hot-zone idiom used in kiosk-style screens.
+
+### T0b-B3: No way to exit a scenario without committing Victory or Defeat
+**Symptom:** Pre-T0b, the only scenario exits were `Scenario Complete (Victory)` and `Scenario Failed (Defeat)`, both of which transfer rewards and record the scenario in `party.scenarios`. Legitimate real-world need — "we started the wrong scenario" / "we need to reset" / "we're done playing" — had no first-class path.
+**Root cause:** Historical gap in the scenario lifecycle model.
+**Fix:** Added `abortScenario` command (GM-only, validator rejects unless `mode === 'scenario'`). Handler clears scenario combat state identically to `handleCompleteScenario`'s cleanup block — monsters / non-character figures / HP / conditions / summons / in-scenario counters / elements / round+phase — but skips the rewards transfer and does NOT append to `state.party.scenarios`. Transitions `state.mode = 'lobby'` directly (skipping town, which is a reward-resolution surface and has nothing to resolve for an aborted scenario). Exposed as "Cancel Scenario" in the new [ScenarioControlsOverlay.tsx](app/controller/overlays/ScenarioControlsOverlay.tsx) with two-step inline confirmation.
+
+### T0b-B4: `'scenarioSetup'` overlay type was orphaned dead code (latent)
+**Symptom:** `ScenarioView.tsx` passed `onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}` to `MenuOverlay`, but `'scenarioSetup'` was not in the `OverlayState` discriminated union. `tsc --noEmit` flagged the mismatch; runtime silently never rendered anything for that menu item. Left behind from the Batch 16b lobby-view refactor that moved scenario setup out of ScenarioView overlays.
+**Root cause:** Incomplete cleanup in the earlier refactor — the caller was never pruned when the overlay type was removed from the union.
+**Fix:** Side effect of the T0b scenario-controls restructure. `onOpenSetup` dropped entirely from the `MenuOverlay` mount in `ScenarioView` (scenario-specific flows now cluster in `ScenarioControlsOverlay`, triggered by clicking the scenario name). The orphan call was removed and `tsc --noEmit` is clean for this file again.

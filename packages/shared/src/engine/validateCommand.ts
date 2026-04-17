@@ -444,6 +444,29 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'addPartyAchievement': {
+      const ach = command.payload.achievement?.trim?.() ?? '';
+      if (!ach) return fail('addPartyAchievement: achievement is empty');
+      return OK;
+    }
+
+    case 'removePartyAchievement': {
+      const target = command.payload.achievement;
+      if (!target) return fail('removePartyAchievement: achievement is empty');
+      const list = state.party.achievementsList ?? [];
+      if (!list.includes(target)) {
+        return fail(`removePartyAchievement: "${target}" not in party achievements`);
+      }
+      return OK;
+    }
+
+    case 'abortScenario': {
+      if (state.mode !== 'scenario') {
+        return fail('abortScenario: no scenario in progress');
+      }
+      return OK;
+    }
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

@@ -11,10 +11,27 @@ interface ScenarioHeaderProps {
   elementBoard: ElementModel[];
   onCycleElement?: (elementType: string, currentState: string) => void;
   onMenuOpen?: () => void;
+  /** Phase T0b: click scenario name to open scenario-controls overlay
+   *  (End Scenario — Victory/Defeat). Relocated from MenuOverlay so the
+   *  hamburger menu stays cross-mode (Party Sheet / Undo / Export /
+   *  Disconnect) and scenario-specific flows cluster next to the
+   *  scenario title. */
+  onScenarioControls?: () => void;
   readonly?: boolean;
 }
 
-export function ScenarioHeader({ round, phase, scenarioName, scenarioIndex, level, elementBoard, onCycleElement, onMenuOpen, readonly }: ScenarioHeaderProps) {
+export function ScenarioHeader({
+  round,
+  phase,
+  scenarioName,
+  scenarioIndex,
+  level,
+  elementBoard,
+  onCycleElement,
+  onMenuOpen,
+  onScenarioControls,
+  readonly,
+}: ScenarioHeaderProps) {
   const phaseLabel = phase === 'draw' ? 'Card Selection' : 'Playing';
 
   const scenarioDisplay = scenarioIndex && scenarioName
@@ -36,7 +53,19 @@ export function ScenarioHeader({ round, phase, scenarioName, scenarioIndex, leve
       </div>
 
       <div class="header-center">
-        <span class="scenario-label">{scenarioDisplay}</span>
+        {onScenarioControls ? (
+          <button
+            type="button"
+            class="scenario-label scenario-label--interactive"
+            onClick={onScenarioControls}
+            aria-label="Open scenario controls"
+          >
+            {scenarioDisplay}
+            <span class="scenario-label__caret" aria-hidden="true">▾</span>
+          </button>
+        ) : (
+          <span class="scenario-label">{scenarioDisplay}</span>
+        )}
       </div>
 
       <div class="header-right">

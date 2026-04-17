@@ -73,7 +73,10 @@ export type CommandAction =
   | 'setBattleGoalComplete'
   | 'claimTreasure'
   | 'dismissRewards'
-  | 'setCharacterProgress';
+  | 'setCharacterProgress'
+  | 'addPartyAchievement'
+  | 'removePartyAchievement'
+  | 'abortScenario';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -404,6 +407,42 @@ export interface SetCharacterProgressCommand {
   };
 }
 
+// ── Party Sheet (Phase T0b) ───────────────────────────────────────────────
+
+/**
+ * Array-field mutations for `state.party.achievementsList`. `updateCampaign`
+ * is a scalar setter and can't cleanly mutate arrays (it would replace the
+ * whole array, losing ordering / dedup on undo). These structured commands
+ * preserve ordering and deduplicate.
+ *
+ * GM-only — NOT on the phone whitelist. Party management is a GM concern.
+ */
+export interface AddPartyAchievementCommand {
+  action: 'addPartyAchievement';
+  payload: { achievement: string };
+}
+
+export interface RemovePartyAchievementCommand {
+  action: 'removePartyAchievement';
+  payload: { achievement: string };
+}
+
+/**
+ * Phase T0b: abort the current scenario mid-play and return to lobby.
+ *
+ * Clears scenario combat state (monsters, objectives, character HP /
+ * conditions / initiative / summons / in-scenario counters) but does NOT
+ * transfer rewards and does NOT record the scenario in `party.scenarios`.
+ * Transitions `state.mode = 'lobby'` directly (skips town phase).
+ *
+ * GM-only — NOT on phone whitelist. Validator rejects when
+ * `state.mode !== 'scenario'`.
+ */
+export interface AbortScenarioCommand {
+  action: 'abortScenario';
+  payload: Record<string, never>;
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -460,7 +499,10 @@ export type Command =
   | SetBattleGoalCompleteCommand
   | ClaimTreasureCommand
   | DismissRewardsCommand
-  | SetCharacterProgressCommand;
+  | SetCharacterProgressCommand
+  | AddPartyAchievementCommand
+  | RemovePartyAchievementCommand
+  | AbortScenarioCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

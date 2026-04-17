@@ -6,6 +6,7 @@ import { ConnectionScreen } from './ConnectionScreen';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import { LobbyWaitingView } from './LobbyWaitingView';
+import { DisplayPartySheetView } from './views/DisplayPartySheetView';
 import { DisplayRewardsOverlay } from './overlays/DisplayRewardsOverlay';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 import { mockState } from './mockData';
@@ -140,10 +141,20 @@ export function App() {
         gameCode, error, disconnect,
       }}>
         <div class="app-shell">
-          {mode === 'lobby'
+          {/*
+            Phase T0b: in idle lobby (no setupPhase) and town mode, the
+            display hands its canvas to the Party Sheet's decorative
+            auto-cycling view. Scenario mode is untouched — scenario
+            fully owns the display. During an active setupPhase the
+            lobby waiting view still renders so chore/rules prompts
+            drive the table.
+          */}
+          {mode === 'lobby' && !state.setupPhase
+            ? <DisplayPartySheetView onOpenMenu={handleOpenMenu} />
+            : mode === 'lobby'
             ? <LobbyWaitingView onOpenMenu={handleOpenMenu} />
             : mode === 'town'
-            ? <TownView onOpenMenu={handleOpenMenu} />
+            ? <DisplayPartySheetView onOpenMenu={handleOpenMenu} />
             : <ScenarioView isReconnect={isReconnectRef} onOpenMenu={handleOpenMenu} />
           }
 

@@ -243,6 +243,15 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'setCharacterProgress':
       handleSetCharacterProgress(after, command.payload);
       break;
+    case 'addPartyAchievement':
+      handleAddPartyAchievement(after, command.payload);
+      break;
+    case 'removePartyAchievement':
+      handleRemovePartyAchievement(after, command.payload);
+      break;
+    case 'abortScenario':
+      handleAbortScenario(after);
+      break;
     default: {
       const _exhaustive: never = command;
       throw new Error(`Unknown command action: ${(_exhaustive as Command).action}`);
@@ -1857,6 +1866,77 @@ function handleSetCharacterProgress(
   // Field allow-list already enforced by validateCommand; this is defence-in-depth.
   if (!isSetCharacterProgressField(payload.field)) return;
   (char.progress as unknown as Record<string, unknown>)[payload.field] = payload.value;
+}
+
+// ── Phase T0b: Party Sheet achievement array mutations ─────────────────────
+
+function handleAddPartyAchievement(
+  state: GameState,
+  payload: { achievement: string },
+): void {
+  const ach = payload.achievement.trim();
+  if (!ach) return;
+  if (!state.party.achievementsList) state.party.achievementsList = [];
+  if (!state.party.achievementsList.includes(ach)) {
+    state.party.achievementsList.push(ach);
+  }
+}
+
+function handleRemovePartyAchievement(
+  state: GameState,
+  payload: { achievement: string },
+): void {
+  if (!state.party.achievementsList) return;
+  state.party.achievementsList = state.party.achievementsList.filter(
+    (a) => a !== payload.achievement,
+  );
+}
+
+/**
+ * Phase T0b: abort the current scenario without applying rewards.
+ *
+ * Mirrors the post-rewards cleanup block of `handleCompleteScenario` —
+ * clears monsters, non-character figures, character combat state, round
+ * / phase / elements — but skips the XP / gold / resource transfer and
+ * does NOT append to `party.scenarios`. Transitions directly to lobby
+ * (not town), and clears any pending finish / finishData so a partially
+ * entered scenario-end flow doesn't bleed into the next scenario.
+ */
+function handleAbortScenario(state: GameState): void {
+  state.monsters = [];
+  state.objectiveContainers = [];
+  state.figures = state.figures.filter((figStr) =>
+    state.characters.some((c) => `${c.edition}-${c.name}` === figStr),
+  );
+
+  for (const char of state.characters) {
+    char.initiative = 0;
+    char.health = char.maxHealth;
+    char.exhausted = false;
+    char.longRest = false;
+    char.entityConditions = [];
+    char.summons = [];
+    char.active = false;
+    char.off = false;
+    // In-scenario counters — discard, since we're aborting without commit.
+    char.experience = 0;
+    char.loot = 0;
+    char.lootCards = [];
+    char.treasures = [];
+  }
+
+  state.state = 'draw';
+  state.round = 0;
+
+  if (state.elementBoard) {
+    for (const el of state.elementBoard) {
+      el.state = 'inert';
+    }
+  }
+
+  state.finish = undefined;
+  state.finishData = undefined;
+  state.mode = 'lobby';
 }
 
 function buildLootDeck(config: Record<string, number>): LootDeck {

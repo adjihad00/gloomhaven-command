@@ -209,7 +209,48 @@
         phone + controller `index.html` and SW precache
   - [x] Removed: `PhoneCharacterDetail.tsx`, `PhoneDisconnectMenu.tsx`,
         `CharacterSheetOverlay.tsx` (absorbed)
-- [ ] Phase T0b: Party Sheet on controller (+ display decorative)
+- [x] Phase T0b: Party Sheet on controller (+ display decorative) (2026-04-17)
+  - [x] Shared home `app/shared/sheets/` for multi-client sheet components
+        (PartySheet, PartySheetContext, PartySheetHeader, PartySheetTabs,
+        PartySheetIntro + tabs/*). Consumed by controller primary and display
+        decorative via direct import.
+  - [x] Five tabs: Roster, Standing, Location, Resources (FH only), Events
+  - [x] Standing tab: party name, reputation slider with live price-modifier
+        chip, party notes, party achievements (add/remove)
+  - [x] Resources tab hidden entirely on non-FH editions (gh, jotl, cs, fc, toa)
+  - [x] `getReputationPriceModifier(reputation)` helper in
+        `packages/shared/src/data/reputationPrice.ts` (brackets per
+        GAME_RULES_REFERENCE §16; T2a shopping will reuse)
+  - [x] Structured commands `addPartyAchievement` / `removePartyAchievement`
+        (GM-only; NOT on phone whitelist; updateCampaign can't cleanly
+        mutate arrays)
+  - [x] `abortScenario` command (GM-only, mode==='scenario' only) — resets
+        scenario combat state, skips town, transitions directly to lobby
+        without applying rewards or recording the scenario. Surfaced via
+        the controller's scenario-controls overlay with two-step confirm.
+  - [x] `Party.sheetIntroSeen?: boolean` flag; leather-book intro animation
+        persists via `updateCampaign('sheetIntroSeen', true)`
+  - [x] `useCommitOnPause` hybrid-commit hook in `app/shared/hooks/`
+        (blur/Enter/1000 ms typing pause); reused by T0d Notes
+  - [x] `ControllerNav` persistent ⋯ button mounted at `app/controller/App.tsx`
+        in Lobby / Town only (scenario uses the existing ☰ in ScenarioHeader
+        to avoid overlapping the element board). Party Sheet reachable
+        from every mode via MenuOverlay. Scenario-specific controls
+        (Scenario End — Victory / Defeat, Cancel Scenario) moved to a
+        new `ScenarioControlsOverlay` triggered by clicking the scenario
+        name in the scenario header.
+  - [x] `DisplayPartySheetView` replaces idle-lobby (no setupPhase) and
+        town-mode views on display. 30 s tab auto-cycle + page-turn
+        transition + gilt candlelight flicker. Skips intro, ignores Escape.
+  - [x] Gilt-bound tab binding as Party Sheet's signature visual
+        (continuous metallic rule broken only at active tab)
+  - [x] CSS extended in `app/shared/styles/sheets.css` (appended T0b section,
+        ~800 lines) with BEM prefixes (`.party-sheet__*`, `.roster-tab__*`,
+        `.standing-tab__*`, `.location-tab__*`, `.resources-tab__*`,
+        `.events-tab__*`). Display SW precache + `index.html` link added.
+  - [x] Reduced-motion handling for intro / page-turn / gold flash / flicker
+  - [x] Tests deferred: no test framework in repo today; helper is pure
+        integer logic with small surface. See DESIGN_DECISIONS for rationale.
 - [ ] Phase T0c: Campaign Sheet on controller (+ display decorative)
 - [ ] Phase T0d: Notes + History tabs (engine additions to `CharacterProgress`)
 - [x] Phase T1.1: Display rewards auto-hide when all phones dismiss (2026-04-17)

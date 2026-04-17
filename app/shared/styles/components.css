@@ -1555,6 +1555,33 @@ a,
     text-overflow: ellipsis;
 }
 
+/* Phase T0b: clickable scenario name opens ScenarioControlsOverlay. */
+.scenario-label--interactive {
+    appearance: none;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 200ms ease, border-color 200ms ease;
+    min-height: 32px;
+}
+.scenario-label--interactive:hover,
+.scenario-label--interactive:focus-visible {
+    background: rgba(201, 169, 97, 0.12);
+    border-color: rgba(201, 169, 97, 0.5);
+    outline: none;
+}
+.scenario-label__caret {
+    font-size: 0.7em;
+    color: var(--gilt-gold, #c9a961);
+    opacity: 0.75;
+}
+
 .header-right {
     display: flex;
     align-items: center;

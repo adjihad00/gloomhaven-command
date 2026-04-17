@@ -272,6 +272,34 @@ export class CommandSender {
     });
   }
 
+  // ── Party Sheet (Phase T0b) ──
+
+  /**
+   * Append a party achievement (GM-only). Empty/duplicate entries are no-ops.
+   * `updateCampaign` can't cleanly mutate arrays, so this is a structured
+   * command.
+   */
+  addPartyAchievement(achievement: string): void {
+    this.send({ action: 'addPartyAchievement', payload: { achievement } });
+  }
+
+  /**
+   * Remove a party achievement by exact match (GM-only).
+   */
+  removePartyAchievement(achievement: string): void {
+    this.send({ action: 'removePartyAchievement', payload: { achievement } });
+  }
+
+  /**
+   * Abort the current scenario mid-play and return to lobby (GM-only).
+   * Clears scenario combat state; no rewards applied; does NOT record
+   * the scenario in `party.scenarios`. Rejected server-side when no
+   * scenario is in progress.
+   */
+  abortScenario(): void {
+    this.send({ action: 'abortScenario', payload: {} as Record<string, never> });
+  }
+
   // ── Internal ──
 
   private send(command: Command): void {

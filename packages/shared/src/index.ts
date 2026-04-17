@@ -13,6 +13,7 @@ export * from './engine/diffStates.js';
 
 // Data layer
 export * from './data/index.js';
+export * from './data/reputationPrice.js';
 
 // Utilities
 export * from './utils/conditions.js';

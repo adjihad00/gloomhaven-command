@@ -102,6 +102,9 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | claimTreasure           | { characterName, edition, treasureId } *(T1, phone-allowed)*     |
 | dismissRewards          | { characterName, edition } *(T1, phone-allowed)*                 |
 | setCharacterProgress    | { characterName, edition, field, value } *(T0a, phone-allowed)*  |
+| addPartyAchievement     | { achievement: string } *(T0b, GM-only)*                         |
+| removePartyAchievement  | { achievement: string } *(T0b, GM-only)*                         |
+| abortScenario           | { } *(T0b, GM-only; mode must be 'scenario')*                    |
 
 ### Side Effects
 
@@ -121,6 +124,25 @@ If client is too far behind (>100 revisions), server sends full state instead.
   journal — T0d surface). `validateCommand` rejects unknown fields and enforces
   the expected value type. Does NOT use `updateCampaign` because that handler is
   `state.party.*`-scoped only.
+- **addPartyAchievement / removePartyAchievement** *(T0b)*: GM-only (NOT on
+  the phone whitelist). Structured array mutations for
+  `state.party.achievementsList`. `updateCampaign` is a scalar setter and
+  can't cleanly mutate arrays (it would replace the whole array, losing
+  ordering/dedup on undo). `addPartyAchievement` deduplicates and trims
+  whitespace; `removePartyAchievement` is rejected server-side if the
+  achievement isn't currently in the list.
+- **abortScenario** *(T0b)*: GM-only. Aborts the current scenario without
+  applying rewards. Clears `state.monsters`, `state.objectiveContainers`,
+  non-character `state.figures`, per-character combat state (HP restored
+  to max; conditions, summons, in-scenario experience / loot / lootCards
+  / treasures discarded), `state.elementBoard` → inert, `state.round = 0`,
+  `state.state = 'draw'`, and `state.finish` / `state.finishData` (in
+  case a pending scenario-end was in flight). Does **NOT** transfer XP /
+  gold / resources to `char.progress` and does **NOT** append to
+  `state.party.scenarios`. Transitions `state.mode = 'lobby'` directly
+  (skips town phase). Validator rejects when `state.mode !== 'scenario'`.
+  Reachable from the controller's scenario-controls overlay (click the
+  scenario name in the scenario header) with a two-step inline confirm.
 
 ## Diffs (S→C broadcast)
 ```json

@@ -14,6 +14,7 @@ import { ScenarioFooter } from '../components/ScenarioFooter';
 import { CharacterDetailOverlay } from './overlays/CharacterDetailOverlay';
 import { PlayerSheetQuickView } from './overlays/PlayerSheetQuickView';
 import { MenuOverlay } from './overlays/MenuOverlay';
+import { ScenarioControlsOverlay } from './overlays/ScenarioControlsOverlay';
 import { LootDeckOverlay } from './overlays/LootDeckOverlay';
 import { ScenarioSummaryOverlay } from './overlays/ScenarioSummaryOverlay';
 import { InitiativeNumpad } from './overlays/InitiativeNumpad';
@@ -25,10 +26,16 @@ type OverlayState =
   | { type: 'characterDetail'; characterName: string }
   | { type: 'characterSheet'; characterName: string }
   | { type: 'menu' }
+  | { type: 'scenarioControls' }
   | { type: 'lootDeck' }
   | { type: 'scenarioSummary'; outcome: 'victory' | 'defeat' };
 
-export function ScenarioView() {
+interface ScenarioViewProps {
+  /** Phase T0b: open the shared Party Sheet overlay (owned by App.tsx). */
+  onOpenPartySheet?: () => void;
+}
+
+export function ScenarioView({ onOpenPartySheet }: ScenarioViewProps = {}) {
   const { gameCode, disconnect } = useContext(AppContext);
   const gameState = useGameState();
   const commands = useCommands();
@@ -125,6 +132,7 @@ export function ScenarioView() {
           commands.moveElement(type as any, (cycle[currentState] || 'inert') as any);
         }}
         onMenuOpen={() => setActiveOverlay({ type: 'menu' })}
+        onScenarioControls={() => setActiveOverlay({ type: 'scenarioControls' })}
       />
 
       <div class="scenario-content">
@@ -191,10 +199,23 @@ export function ScenarioView() {
           hasScenario={!!state?.scenario}
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
-          onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}
+          onOpenPartySheet={onOpenPartySheet}
+        />
+      )}
+
+      {activeOverlay.type === 'scenarioControls' && (
+        <ScenarioControlsOverlay
+          scenarioName={scenarioData?.name}
+          scenarioIndex={state.scenario?.index}
+          level={level}
+          onClose={() => setActiveOverlay({ type: 'none' })}
           onScenarioEnd={(outcome) => {
             commands.prepareScenarioEnd(outcome);
             setActiveOverlay({ type: 'scenarioSummary', outcome });
+          }}
+          onAbortScenario={() => {
+            commands.abortScenario();
+            setActiveOverlay({ type: 'none' });
           }}
         />
       )}

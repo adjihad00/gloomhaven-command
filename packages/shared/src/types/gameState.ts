@@ -467,6 +467,9 @@ export interface Party {
   // GH2E-specific
   factionReputation: Record<string, number>;
   imbuement: number;
+  // Phase T0b: one-time Party Sheet intro animation ("leather book opening"),
+  // persisted via updateCampaign. Optional so pre-T0b saves default to unseen.
+  sheetIntroSeen?: boolean;
 }
 
 export interface EventCardIdentifier {

@@ -50,10 +50,12 @@ app/
 │   └── swRegistration.ts # self-healing SW register + client watchdog (Phase 6)
 ├── controller/           # GM — iPad landscape, full control
 │   ├── main.tsx, index.html
+│   ├── App.tsx           # mode router + ControllerNav (Phase T0b) + PartySheetOverlay mount
+│   ├── ControllerNav.tsx # persistent ⋯ button (T0b) reachable in every mode
 │   ├── LobbyView.tsx     # 8-step sequential setup flow
 │   ├── ScenarioView.tsx  # single-screen + overlays
 │   ├── TownView.tsx      # outpost phase stepper
-│   └── overlays/
+│   └── overlays/         # incl. PartySheetOverlay (T0b) — controller-side readOnly=false mount
 ├── phone/                # Player — portrait, character-scoped
 │   ├── main.tsx, index.html
 │   ├── App.tsx           # connection → picker → mode routing
@@ -81,7 +83,12 @@ app/
 └── display/              # Monitor — portrait, read-only, production-wired
     ├── main.tsx, index.html, manifest.json
     ├── App.tsx               # connection + mode routing, display registration,
-    │                           mounts DisplayRewardsOverlay when state.finishData present
+    │                           mounts DisplayRewardsOverlay when state.finishData present.
+    │                           Phase T0b: idle lobby (no setupPhase) and town mode render
+    │                           DisplayPartySheetView in place of LobbyWaitingView/TownView.
+    ├── views/
+    │   └── DisplayPartySheetView.tsx  # decorative Party Sheet wrapper (T0b) —
+    │                                     readOnly + autoCycle + skipIntro + portrait
     ├── ConnectionScreen.tsx   # game code input
     ├── LobbyWaitingView.tsx   # setup-phase-aware waiting screen
     ├── ScenarioView.tsx       # live state + state-driven animations
@@ -100,6 +107,77 @@ app/
 ```
 
 Three parallel esbuild builds. Tree-shaking gives each device only what it uses.
+
+---
+
+## Cross-Mode Surfaces
+
+### Party Sheet (Phase T0b)
+
+The **Party Sheet** is the campaign's canonical shared-state surface. It is
+reachable from every controller mode (Lobby / Scenario / Town) via the
+hamburger `MenuOverlay`:
+
+- **Lobby / Town:** opened by the floating `⋯` button from
+  `ControllerNav` (mounted at `app/controller/App.tsx` as a sibling to
+  the mode view; rendered only when `mode !== 'scenario'` so it doesn't
+  overlap the scenario header's element board).
+- **Scenario:** opened by the `☰` button in `ScenarioHeader.menu-btn`
+  (already present pre-T0b). `ScenarioView` receives an `onOpenPartySheet`
+  prop from App.tsx and threads it into its `MenuOverlay` mount, so the
+  hamburger has the Party Sheet entry across all modes.
+
+Both entry points mount the same `MenuOverlay` component (Undo · Party
+Sheet · Export · Disconnect). Scenario-specific controls (End Scenario —
+Victory / Defeat) live in a separate `ScenarioControlsOverlay` triggered
+by clicking the scenario name (`.scenario-label--interactive`) in the
+header — clusters scenario actions next to the scenario title instead
+of nested in a catch-all menu.
+
+The Party Sheet overlay itself (`PartySheetOverlay`) is mounted from
+`App.tsx` so it sits at the app root; `readOnly: false` enables full
+editing.
+
+**Tabs (in order):** Roster · Standing · Location · Resources (FH only) · Events
+
+- **Roster** — active-character portrait grid (per-class accent borders from
+  `getCharacterTheme`), absent strip, retirement archive (collapsible).
+- **Standing** — editable party name; reputation slider (−20 to +20) with
+  live price-modifier chip computed via `getReputationPriceModifier`
+  (rules §16); party notes textarea; party achievements list with
+  add/remove via `addPartyAchievement` / `removePartyAchievement`
+  structured commands.
+- **Location** — editable current location + reverse-chronological
+  scenario history timeline. World-map scenario picker lands in T5.
+- **Resources (FH only)** — morale / defense / soldiers / inspiration /
+  trials gauges with +/− buttons; shared loot pool chips (read-only;
+  mutation UI belongs to T3 outpost). Tab hidden on non-FH editions.
+- **Events** — active event cards as read-only list; empty state with
+  gilt-bordered sigil. T6 will refine active/resolved lifecycle.
+
+Editable text inputs use `useCommitOnPause` (blur / Enter / 1000 ms
+typing-pause commit).
+
+### Display decorative Party Sheet (Phase T0b)
+
+The display renders `DisplayPartySheetView` in place of `LobbyWaitingView`
+when `mode === 'lobby'` AND no `setupPhase` is active, AND in place of
+`TownView` whenever `mode === 'town'`. Scenario mode is untouched —
+`ScenarioView` fully owns the display during play. During active setup
+phases (chores / rules / goals), `LobbyWaitingView` still renders so
+table-level prompts drive the ceremony.
+
+`DisplayPartySheetView` mounts the shared `PartySheet` with
+`readOnly + autoCycle + skipIntro` and `layout="portrait"`. Tabs
+auto-advance every 30 seconds with a 600 ms page-turn transition; gilt
+elements (active tab, resource values, title) get a subtle candlelight
+flicker (2.4 s / 3.1 s / 3.7 s offset durations so the effect isn't
+synchronised). The display ignores Escape and has no interactions.
+
+The Party Sheet's signature visual is the **gilt-bound tab binding** — a
+continuous gilt-gold metallic rule along the tab strip's inner edge,
+broken only at the active tab via a content-panel-coloured pseudo-element.
+Reads as a brass-reinforced page binding biting into the active tab.
 
 ---
 

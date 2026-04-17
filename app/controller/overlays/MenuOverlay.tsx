@@ -7,11 +7,21 @@ interface MenuOverlayProps {
   hasScenario: boolean;
   onClose: () => void;
   onDisconnect: () => void;
-  onOpenSetup: () => void;
+  onOpenSetup?: () => void;
   onScenarioEnd?: (outcome: 'victory' | 'defeat') => void;
+  /** Phase T0b: open the shared Party Sheet (always visible in menu). */
+  onOpenPartySheet?: () => void;
 }
 
-export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOpenSetup, onScenarioEnd }: MenuOverlayProps) {
+export function MenuOverlay({
+  gameCode,
+  hasScenario,
+  onClose,
+  onDisconnect,
+  onOpenSetup,
+  onScenarioEnd,
+  onOpenPartySheet,
+}: MenuOverlayProps) {
   const commands = useCommands();
 
   return (
@@ -23,9 +33,17 @@ export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOp
           Undo
         </button>
 
-        <button class="menu-overlay__item" onClick={() => { onClose(); onOpenSetup(); }}>
-          Scenario Setup
-        </button>
+        {onOpenPartySheet && (
+          <button class="menu-overlay__item" onClick={() => { onClose(); onOpenPartySheet(); }}>
+            Party Sheet
+          </button>
+        )}
+
+        {onOpenSetup && (
+          <button class="menu-overlay__item" onClick={() => { onClose(); onOpenSetup(); }}>
+            Scenario Setup
+          </button>
+        )}
 
         <button
           class="menu-overlay__item"
@@ -34,15 +52,15 @@ export function MenuOverlay({ gameCode, hasScenario, onClose, onDisconnect, onOp
           Export Game State
         </button>
 
-        {hasScenario && (
+        {hasScenario && onScenarioEnd && (
           <div class="menu-overlay__section">
             <h3 class="menu-overlay__section-title">End Scenario</h3>
             <button class="menu-overlay__item menu-overlay__item--victory"
-              onClick={() => onScenarioEnd?.('victory')}>
+              onClick={() => onScenarioEnd('victory')}>
               Scenario Complete (Victory)
             </button>
             <button class="menu-overlay__item menu-overlay__item--defeat"
-              onClick={() => onScenarioEnd?.('defeat')}>
+              onClick={() => onScenarioEnd('defeat')}>
               Scenario Failed (Defeat)
             </button>
           </div>

@@ -27,11 +27,30 @@ No outstanding asset requests at T0a completion.
 
 ---
 
-## Phase T0b — pending
+## Phase T0b (2026-04-17) — one pending request
 
-TBD. Party Sheet's signature element is **gilt tab edges** (CSS-rendered)
-and the **leather-bound** aesthetic (CSS gradients). Likely no asset gaps,
-but confirm when T0b scoping begins.
+Party Sheet shipped with the signature elements (gilt-bound tab binding,
+leather surface, candlelight flicker, page-turn animation) all
+CSS/SVG-rendered, no external assets. `IlluminatedCapital` pattern from
+T0a carried over directly; the "leather book opening" intro uses an
+inline two-layer SVG.
+
+**Pending request — event card images:**
+- **Event card art** for the Events tab (gh/fh road, city, outpost,
+  autumn/winter/personal event decks). `app/shared/assets.ts` has no
+  `eventCardImage()` helper, and the `asset_manifest` table does not
+  currently catalogue event card images. T0b renders cards text-only
+  with gilt borders (per `app/CONVENTIONS.md`: broken image is a real
+  bug; text-only is better than placeholder art).
+- Resolution path: when T6 (event draw/resolve flows) lands, either
+  cross-reference Worldhaven's `art/<edition>/events/` set or register
+  a new asset source. Add an `eventCardImage(edition, type, cardId)`
+  helper in `app/shared/assets.ts` and update EventsTab to use it
+  with `onError` fallback to the existing text-only row.
+
+All other T0b surfaces render from existing asset helpers
+(`characterThumbnail`, `characterIcon`, `resourceIcon`) or
+CSS/inline-SVG.
 
 ## Phase T0c — pending
 

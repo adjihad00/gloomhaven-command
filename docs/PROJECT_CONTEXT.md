@@ -57,12 +57,21 @@ server/src/             — HTTP + WebSocket server
 app/components/         — shared Preact UI components
 app/hooks/              — shared Preact hooks (useConnection, useGameState, useCommands, useScenarioText)
 app/shared/             — shared non-component code (assets.ts, formatName.ts, labelRenderer.ts, characterThemes.ts)
-app/shared/styles/      — CSS theme, typography, component styles, sheets.css (Phase T0a)
+app/shared/hooks/       — shared hooks (useCommitOnPause). Phase T0b.
+app/shared/sheets/      — canonical home for multi-client sheet components.
+                          Phase T0b: PartySheet + PartySheetContext/Header/Tabs/Intro
+                          + tabs/ (Roster, Standing, Location, Resources, Events).
+                          T0c CampaignSheet family will land here.
+app/shared/styles/      — CSS theme, typography, component styles, sheets.css (T0a + T0b)
 app/controller/         — landscape tablet app (GM)
+app/controller/ControllerNav.tsx — persistent ⋯ nav (Phase T0b) mounted from App.tsx;
+                          opens MenuOverlay with Party Sheet access from every mode.
 app/phone/              — portrait phone app (player)
 app/phone/sheets/       — Player Sheet family (PlayerSheet, header, tabs, intro, menu,
                           IlluminatedCapital) + tabs/ (Overview + placeholders). Phase T0a.
 app/display/            — portrait TV app (read-only)
+app/display/views/      — display view wrappers (Phase T0b: DisplayPartySheetView —
+                          decorative Party Sheet in idle lobby / town modes)
 scripts/                — data import tooling
   import-data.ts        — populates data/reference.db from .staging/ sources
   extract-books.ts      — extracts scenario/section text from FH book PDFs
@@ -135,6 +144,20 @@ complete"/"only" phrasings; "Unknown at this time." fallback preserves intention
 content-aware `isCopyrightOnlyPage` check replaces book-specific skip. Solo scenario book
 (`fh-solo-scenario-book.pdf`) extracted to 17 entries under `group_name='solo'`; `scenario_book_data`
 PK extended with `group_name` column, `/api/ref/scenario-book` accepts optional `?group=` param.
+Phase T0b COMPLETE (2026-04-17): Party Sheet as shared multi-client sheet.
+`app/shared/sheets/` established as canonical home for cross-client sheets
+(PartySheet + PartySheetContext/Header/Tabs/Intro + 5 tabs). Consumed by controller
+(editable via PartySheetOverlay) and display (decorative via DisplayPartySheetView
+with 30 s tab auto-cycle). 5 tabs: Roster, Standing, Location, Resources (FH only),
+Events. Signature visual: gilt-bound tab binding (continuous metallic rule broken
+only at active tab). `getReputationPriceModifier` helper added for Standing tab's
+live price-modifier chip (T2a shopping will reuse). Structured `addPartyAchievement`
+/ `removePartyAchievement` commands (GM-only) for array-field mutations.
+`Party.sheetIntroSeen?` + leather-book intro animation. `useCommitOnPause` hook
+centralises blur/Enter/1000 ms typing-pause commits for editable text. Controller
+reachability via new `ControllerNav` promoting `MenuOverlay` to App-level — Party
+Sheet reachable from Lobby / Scenario / Town. Display replaces idle-lobby and
+town-mode views; scenario mode unchanged. Rules doc §16 Reputation & Economy added.
 Phase T1 COMPLETE: Scenario end rewards experience unified across all three clients.
 `state.finishData` snapshot built on `prepareScenarioEnd`, mutated during the pending
 window via three new commands (`setBattleGoalComplete`, `claimTreasure`,
@@ -193,7 +216,8 @@ prepareScenarioSetup, confirmChore, proceedToRules,
 proceedToBattleGoals, cancelScenarioSetup, startScenario,
 completeTownPhase, dealBattleGoals, returnBattleGoals,
 setBattleGoalComplete, claimTreasure, dismissRewards,
-setCharacterProgress
+setCharacterProgress, addPartyAchievement, removePartyAchievement,
+abortScenario
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
@@ -222,6 +246,19 @@ setCharacterProgress
   (boolean) and `notes` (string). Unknown fields rejected by `validateCommand`.
   Powers the Player Sheet's one-time intro-seen flag (and the forthcoming T0d
   notes tab) without widening `updateCampaign` beyond its party-level scope.
+- **addPartyAchievement / removePartyAchievement (T0b):** GM-only (NOT on the
+  phone whitelist). Structured array mutations for
+  `state.party.achievementsList` that `updateCampaign` can't cleanly handle
+  (array replacement vs element splice). Add dedupes + trims whitespace;
+  remove is rejected if the entry isn't currently in the list. Consumed by
+  the Party Sheet's Standing tab.
+- **abortScenario (T0b):** GM-only. Aborts the current scenario mid-play
+  without applying rewards. Clears monsters, non-character figures, character
+  combat state, finish/finishData, round/phase/elements; transitions
+  `state.mode = 'lobby'` directly (skips town). Does NOT transfer XP/gold or
+  record the scenario in `party.scenarios`. Validator rejects when
+  `mode !== 'scenario'`. Reachable from the controller scenario-controls
+  overlay (click scenario name) with a two-step inline confirm.
 - **activateFigure (internal):** Long rest characters heal 2 HP on activation
   (or clear wound/poison/bane/brittle). Fires before wound/regenerate processing.
   Monster activation triggers ability card consume + summon actions via

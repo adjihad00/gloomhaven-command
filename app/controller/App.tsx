@@ -8,6 +8,8 @@ import { EditionSelector } from './EditionSelector';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import { LobbyView } from './LobbyView';
+import { ControllerNav } from './ControllerNav';
+import { PartySheetOverlay } from './overlays/PartySheetOverlay';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
 export function App() {
@@ -45,14 +47,24 @@ export function App() {
         connection, store, commands, state, connectionStatus: status,
         gameCode, error, disconnect,
       }}>
-        <AppShell state={state} />
+        <AppShell state={state} gameCode={gameCode} onDisconnect={disconnect} />
       </AppContext.Provider>
     </ErrorBoundary>
   );
 }
 
-function AppShell({ state }: { state: GameState }) {
+function AppShell({
+  state,
+  gameCode,
+  onDisconnect,
+}: {
+  state: GameState;
+  gameCode: string;
+  onDisconnect: () => void;
+}) {
   const mode: AppMode = state.mode ?? 'lobby';
+  const [partySheetOpen, setPartySheetOpen] = useState(false);
+  const openPartySheet = () => setPartySheetOpen(true);
 
   return (
     <div class="app-shell">
@@ -60,8 +72,27 @@ function AppShell({ state }: { state: GameState }) {
         ? <LobbyView />
         : mode === 'town'
         ? <TownView />
-        : <ScenarioView />
+        : <ScenarioView onOpenPartySheet={openPartySheet} />
       }
+      {/*
+        Phase T0b: floating ⋯ nav is only rendered in modes that lack their
+        own header menu — Lobby and Town. ScenarioView already has a ☰ in
+        its header (ScenarioHeader.menu-btn) that opens MenuOverlay; adding
+        a second floating nav there would overlap the top-right element
+        board. In Scenario, MenuOverlay gains the Party Sheet entry via a
+        prop-drilled opener.
+      */}
+      {mode !== 'scenario' && (
+        <ControllerNav
+          gameCode={gameCode}
+          hasScenario={!!state.scenario}
+          onDisconnect={onDisconnect}
+          onOpenPartySheet={openPartySheet}
+        />
+      )}
+      {partySheetOpen && (
+        <PartySheetOverlay onClose={() => setPartySheetOpen(false)} />
+      )}
     </div>
   );
 }

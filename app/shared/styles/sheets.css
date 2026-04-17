@@ -967,3 +967,1403 @@
         transition: none !important;
     }
 }
+
+/* ───────────────────────────────────────────────────────────────────
+   T0b: Party Sheet
+   Leather-bound campaign ledger. Gilt-bound tab strip on the inner
+   edge (vertical on landscape, top on portrait). Extends the sheet
+   design system established by T0a (Player Sheet).
+
+   BEM blocks:
+     .party-sheet              — root modal
+     .party-sheet__header      — title / close / achievement pill
+     .party-sheet__body        — tab strip + content layout wrapper
+     .party-sheet__tab-strip   — gilt-bound tab strip
+     .party-sheet__tab         — individual tab
+     .party-sheet__content     — scrollable tab panel
+     .party-sheet-intro        — one-time "leather book" intro
+     .roster-tab, .standing-tab, .location-tab,
+     .resources-tab, .events-tab — individual tab content
+   ─────────────────────────────────────────────────────────────────── */
+
+/* Root ─────────────────────────────────────────────────────────── */
+
+.party-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--sheet-party-bg, linear-gradient(180deg, var(--leather-brown) 0%, var(--leather-brown-deep) 100%));
+  color: var(--parchment-base);
+  font-family: var(--font-body, 'Crimson Pro', serif);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  outline: none;
+}
+
+.party-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at top, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.35) 100%),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.015) 0px,
+      rgba(255, 255, 255, 0.015) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+}
+
+.party-sheet::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 4px;
+  opacity: 0.45;
+}
+
+/* Header ───────────────────────────────────────────────────────── */
+
+.party-sheet__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4, 16px);
+  padding: var(--space-5, 20px) var(--space-6, 24px);
+  border-bottom: 1px solid var(--gilt-gold-shadow);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  flex-shrink: 0;
+}
+
+.party-sheet__close {
+  appearance: none;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--gilt-gold-shadow);
+  color: var(--gilt-gold);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 22px;
+  font-size: 22px;
+  font-family: var(--font-display, 'Cinzel', serif);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.party-sheet__close:hover,
+.party-sheet__close:focus-visible {
+  background: rgba(201, 169, 97, 0.18);
+  outline: none;
+  border-color: var(--gilt-gold);
+}
+
+.party-sheet__title-block {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.party-sheet__title {
+  margin: 0;
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--gilt-gold);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+}
+
+.party-sheet__title--unset {
+  color: var(--parchment-ink-dim);
+  font-style: italic;
+}
+
+.party-sheet__subtitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 13px;
+  color: var(--parchment-base);
+  opacity: 0.75;
+  margin-top: 4px;
+}
+
+.party-sheet__edition-chip {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--gilt-gold);
+}
+
+.party-sheet__divider {
+  opacity: 0.4;
+}
+
+.party-sheet__achievement-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 8px 14px;
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(201, 169, 97, 0.12), rgba(0, 0, 0, 0.2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.party-sheet__achievement-pill-count {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--gilt-gold);
+  line-height: 1;
+}
+.party-sheet__achievement-pill-label {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--parchment-base);
+  opacity: 0.7;
+  margin-top: 3px;
+}
+
+/* Body layout ──────────────────────────────────────────────────── */
+
+.party-sheet__body {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+.party-sheet__body--landscape {
+  flex-direction: row;
+}
+.party-sheet__body--portrait {
+  flex-direction: column;
+}
+
+/* Tab strip + gilt binding ─────────────────────────────────────── */
+
+.party-sheet__tab-strip {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  padding: 8px;
+  gap: 4px;
+}
+
+.party-sheet__tab-strip--landscape {
+  flex-direction: column;
+  width: 220px;
+  padding: var(--space-4, 16px) 0 var(--space-4, 16px) var(--space-4, 16px);
+}
+
+.party-sheet__tab-strip--portrait {
+  flex-direction: row;
+  height: 72px;
+  padding: var(--space-3, 12px) var(--space-4, 16px) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.party-sheet__tab-strip--portrait::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+  Signature: the gilt metallic rule running along the inner edge of
+  the tab strip (right edge on landscape, bottom edge on portrait).
+  The active tab's `::before` covers the rule at its row/column,
+  creating a "brass-reinforced binding" break that reads as physical
+  page-binding.
+*/
+.party-sheet__tab-strip--landscape::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--gilt-gold) 12%,
+    var(--gilt-gold) 88%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.party-sheet__tab-strip--portrait::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--gilt-gold) 12%,
+    var(--gilt-gold) 88%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.party-sheet__tab {
+  position: relative;
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--parchment-base);
+  opacity: 0.7;
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 18px;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: left;
+  transition:
+    opacity var(--duration-ink-settle, 240ms) var(--ease-ink-settle),
+    color var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.party-sheet__tab-strip--portrait .party-sheet__tab {
+  text-align: center;
+  padding: 10px 16px;
+  min-width: 96px;
+}
+.party-sheet__tab:hover {
+  opacity: 1;
+}
+.party-sheet__tab:focus-visible {
+  outline: 1px solid var(--gilt-gold);
+  outline-offset: -2px;
+  opacity: 1;
+}
+.party-sheet__tab--active {
+  opacity: 1;
+  color: var(--gilt-gold);
+}
+
+/* Active tab's break in the gilt binding rule. */
+.party-sheet__tab-strip--landscape .party-sheet__tab--active::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  right: -9px;
+  width: 3px;
+  background: var(--leather-brown);
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px var(--gilt-gold-shadow);
+  border-radius: 1px;
+}
+.party-sheet__tab-strip--portrait .party-sheet__tab--active::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -9px;
+  height: 3px;
+  background: var(--leather-brown);
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px var(--gilt-gold-shadow);
+  border-radius: 1px;
+}
+
+.party-sheet__tab[disabled] {
+  cursor: default;
+}
+
+/* Content panel ────────────────────────────────────────────────── */
+
+.party-sheet__content {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6, 24px);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.08) 0%,
+      rgba(0, 0, 0, 0) 120px
+    );
+}
+
+/* Display auto-cycle: page-turn transition between tabs. Ink-settle
+   from T0a handles manual switches; only the autoCycle variant uses
+   the more dramatic page-turn. */
+.party-sheet[data-autocycle='true'] .party-sheet__content[data-cycling='true'] {
+  animation: party-sheet-page-turn 600ms var(--ease-page-turn, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+@keyframes party-sheet-page-turn {
+  0%   { opacity: 1; transform: translateY(0); }
+  20%  { opacity: 0; transform: translateY(-4px); }
+  60%  { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Display ambient: candlelight flicker on gilt accents, slightly
+   offset durations per element so the effect isn't synchronised. */
+.party-sheet[data-autocycle='true'] .party-sheet__tab--active {
+  animation: party-sheet-gilt-flicker 2.4s ease-in-out infinite;
+}
+.party-sheet[data-autocycle='true'] .resources-tab__gauge-value {
+  animation: party-sheet-gilt-flicker 3.1s ease-in-out infinite;
+}
+.party-sheet[data-autocycle='true'] .party-sheet__title {
+  animation: party-sheet-gilt-flicker 3.7s ease-in-out infinite;
+}
+
+@keyframes party-sheet-gilt-flicker {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50%      { opacity: 0.94; filter: brightness(1.08); }
+}
+
+/* Intro — "A leather book opening" ─────────────────────────────── */
+
+.party-sheet-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.party-sheet-intro__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--leather-brown-deep);
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+}
+.party-sheet-intro[data-phase='1'] .party-sheet-intro__backdrop,
+.party-sheet-intro[data-phase='2'] .party-sheet-intro__backdrop,
+.party-sheet-intro[data-phase='3'] .party-sheet-intro__backdrop,
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__backdrop {
+  opacity: 0.98;
+}
+.party-sheet-intro[data-phase='5'] .party-sheet-intro__backdrop {
+  opacity: 0;
+  transition-duration: 400ms;
+}
+
+.party-sheet-intro__stage {
+  position: relative;
+  width: 280px;
+  max-width: 80vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5, 20px);
+}
+
+.party-sheet-intro__book {
+  position: relative;
+  width: 220px;
+  height: 280px;
+  perspective: 1400px;
+}
+
+.party-sheet-intro__book-page,
+.party-sheet-intro__book-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+
+.party-sheet-intro__book-cover {
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  backface-visibility: hidden;
+  z-index: 2;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
+}
+
+.party-sheet-intro__book-page {
+  z-index: 1;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.party-sheet-intro[data-phase='1'] .party-sheet-intro__book-cover,
+.party-sheet-intro[data-phase='2'] .party-sheet-intro__book-cover {
+  opacity: 1;
+}
+
+.party-sheet-intro[data-phase='3'] .party-sheet-intro__book-cover,
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__book-cover {
+  opacity: 1;
+  transform: rotateY(-128deg);
+  transition:
+    opacity 300ms ease-out,
+    transform 700ms var(--ease-page-turn, cubic-bezier(0.4, 0, 0.2, 1));
+}
+.party-sheet-intro[data-phase='3'] .party-sheet-intro__book-page,
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__book-page {
+  opacity: 1;
+  transition-delay: 300ms;
+}
+
+.party-sheet-intro[data-phase='5'] .party-sheet-intro__book-cover,
+.party-sheet-intro[data-phase='5'] .party-sheet-intro__book-page {
+  opacity: 0;
+  transition-duration: 400ms;
+}
+
+.party-sheet-intro__name {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--gilt-gold);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 500ms ease-out, transform 500ms ease-out;
+}
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__name {
+  opacity: 1;
+  transform: translateY(0);
+}
+.party-sheet-intro[data-phase='5'] .party-sheet-intro__name {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition-duration: 300ms;
+}
+
+.party-sheet-intro__subtitle {
+  font-family: var(--font-body, 'Crimson Pro', serif);
+  font-size: 16px;
+  font-style: italic;
+  color: var(--parchment-base);
+  opacity: 0;
+  transition: opacity 500ms ease-out;
+  margin: 0;
+}
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__subtitle {
+  opacity: 0.9;
+  transition-delay: 500ms;
+}
+.party-sheet-intro[data-phase='5'] .party-sheet-intro__subtitle {
+  opacity: 0;
+  transition-duration: 300ms;
+  transition-delay: 0ms;
+}
+
+.party-sheet-intro__skip-hint {
+  position: absolute;
+  bottom: var(--space-6, 24px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--parchment-base);
+  opacity: 0;
+  transition: opacity 400ms ease-out;
+}
+.party-sheet-intro[data-phase='2'] .party-sheet-intro__skip-hint,
+.party-sheet-intro[data-phase='3'] .party-sheet-intro__skip-hint,
+.party-sheet-intro[data-phase='4'] .party-sheet-intro__skip-hint {
+  opacity: 0.5;
+}
+
+/* Roster tab ───────────────────────────────────────────────────── */
+
+.roster-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+}
+.roster-tab--empty {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3, 12px);
+  min-height: 50vh;
+  text-align: center;
+  color: var(--parchment-base);
+}
+.roster-tab__empty-silhouette {
+  width: 120px;
+  height: 160px;
+}
+.roster-tab__empty-silhouette svg {
+  width: 100%;
+  height: 100%;
+}
+.roster-tab__empty-text {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 20px;
+  color: var(--gilt-gold);
+  margin: 0;
+}
+.roster-tab__empty-hint {
+  font-size: 15px;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.roster-tab__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+}
+.roster-tab__section-title {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gilt-gold);
+  margin: 0;
+}
+
+.roster-tab__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4, 16px);
+}
+.roster-tab__grid--dim {
+  opacity: 0.6;
+}
+
+.roster-tab__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.15));
+  border: 1px solid var(--card-accent-dim, var(--gilt-gold-shadow));
+  border-top: 2px solid var(--card-accent, var(--gilt-gold));
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    0 0 12px var(--card-accent-glow, rgba(201, 169, 97, 0.15));
+}
+.roster-tab__card--absent {
+  filter: grayscale(0.8);
+}
+
+.roster-tab__portrait-frame {
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--card-accent-dim, var(--gilt-gold-shadow));
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.roster-tab__portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.roster-tab__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.roster-tab__card-name {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 15px;
+  color: var(--parchment-base);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.roster-tab__card-class {
+  font-size: 12px;
+  color: var(--card-accent, var(--gilt-gold));
+  opacity: 0.85;
+  text-transform: capitalize;
+}
+.roster-tab__card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--parchment-base);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+.roster-tab__card-divider {
+  opacity: 0.4;
+}
+
+.roster-tab__retirees-toggle {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-top: 1px solid var(--gilt-gold-shadow);
+}
+.roster-tab__retirees-caret {
+  color: var(--gilt-gold);
+  font-size: 14px;
+}
+.roster-tab__retirees-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.roster-tab__retiree-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+}
+.roster-tab__retiree-icon {
+  width: 32px;
+  height: 32px;
+  filter: brightness(0) invert(0.8);
+}
+.roster-tab__retiree-name {
+  font-family: var(--font-display, 'Cinzel', serif);
+  color: var(--parchment-base);
+}
+.roster-tab__retiree-class {
+  color: var(--parchment-base);
+  opacity: 0.65;
+  text-transform: capitalize;
+  font-size: 12px;
+}
+.roster-tab__retiree-edition {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--gilt-gold);
+  opacity: 0.85;
+}
+
+/* Shared section / parchment field patterns ────────────────────── */
+
+.standing-tab,
+.location-tab,
+.resources-tab,
+.events-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+}
+
+.standing-tab__section,
+.location-tab__section,
+.events-tab__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.standing-tab__label,
+.location-tab__label {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gilt-gold);
+}
+
+.standing-tab__parchment-field,
+.location-tab__parchment-field {
+  position: relative;
+  background: var(--parchment-aged);
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 2px 6px rgba(58, 46, 31, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.06);
+  transition: border-color var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.standing-tab__parchment-field:focus-within,
+.location-tab__parchment-field:focus-within {
+  border-color: var(--gilt-gold);
+  background: color-mix(in srgb, var(--parchment-aged) 90%, white 10%);
+}
+.standing-tab__parchment-field--tall {
+  min-height: 140px;
+}
+
+.standing-tab__input,
+.standing-tab__textarea,
+.location-tab__input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--parchment-ink);
+  font-family: var(--font-body, 'Crimson Pro', serif);
+  font-size: 18px;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.standing-tab__input::placeholder,
+.standing-tab__textarea::placeholder,
+.location-tab__input::placeholder {
+  color: var(--parchment-ink-dim);
+  opacity: 0.55;
+  font-style: italic;
+}
+.standing-tab__textarea {
+  min-height: 120px;
+  line-height: 1.5;
+}
+
+/* Reputation slider ────────────────────────────────────────────── */
+
+.standing-tab__rep-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+}
+.standing-tab__rep-value {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 22px;
+  color: var(--gilt-gold);
+  font-weight: 600;
+}
+
+.standing-tab__rep-slider {
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  padding: 0;
+}
+.standing-tab__rep-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg,
+      rgba(139, 61, 61, 0.65) 0%,
+      rgba(101, 80, 52, 0.65) 50%,
+      rgba(201, 169, 97, 0.65) 100%);
+  border: 1px solid var(--gilt-gold-shadow);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.standing-tab__rep-slider::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg,
+      rgba(139, 61, 61, 0.65) 0%,
+      rgba(101, 80, 52, 0.65) 50%,
+      rgba(201, 169, 97, 0.65) 100%);
+  border: 1px solid var(--gilt-gold-shadow);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.standing-tab__rep-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f2dca3 0%, var(--gilt-gold) 55%, #8c6a2a 100%);
+  border: 1px solid var(--gilt-gold-shadow);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  margin-top: -8px;
+  cursor: pointer;
+}
+.standing-tab__rep-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f2dca3 0%, var(--gilt-gold) 55%, #8c6a2a 100%);
+  border: 1px solid var(--gilt-gold-shadow);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+}
+.standing-tab__rep-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px rgba(201, 169, 97, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.standing-tab__rep-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--parchment-base);
+  opacity: 0.55;
+  padding: 0 4px;
+}
+
+.standing-tab__rep-modifier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-3, 12px);
+  padding: 10px 14px;
+  background: var(--parchment-aged);
+  color: var(--parchment-ink);
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 3px;
+}
+.standing-tab__rep-modifier-label {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--parchment-ink-dim);
+}
+.standing-tab__rep-modifier-chip {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gilt-gold-shadow);
+  background: rgba(0, 0, 0, 0.08);
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--gilt-gold-shadow);
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Achievements list ────────────────────────────────────────────── */
+
+.standing-tab__ach-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.standing-tab__ach-count {
+  font-size: 12px;
+  opacity: 0.65;
+  font-style: italic;
+}
+
+.standing-tab__ach-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.standing-tab__ach-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0));
+}
+.standing-tab__ach-text {
+  flex: 1 1 auto;
+  font-family: var(--font-body, 'Crimson Pro', serif);
+  font-size: 16px;
+  color: var(--parchment-base);
+}
+.standing-tab__ach-remove {
+  appearance: none;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--gilt-gold-shadow);
+  color: var(--parchment-base);
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  font-size: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+  flex-shrink: 0;
+}
+.standing-tab__ach-remove:hover,
+.standing-tab__ach-remove:focus-visible {
+  background: rgba(139, 61, 61, 0.4);
+  border-color: #c77a7a;
+  outline: none;
+}
+
+.standing-tab__ach-empty {
+  font-style: italic;
+  color: var(--parchment-base);
+  opacity: 0.55;
+  padding: 12px 0;
+  margin: 0;
+}
+
+.standing-tab__ach-add {
+  display: flex;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-3, 12px);
+  align-items: stretch;
+}
+.standing-tab__ach-add .standing-tab__parchment-field {
+  flex: 1 1 auto;
+}
+.standing-tab__ach-add-btn {
+  appearance: none;
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.25), rgba(201, 169, 97, 0.1));
+  border: 1px solid var(--gilt-gold-shadow);
+  color: var(--gilt-gold);
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 var(--space-5, 20px);
+  min-width: 96px;
+  min-height: 44px;
+  border-radius: 3px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.standing-tab__ach-add-btn:hover:not(:disabled),
+.standing-tab__ach-add-btn:focus-visible:not(:disabled) {
+  background: linear-gradient(180deg, rgba(201, 169, 97, 0.4), rgba(201, 169, 97, 0.2));
+  border-color: var(--gilt-gold);
+  outline: none;
+}
+.standing-tab__ach-add-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Location tab ─────────────────────────────────────────────────── */
+
+.location-tab__section-title {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gilt-gold);
+  margin: 0;
+}
+
+.location-tab__map-note {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--font-display, 'Cinzel', serif);
+  color: var(--parchment-base);
+  opacity: 0.45;
+  margin: 6px 0 0;
+  font-style: italic;
+}
+
+.location-tab__history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.location-tab__history-row {
+  display: grid;
+  grid-template-columns: 24px auto auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.18);
+  border-left: 2px solid var(--gilt-gold-shadow);
+  font-size: 14px;
+}
+.location-tab__history-marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--gilt-gold);
+  box-shadow: 0 0 6px rgba(201, 169, 97, 0.6);
+}
+.location-tab__history-index {
+  font-family: var(--font-display, 'Cinzel', serif);
+  color: var(--gilt-gold);
+  font-weight: 600;
+  font-size: 16px;
+}
+.location-tab__history-edition {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--parchment-base);
+  opacity: 0.65;
+}
+.location-tab__history-check {
+  color: var(--gilt-gold);
+  font-size: 18px;
+  opacity: 0.85;
+  justify-self: end;
+}
+.location-tab__history-empty {
+  font-style: italic;
+  opacity: 0.55;
+  margin: 0;
+}
+
+/* Resources tab (FH) ───────────────────────────────────────────── */
+
+.resources-tab__gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4, 16px);
+}
+
+.resources-tab__gauge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  background:
+    radial-gradient(ellipse at top, rgba(201, 169, 97, 0.12), rgba(0, 0, 0, 0.35)),
+    var(--leather-brown-deep);
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: box-shadow var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.resources-tab__gauge--flash {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 20px rgba(201, 169, 97, 0.45);
+}
+
+.resources-tab__gauge-core {
+  text-align: center;
+  flex: 1 1 auto;
+}
+.resources-tab__gauge-value {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--gilt-gold);
+  line-height: 1;
+}
+.resources-tab__gauge-label {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--parchment-base);
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.resources-tab__gauge-btn {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--gilt-gold-shadow);
+  color: var(--gilt-gold);
+  font-size: 22px;
+  font-family: var(--font-display, 'Cinzel', serif);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background var(--duration-ink-settle, 240ms) var(--ease-ink-settle),
+    border-color var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.resources-tab__gauge-btn:hover:not(:disabled),
+.resources-tab__gauge-btn:focus-visible:not(:disabled) {
+  border-color: var(--gilt-gold);
+  background: rgba(201, 169, 97, 0.15);
+  outline: none;
+}
+.resources-tab__gauge-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.resources-tab__loot-title {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gilt-gold);
+  margin: 0 0 var(--space-3, 12px);
+}
+.resources-tab__loot-empty {
+  font-style: italic;
+  opacity: 0.55;
+  margin: 0;
+}
+.resources-tab__loot-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resources-tab__loot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--parchment-aged);
+  color: var(--parchment-ink);
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 16px;
+  font-size: 13px;
+}
+.resources-tab__loot-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.resources-tab__loot-count {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-weight: 600;
+  color: var(--gilt-gold-shadow);
+}
+
+/* Events tab ───────────────────────────────────────────────────── */
+
+.events-tab--empty {
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3, 12px);
+  min-height: 50vh;
+  text-align: center;
+}
+.events-tab__empty-sigil {
+  width: 90px;
+  height: 120px;
+}
+.events-tab__empty-sigil svg {
+  width: 100%;
+  height: 100%;
+}
+.events-tab__empty-text {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 18px;
+  color: var(--gilt-gold);
+  margin: 0;
+}
+.events-tab__empty-hint {
+  font-size: 14px;
+  opacity: 0.65;
+  margin: 0;
+  font-style: italic;
+}
+
+.events-tab__section-title {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gilt-gold);
+  margin: 0;
+}
+
+.events-tab__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.events-tab__card {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--gilt-gold-shadow);
+  border-radius: 3px;
+}
+.events-tab__card-head {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  color: var(--parchment-base);
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: left;
+}
+.events-tab__card-head:focus-visible {
+  outline: 1px solid var(--gilt-gold);
+  outline-offset: -2px;
+}
+.events-tab__card-type {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--gilt-gold);
+}
+.events-tab__card-id {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+.events-tab__card-edition {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  margin-left: auto;
+}
+.events-tab__card-attack {
+  color: #c77a7a;
+  font-size: 14px;
+}
+.events-tab__card-body {
+  padding: 0 14px 12px;
+  font-size: 14px;
+  color: var(--parchment-base);
+  opacity: 0.85;
+}
+.events-tab__card-note {
+  margin: 0;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Controller nav (persistent ⋯) ────────────────────────────────── */
+
+.controller-nav {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 50;
+}
+.controller-nav__toggle {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: rgba(26, 20, 16, 0.75);
+  border: 1px solid var(--gilt-gold-shadow);
+  color: var(--gilt-gold);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  font-family: var(--font-display, 'Cinzel', serif);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: background var(--duration-ink-settle, 240ms) var(--ease-ink-settle);
+}
+.controller-nav__toggle:hover,
+.controller-nav__toggle:focus-visible {
+  background: rgba(201, 169, 97, 0.2);
+  border-color: var(--gilt-gold);
+  outline: none;
+}
+
+/* Display wrapper — ambient particles mix with the sheet ───────── */
+
+.display-party-sheet-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+}
+.display-party-sheet-view .party-sheet {
+  background: transparent;
+}
+.display-party-sheet-view .party-sheet::before {
+  opacity: 0.55;
+}
+
+/* Invisible escape-hatch tap zone (top-left) → DisplayConfigMenu.
+   Matches the positional hot-zones in other display views (round
+   number / edition title / town title are the interactive chrome). */
+.display-party-sheet-view__hot-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 70;
+  appearance: none;
+}
+.display-party-sheet-view__hot-zone:focus-visible {
+  outline: 1px dashed var(--gilt-gold);
+  outline-offset: -4px;
+}
+
+/* Reduced motion ───────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .party-sheet__content[data-cycling='true'],
+  .party-sheet[data-autocycle='true'] .party-sheet__tab--active,
+  .party-sheet[data-autocycle='true'] .resources-tab__gauge-value,
+  .party-sheet[data-autocycle='true'] .party-sheet__title,
+  .party-sheet-intro__book-cover,
+  .party-sheet-intro__book-page,
+  .party-sheet-intro__name,
+  .party-sheet-intro__subtitle,
+  .resources-tab__gauge,
+  .roster-tab__card,
+  .standing-tab__ach-add-btn,
+  .standing-tab__parchment-field,
+  .location-tab__parchment-field,
+  .controller-nav__toggle {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -350,6 +350,40 @@
   margin: 0 0 12px 0;
 }
 
+/* Phase T0b: ScenarioControlsOverlay uses a subtitle below the title. */
+.menu-overlay__subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  opacity: 0.65;
+  margin: -6px 0 14px 0;
+}
+
+/* Phase T0b: inline two-step confirm for Cancel Scenario. */
+.menu-overlay__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--negative-red, #c77a7a);
+  border-radius: 3px;
+  background: rgba(139, 61, 61, 0.12);
+}
+.menu-overlay__confirm-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+.menu-overlay__confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .menu-overlay__item {
   display: block;
   width: 100%;

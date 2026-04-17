@@ -940,6 +940,198 @@ migration resolved. `app/shared/styles/` is the documented home for
 cross-client CSS (`theme.css`, `typography.css`, `components.css`,
 `connection.css`).
 
+### 2026-04-17 — Phase T0b: Party Sheet as shared multi-client sheet
+**Decision:** Landed the Party Sheet as a shared component at
+`app/shared/sheets/PartySheet.tsx`, consumed by controller primary
+(editable via `PartySheetOverlay`, `readOnly: false`) and display
+decorative (via `DisplayPartySheetView`, `readOnly + autoCycle +
+skipIntro`) via direct import. Five tabs: Roster, Standing, Location,
+Resources (FH only), Events. Resources hides entirely on non-FH editions.
+Establishes `app/shared/sheets/` as the canonical home for multi-client
+sheet components — T0c `CampaignSheet.tsx` lands here too.
+**Rationale:** The Party Sheet is consumed by both the controller
+(primary edit surface) and the display (decorative ambient render). The
+T0a `PlayerSheetQuickView` pattern already proved that a sheet can be
+authored once and mounted with `readOnly` in multiple clients; Party
+Sheet generalises that move. Shared sheets belong outside any one
+client's tree so neither client is cross-importing from the other.
+
+### 2026-04-17 — Phase T0b: Gilt-bound tab binding as Party Sheet signature
+**Decision:** The tab strip's signature visual is a continuous gilt-gold
+metallic rule along its inner edge (right on landscape, bottom on
+portrait), broken only at the active tab's row/column via a pseudo-
+element overlay in the content panel's background colour. Looks like the
+active tab "bites into" a brass-reinforced page binding.
+**Rationale:** T0a's signature was the illuminated capital; Party Sheet
+needed something equally distinctive so the three sheets (Player, Party,
+Campaign) each have a clear visual fingerprint. The binding motif also
+carries the "leather-bound campaign ledger" metaphor from the intro
+animation into the main sheet navigation, reinforcing the book metaphor
+without costume-y ornament. Pseudo-elements keep it zero-asset.
+
+### 2026-04-17 — Phase T0b: `addPartyAchievement` / `removePartyAchievement` structured commands
+**Decision:** Added two structured character-scope-free commands for
+mutating `state.party.achievementsList`. Both are GM-only (NOT on the
+phone whitelist in `server/src/wsHub.ts`). Validator rejects empty
+achievement strings; `removePartyAchievement` is rejected if the entry
+isn't currently in the list.
+**Rationale:** `updateCampaign` is a scalar setter that replaces the
+whole field. Routing array mutations through it would lose ordering
+integrity on undo (undo stack diffs field value, not per-element
+splice), and would push dedup/trim logic into UI code instead of the
+server. Structured commands keep array mutation semantic and
+undo-friendly. Achievements are party-level campaign bookkeeping, so
+phone access isn't needed — keeping them GM-only also avoids the
+spoiler concern of a phone seeing the full list of other parties'
+achievement slugs the GM is drafting.
+
+### 2026-04-17 — Phase T0b: Reputation brackets shipped with Party Sheet
+**Decision:** `getReputationPriceModifier(reputation)` lives at
+`packages/shared/src/data/reputationPrice.ts`, exported from the shared
+barrel. Returns an integer in [−5, +5] per the rules bracket table.
+Price floor-at-0 is the caller's responsibility (T2a purchase logic).
+`docs/GAME_RULES_REFERENCE.md §16 Reputation & Economy` is the new
+authoritative source for the bracket table.
+**Rationale:** Party Sheet's Standing tab needs this live — players
+should see the shop impact of their reputation in real time as the
+slider drags. T2a shopping will re-consume the same helper; landing it
+now with the Party Sheet avoids a later "we already have half this
+logic for the chip" split. The rules doc didn't have a reputation
+section before — adding §16 anchors the helper to the repo's
+authoritative game-rules reference so the next person who changes the
+helper has to reckon with the doc too.
+
+### 2026-04-17 — Phase T0b: Tests deferred; no test framework added for one helper
+**Decision:** `reputationPrice.ts` ships without `.test.ts` files. The
+project has no test runner (no vitest/jest/mocha in `package.json`).
+Rather than pull one in mid-batch just to test an 11-line pure-integer
+bracket function, we skipped it. A future infrastructure batch will
+introduce a test framework and backfill tests for this and other shared
+helpers at once.
+**Rationale:** Adding a test runner mid-feature is the exact kind of
+scope balloon the T0b prompt's "stop and flag" warning guards against.
+The helper's surface is small, pure, and easy to read-verify against
+the bracket table in GAME_RULES_REFERENCE §16. Deferral risk is low
+and visible — documented here and in ROADMAP so the next
+infrastructure pass doesn't forget.
+
+### 2026-04-17 — Phase T0b: `useCommitOnPause` hook centralised for editable text
+**Decision:** Hybrid-commit behaviour (commit on blur, Enter, or 1000 ms
+typing pause) extracted into `app/shared/hooks/useCommitOnPause.ts` and
+consumed by the Standing tab (party name, notes) + Location tab (current
+location). External value updates while the input is NOT focused sync
+the local state; updates WHILE focused do not (user's in-progress edit
+wins until blur).
+**Rationale:** The three editable text sites in T0b alone would have
+each re-invented the same timer/focus/sync dance. The controller is
+multi-user (GM laptop + phones broadcast diffs), so collaborative edits
+are a real concern — a hand-rolled per-field version would almost
+certainly get the "don't clobber user's in-progress edit" case wrong at
+one of the sites. T0d's Notes tab gets this for free. Naming the hook
+"on pause" (vs "on debounced") makes the Enter-to-commit and
+blur-to-commit behaviours orthogonal and explicit.
+
+### 2026-04-17 — Phase T0b: `ControllerNav` scoped to Lobby / Town; scenario uses existing `☰`
+**Decision:** `app/controller/ControllerNav.tsx` renders a fixed-position
+`⋯` button mounted from `app/controller/App.tsx` only when
+`mode !== 'scenario'`. In scenario mode, the existing `☰` button in
+`ScenarioHeader` (rendered by `ScenarioView`) already opens `MenuOverlay`
+— adding a floating nav on top of that would overlap the element board
+in the header's top-right. The Party Sheet opener is lifted to App.tsx
+state and passed into `ScenarioView` via a new `onOpenPartySheet` prop;
+`ScenarioView` then passes it into `MenuOverlay`, so the hamburger has
+the Party Sheet entry from every mode with zero duplicate UI affordance.
+Scenario-specific actions (Scenario End — Victory/Defeat, Cancel Scenario)
+moved out of `MenuOverlay` and into a new `ScenarioControlsOverlay`
+triggered by clicking the scenario name in the header. The Cancel
+Scenario action uses a new `abortScenario` command — clears scenario
+combat state and returns to lobby without applying rewards or recording
+the scenario. Two-step inline confirmation because it's destructive.
+**Rationale:** The original "floating ⋯ in every mode" plan worked for
+Lobby/Town (which have no header menu) but caused a visual collision in
+Scenario mode (the new nav overlapped the element board). The restructure
+gives each surface one obvious entry point: **hamburger = cross-mode**
+(Undo, Party Sheet, Export, Disconnect), **scenario name click =
+scenario-specific controls** (End Scenario), **floating ⋯ = modes that
+lack a header menu** (Lobby/Town). The scenario-name affordance also
+clusters scenario actions next to the scenario title, which reads more
+naturally than hiding them in a catch-all menu.
+
+### 2026-04-17 — Phase T0b: Display Party Sheet replaces idle lobby / town views
+**Decision:** When the display is in `mode === 'lobby'` AND no
+`setupPhase` is active (idle lobby), OR in `mode === 'town'`, the
+display renders `DisplayPartySheetView` in place of the existing
+`LobbyWaitingView` / `TownView`. During an active setup phase
+(chores/rules/goals), `LobbyWaitingView` still renders so the
+table-level prompts drive the ceremony. Scenario mode is untouched.
+Display mode auto-cycles tabs every 30 s with a page-turn transition;
+gilt elements get a 2–4 s candlelight flicker (offset durations so the
+effect isn't synchronised).
+**Rationale:** Display is a vertical tower sitting on the table. During
+setup or scenario, something important owns the display. During idle
+lobby and town, the display was showing a minimal "waiting" placeholder
+— Party Sheet fills that dead space with at-a-glance campaign context
+(party name, reputation, current location, resources, recent
+scenarios) that a passer-by at the table can read. Auto-cycling
+ensures no single tab hogs the display.
+
+### 2026-04-17 — Phase T0b: "Leather book opening" intro + `Party.sheetIntroSeen`
+**Decision:** First-open intro animation on the controller Party Sheet
+(~3 seconds): backdrop fade → closed leather book fades in → cover
+swings open on Y-axis (CSS transform, transform-origin: left) → party
+name + "Your campaign begins…" fade in → fade out. Persisted via a new
+`Party.sheetIntroSeen?: boolean` flag, set via existing
+`updateCampaign('sheetIntroSeen', true)` (no new command needed — it's
+a scalar on `state.party`). Respects `prefers-reduced-motion` (skips
+animation, still sets the flag).
+**Rationale:** Parallel to T0a's PlayerSheetIntro. Party Sheet is the
+campaign's canonical shared surface; the one-time intro sets the
+ceremonial tone the same way a leather-bound journal feels different
+the first time you crack it open. Using `updateCampaign` avoids a new
+command surface for a one-field boolean.
+
+### 2026-04-17 — Phase T0b: Display escape hatch via invisible corner tap-zone
+**Decision:** `DisplayPartySheetView` renders a 96×96 invisible
+`<button>` pinned to the top-left corner (`z-index: 70`,
+`background: transparent`, `border: none`). Tapping it calls
+`onOpenMenu` and opens the existing `DisplayConfigMenu` (game code +
+Disconnect). Other display views (scenario, lobby, town) surface this
+same menu via clickable text affordances — round number /
+"Gloomhaven/Frosthaven" title / "Town Phase" title. The decorative
+Party Sheet has no such text chrome of its own (the sheet fills the
+canvas), so a positional hot-zone substitutes.
+**Rationale:** Without this, tapping the display while in idle
+lobby/town hits the decorative Party Sheet — which is read-only and
+doesn't react — leaving the display with no way to disconnect short
+of navigating to `/unregister`. The invisible tap-zone pattern is a
+common escape-hatch idiom for kiosk-style screens, and placing it in
+the same region where other display views already have clickable
+chrome (top area) keeps the muscle memory consistent. 96×96 gives a
+comfortable tap target without visibly occluding the sheet.
+
+### 2026-04-17 — Phase T0b: `abortScenario` command for mid-play exit
+**Decision:** Added `abortScenario` — a GM-only structured command that
+aborts the current scenario without applying rewards and returns
+directly to lobby mode (skipping town phase). Handler mirrors the
+combat-state cleanup block of `handleCompleteScenario` (monsters /
+non-character figures / HP / conditions / summons / in-scenario
+counters / elements / round+phase) but skips the XP / gold / resource
+transfer and does NOT append to `state.party.scenarios`. Validator
+rejects when `state.mode !== 'scenario'`. Exposed as "Cancel Scenario"
+in the controller's new `ScenarioControlsOverlay` with a two-step
+inline confirm.
+**Rationale:** Pre-T0b there was no way to exit a scenario mid-play
+— the only paths out were Victory or Defeat, both of which transfer
+rewards and record the scenario as completed. Common real-world need:
+"we started the wrong scenario" / "we need to restart" / "we're done
+playing for the night." Going through Victory and then using Undo is
+fragile (undo is bounded, and the town-phase transition can complicate
+it). An explicit abort command keeps the semantics clear (NO rewards,
+NOT recorded) and keeps state integrity guaranteed. Skipping town
+phase is correct: town phase is a reward-resolution surface, and an
+aborted scenario has nothing to resolve. Not on the phone whitelist
+because the GM owns scenario lifecycle.
+
 ### 2026-04-17 — Phase T1.1: Display rewards hide condition decoupled from finishData lifetime
 **Decision:** The display's `DisplayRewardsOverlay` mount is now gated by a
 dismissal check (`isFinal && every-non-absent-char.dismissed`) in
