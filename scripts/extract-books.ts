@@ -61,6 +61,18 @@ async function extractPdfPages(pdfPath: string): Promise<PageText[]> {
   return pages;
 }
 
+// ── Copyright-only page detection ───────────────────────────────────────────
+
+/**
+ * A copyright-only page contains only the Cephalofair copyright footer and
+ * no real scenario/section content. Defensive check; replaces an older
+ * conditional "skip pages 1-2 of the first scenario book" heuristic.
+ */
+function isCopyrightOnlyPage(text: string): boolean {
+  const trimmed = text.trim();
+  return trimmed.length < 200 && /CEPHALOFAIR/i.test(trimmed);
+}
+
 // ── Scenario Page Parser ────────────────────────────────────────────────────
 
 interface ParsedScenario {
@@ -94,8 +106,8 @@ function parseScenarioPages(text: string): ParsedScenario[] {
   }> = [];
 
   for (let i = 0; i < lines.length; i++) {
-    // Full title: "0 • N6 Howling in the Snow"
-    const m = lines[i].match(/^(\d+)\s*(CONT\.)?\s*•\s*([A-Z][A-Z0-9-]*)\s+(.+)/);
+    // Full title: "0 • N6 Howling in the Snow" (also matches suffixed "4A", "74B", etc.)
+    const m = lines[i].match(/^(\d+[A-Z]?)\s*(CONT\.)?\s*•\s*([A-Z][A-Z0-9-]*)\s+(.+)/);
     if (m) {
       titles.push({
         lineIndex: i,
@@ -107,7 +119,7 @@ function parseScenarioPages(text: string): ParsedScenario[] {
       continue;
     }
     // CONT without location code: "15 CONT. • Ancient Spire"
-    const contMatch = lines[i].match(/^(\d+)\s+CONT\.\s*•\s*(.+)/);
+    const contMatch = lines[i].match(/^(\d+[A-Z]?)\s+CONT\.\s*•\s*(.+)/);
     if (contMatch) {
       titles.push({
         lineIndex: i,
@@ -121,7 +133,7 @@ function parseScenarioPages(text: string): ParsedScenario[] {
     // Multi-line: "• {code}" with number above and name below (or above number)
     const bulletMatch = lines[i].match(/^•\s*([A-Z][A-Z0-9-]*)\s*$/);
     if (bulletMatch && i > 0) {
-      const numMatch = lines[i - 1].match(/^(\d+)\s*(CONT\.)?$/);
+      const numMatch = lines[i - 1].match(/^(\d+[A-Z]?)\s*(CONT\.)?$/);
       if (numMatch) {
         // Name is usually on the line after "• CODE", but if that line is copyright,
         // the name may be above the number line
@@ -167,42 +179,16 @@ function parseScenarioFromText(
   title: { scenarioIndex: string; name: string; locationCode: string; isContinuation: boolean },
 ): ParsedScenario {
   // ── Win condition ──
-  let goalText: string | null = null;
-  const goalMatch = fullText.match(/(The scenario is complete\s+(?:when|at the end of|once|after)\s+[\s\S]*?\.)/i);
-  if (goalMatch) {
-    let raw = goalMatch[1];
-    // Handle column interleaving: if "When door" appears mid-sentence, split there
-    const interleaveIdx = raw.search(/\s+When\s+(door|a|the|all|any)\s/i);
-    if (interleaveIdx > 30) {
-      raw = raw.substring(0, interleaveIdx) + '.';
-    }
-    goalText = raw.replace(/\s+/g, ' ').trim();
-  }
+  // Handles "is/may be complete" + "when/at the end of/once/after/only" plus
+  // whitespace-split phrasing (e.g. PDF line break inside "at the end\nof").
+  // Also covers scenarios with intentionally hidden goals ("Unknown at this time.").
+  const goalText = extractGoalText(fullText);
 
   // ── Loss condition ──
-  let lossText: string | null = null;
-  const lossMatch1 = fullText.match(/(If\s+[\s\S]*?the scenario is lost\.)/i);
-  if (lossMatch1) {
-    lossText = lossMatch1[1].replace(/\s+/g, ' ').trim();
-  }
-  if (!lossText) {
-    const lossMatch2 = fullText.match(/([^.]*?the scenario is lost\.)/i);
-    if (lossMatch2) {
-      const candidate = lossMatch2[1].replace(/\s+/g, ' ').trim();
-      if (candidate.length > 10 && candidate.length < 300) lossText = candidate;
-    }
-  }
+  const lossText = extractLossText(fullText);
 
   // ── Section links ──
-  const sectionLinks: Array<{ trigger: string; sectionId: string }> = [];
-  const linkPattern = /(?:read|Read)\s+(\d+\.\d+)/g;
-  let linkMatch: RegExpExecArray | null;
-  while ((linkMatch = linkPattern.exec(fullText)) !== null) {
-    const before = fullText.substring(Math.max(0, linkMatch.index - 60), linkMatch.index);
-    const sentenceStart = Math.max(before.lastIndexOf('.') + 1, before.lastIndexOf('\n') + 1, 0);
-    const trigger = before.substring(sentenceStart).replace(/\s+/g, ' ').trim();
-    sectionLinks.push({ trigger, sectionId: linkMatch[1] });
-  }
+  const sectionLinks = extractSectionLinks(fullText);
 
   // ── Designer / Writer ──
   let designer: string | null = null;
@@ -233,6 +219,32 @@ function parseScenarioFromText(
     writer,
     rawText: fullText,
   };
+}
+
+/** Extract loss-condition text. Falls back to a short sentence ending in "the scenario is lost.". */
+function extractLossText(fullText: string): string | null {
+  const m1 = fullText.match(/(If\s+[\s\S]*?the scenario is lost\.)/i);
+  if (m1) return m1[1].replace(/\s+/g, ' ').trim();
+  const m2 = fullText.match(/([^.]*?the scenario is lost\.)/i);
+  if (m2) {
+    const candidate = m2[1].replace(/\s+/g, ' ').trim();
+    if (candidate.length > 10 && candidate.length < 300) return candidate;
+  }
+  return null;
+}
+
+/** Extract section-link references ("read 2.1") with the preceding trigger phrase. */
+function extractSectionLinks(fullText: string): Array<{ trigger: string; sectionId: string }> {
+  const links: Array<{ trigger: string; sectionId: string }> = [];
+  const linkPattern = /(?:read|Read)\s+(\d+\.\d+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = linkPattern.exec(fullText)) !== null) {
+    const before = fullText.substring(Math.max(0, m.index - 60), m.index);
+    const sentenceStart = Math.max(before.lastIndexOf('.') + 1, before.lastIndexOf('\n') + 1, 0);
+    const trigger = before.substring(sentenceStart).replace(/\s+/g, ' ').trim();
+    links.push({ trigger, sectionId: m[1] });
+  }
+  return links;
 }
 
 /** Fix PDF text extraction artifacts where capital letters get split from words */
@@ -450,6 +462,118 @@ const SECTION_BOOKS = [
   'fh-section-book-182-197.pdf',
 ];
 
+const SOLO_BOOKS = [
+  'fh-solo-scenario-book.pdf',
+];
+
+// ── Solo Scenario Page Parser ───────────────────────────────────────────────
+
+type SoloParseResult =
+  | { kind: 'base'; scenario: ParsedScenario }
+  | { kind: 'continuation'; ofName: string; addendum: ParsedScenario }
+  | { kind: 'skip' };
+
+/**
+ * Solo scenarios have no numeric index or "X • LOC Name" title. The scenario
+ * name appears on the last non-copyright line, just above the copyright footer.
+ * Some scenarios span two pages; the second page's last line is "CONT. • Name".
+ * Uses the page number as the scenario_index for base pages; continuations are
+ * merged into the prior base.
+ */
+function parseSoloScenarioPage(text: string, pageNumber: number): SoloParseResult {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+  // Credits page (printing info + playtester list) — not a scenario.
+  if (/Playtesting:/i.test(text) && /Graphic Design:/i.test(text)) {
+    return { kind: 'skip' };
+  }
+
+  const labelNoiseWord = /^(Scenario|Key|Loot|Introduction|Special|Rules|Goals|Section|Links|Conclusion|Rewards|Map|Layout|Effects|Boss)$/i;
+  const isContLine = (l: string): RegExpMatchArray | null => l.match(/^CONT\.\s*•\s*(.+)$/i);
+  const looksLikeScenarioName = (l: string): boolean => {
+    if (l.length < 5 || l.length > 60) return false;
+    if (!/^[A-Z]/.test(l)) return false;          // must start with capital
+    if (/[0-9"“”.,;:!?]/.test(l)) return false;   // no digits, quotes, or sentence punctuation anywhere
+    // Reject PDF concatenation artifacts like "LootScenario" (lower-then-upper).
+    if (/[a-z][A-Z]/.test(l)) return false;
+    // Reject lines that consist entirely of label-noise words.
+    const words = l.split(/\s+/);
+    if (words.every(w => labelNoiseWord.test(w))) return false;
+    return true;
+  };
+
+  // The real solo-book layout puts the scenario title (or "CONT. • Name"
+  // marker) on the line IMMEDIATELY above the copyright footer, with label
+  // noise ("Loot", "Rewards", etc.) above it. Some pages have BOTH a plain
+  // title AND a CONT of the prior scenario (e.g. page 18: "Recharge" base +
+  // "CONT. • Under the Ice"). Inspect up to 2 concrete bottom lines so we
+  // can find both; but stop before walking into narrative paragraphs.
+  const isNoiseLine = (l: string): boolean => {
+    if (/CEPHALOFAIR/i.test(l)) return true;
+    if (labelNoiseWord.test(l)) return true;
+    if (/^x?\d+$/.test(l)) return true;
+    if (/^\d+(\s+\d+)+$/.test(l)) return true;
+    const words = l.split(/\s+/);
+    if (words.every(w => labelNoiseWord.test(w))) return true;
+    // Glued-but-label-only artifacts: "LootScenario" → [Loot, Scenario].
+    if (words.every(w => w.split(/(?=[A-Z])/).every(chunk => labelNoiseWord.test(chunk)))) return true;
+    return false;
+  };
+
+  let contName: string | null = null;
+  let plainName: string | null = null;
+  let concreteInspected = 0;
+  for (let i = lines.length - 1; i >= 0 && concreteInspected < 2; i--) {
+    const l = lines[i];
+    if (isNoiseLine(l)) continue;
+    concreteInspected++;
+    const cm = isContLine(l);
+    if (cm) { if (!contName) contName = cm[1].trim(); continue; }
+    if (looksLikeScenarioName(l)) { plainName = l; continue; }
+    break; // narrative paragraph — stop looking
+  }
+
+  const fullText = lines.join('\n');
+  const addendum: ParsedScenario = {
+    scenarioIndex: String(pageNumber),
+    name: plainName ?? (contName ?? ''),
+    locationCode: '',
+    isContinuation: !!contName && !plainName,
+    introduction: extractIntroduction(lines),
+    goalText: extractGoalText(fullText),
+    lossText: extractLossText(fullText),
+    specialRulesText: extractSpecialRules(lines, null, null),
+    sectionLinks: extractSectionLinks(fullText),
+    designer: null,
+    writer: null,
+    rawText: fullText,
+  };
+
+  if (contName && !plainName) {
+    // Pure continuation page.
+    return { kind: 'continuation', ofName: contName, addendum };
+  }
+  if (!plainName) return { kind: 'skip' };
+  // Base page (may also contain a CONT for a previous scenario — we store the
+  // base and rely on the previous scenario already having its core content).
+  return { kind: 'base', scenario: addendum };
+}
+
+/** Goal-text extraction shared between main and solo parsers. */
+function extractGoalText(fullText: string): string | null {
+  const m = fullText.match(
+    /(The scenario (?:is|may be) complete\s+(?:when|at\s+the\s+end\s+of|once|after|only)\s+[\s\S]*?\.)/i,
+  );
+  if (m) {
+    let raw = m[1];
+    const interleaveIdx = raw.search(/\s+When\s+(door|a|the|all|any)\s/i);
+    if (interleaveIdx > 30) raw = raw.substring(0, interleaveIdx) + '.';
+    return raw.replace(/\s+/g, ' ').trim();
+  }
+  if (/Unknown at this time\./i.test(fullText)) return 'Unknown at this time.';
+  return null;
+}
+
 // ── Main pipeline ───────────────────────────────────────────────────────────
 
 interface VerifyEntry {
@@ -476,6 +600,10 @@ async function main() {
   console.log(`Database: ${DB_PATH}`);
 
   const db = new ReferenceDb(DB_PATH);
+  // scenario_book_data gained a group_name column in the PK (for solo scenarios).
+  // Drop the old table so createSchema() rebuilds it with the new PK — the data
+  // is fully re-derived from the PDFs on every run.
+  try { db.transaction(() => { (db as any).db.exec('DROP TABLE IF EXISTS scenario_book_data'); }); } catch (_) { /* ignore */ }
   // Ensure schema has the new tables and columns
   db.createSchema();
   // Add new columns to existing sections table if missing (for DBs created before this change)
@@ -502,10 +630,9 @@ async function main() {
     let prevScenario: ParsedScenario | null = null;
 
     for (const { pageNumber, text } of pages) {
+      if (isCopyrightOnlyPage(text)) continue;
       const parsedList = parseScenarioPages(text);
       if (parsedList.length === 0) {
-        // Skip known non-scenario pages (copyright, intro, empty)
-        if (pageNumber <= 2 && filename === SCENARIO_BOOKS[0]) continue;
         if (text.trim().length < 50) continue;
         console.warn(`    Page ${pageNumber}: could not parse`);
         continue;
@@ -560,6 +687,7 @@ async function main() {
       const pages = await extractPdfPages(filepath);
 
       for (const { pageNumber, text } of pages) {
+        if (isCopyrightOnlyPage(text)) continue;
         const sections = parseSectionPage(text);
         if (sections.length === 0) {
           console.warn(`    Page ${pageNumber}: no sections found`);
@@ -579,6 +707,59 @@ async function main() {
     console.log(`  With narrative text: ${sectionsWithNarrative}`);
   }
 
+  // ── Process solo scenario book ──
+  console.log('\n=== Processing Solo Scenario Book ===');
+  let totalSolo = 0;
+  let soloWithGoal = 0;
+  for (const filename of SOLO_BOOKS) {
+    const filepath = join(booksDir, filename);
+    if (!existsSync(filepath)) {
+      console.warn(`  SKIP: ${filename} not found`);
+      continue;
+    }
+    console.log(`  Processing: ${filename}`);
+    const pages = await extractPdfPages(filepath);
+    let prevSolo: ParsedScenario | null = null;
+    const flushPrev = () => {
+      if (prevSolo) {
+        storeScenario(db, 'fh', prevSolo, 'solo');
+        totalSolo++;
+        if (prevSolo.goalText) soloWithGoal++;
+        prevSolo = null;
+      }
+    };
+    for (const { pageNumber, text } of pages) {
+      if (isCopyrightOnlyPage(text)) continue;
+      // Page 1 is the "This book contains solo scenarios" introduction.
+      if (pageNumber === 1 && /This book contains solo scenarios/i.test(text)) continue;
+      const result = parseSoloScenarioPage(text, pageNumber);
+      if (result.kind === 'skip') {
+        console.log(`    Page ${pageNumber}: skip (non-scenario)`);
+        continue;
+      }
+      if (result.kind === 'continuation') {
+        console.log(`    Page ${pageNumber}: CONT. ${result.ofName}`);
+        if (prevSolo && prevSolo.name === result.ofName) {
+          mergeContinuation(prevSolo, result.addendum);
+        } else {
+          console.warn(`    Page ${pageNumber}: continuation without matching base "${result.ofName}"`);
+        }
+        continue;
+      }
+      // Base: flush previous, start new.
+      flushPrev();
+      prevSolo = result.scenario;
+      console.log(`    Page ${pageNumber}: ${prevSolo.name}`);
+    }
+    flushPrev();
+  }
+  console.log(`\nSolo extraction summary:`);
+  console.log(`  Total solo scenarios: ${totalSolo}`);
+  console.log(`  With goal text: ${soloWithGoal}`);
+
+  // ── Coverage report ──
+  printCoverageReport(db);
+
   // ── Verify mode: output TSV ──
   if (verifyMode) {
     const tsvPath = join(ROOT, 'data', 'book-extraction-verify.tsv');
@@ -594,15 +775,49 @@ async function main() {
   console.log('\nDone.');
 }
 
-function storeScenario(db: ReferenceDb, edition: string, s: ParsedScenario): void {
+function storeScenario(
+  db: ReferenceDb,
+  edition: string,
+  s: ParsedScenario,
+  groupName = '',
+): void {
   db.insertScenarioBookData(
-    edition, s.scenarioIndex,
+    edition, s.scenarioIndex, groupName,
     s.introduction, s.goalText, s.lossText,
     s.specialRulesText,
     s.sectionLinks.length > 0 ? JSON.stringify(s.sectionLinks) : null,
     s.designer, s.writer,
     s.locationCode || null, s.rawText,
   );
+}
+
+function printCoverageReport(db: ReferenceDb): void {
+  const raw = (db as any).db as {
+    prepare(sql: string): { get(...params: unknown[]): unknown };
+  };
+  const main = raw.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN goal_text IS NOT NULL AND goal_text != '' THEN 1 ELSE 0 END) AS with_goal,
+            SUM(CASE WHEN loss_text IS NOT NULL AND loss_text != '' THEN 1 ELSE 0 END) AS with_loss
+       FROM scenario_book_data
+      WHERE group_name = ''`,
+  ).get() as { total: number; with_goal: number; with_loss: number };
+  const solo = raw.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN goal_text IS NOT NULL AND goal_text != '' THEN 1 ELSE 0 END) AS with_goal
+       FROM scenario_book_data
+      WHERE group_name = 'solo'`,
+  ).get() as { total: number; with_goal: number };
+  const sec = raw.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN narrative_text IS NOT NULL AND narrative_text != '' THEN 1 ELSE 0 END) AS with_nar
+       FROM sections`,
+  ).get() as { total: number; with_nar: number };
+
+  console.log('\n=== Coverage Report ===');
+  console.log(`  Main scenarios:  ${main.total} (${main.with_goal} with goal, ${main.with_loss} with loss)`);
+  console.log(`  Solo scenarios:  ${solo.total} (${solo.with_goal} with goal)`);
+  console.log(`  Sections:        ${sec.total} (${sec.with_nar} with narrative)`);
 }
 
 function storeSection(db: ReferenceDb, edition: string, s: ParsedSection): void {

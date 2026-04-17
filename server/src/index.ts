@@ -224,7 +224,8 @@ app.get('/api/ref/asset/:edition/:category/:name(*)', (req, res) => {
 
 app.get('/api/ref/scenario-book/:edition/:index', (req, res) => {
   if (!refDb) { res.status(503).json({ error: 'Reference DB not available' }); return; }
-  const data = refDb.getScenarioBookData(req.params.edition, req.params.index);
+  const group = typeof req.query.group === 'string' ? req.query.group : '';
+  const data = refDb.getScenarioBookData(req.params.edition, req.params.index, group);
   data ? res.json(data) : res.status(404).json({ error: 'Scenario book data not found' });
 });
 

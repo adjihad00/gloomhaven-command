@@ -182,6 +182,18 @@
   - [x] useScenarioBookData hook for all three clients
   - [x] Wire display footer, controller lobby, phone lobby/rules to real win/loss conditions
   - [x] Graceful fallback for non-FH editions and missing book data
+- [x] Phase 5.x.1: Extraction cleanup (2026-04-17)
+  - [x] Goal regex tolerates whitespace-split `at\s+the\s+end\s+of` and accepts `may be`/`only`
+        phrasings (fixes scenarios 107, 115, 128)
+  - [x] `Unknown at this time.` fallback preserves hidden goals verbatim (fixes 73, 78, 121)
+  - [x] `isCopyrightOnlyPage` content-aware check replaces book-specific page skip
+  - [x] Title regex accepts optional letter suffix (`4A`/`74B`) for future variants
+  - [x] `scenario_book_data` PK extended with `group_name` column (default `''`)
+  - [x] Solo scenario book extraction (`fh-solo-scenario-book.pdf` → 17 solo scenarios with 100%
+        goal coverage, stored under `group_name='solo'`)
+  - [x] `/api/ref/scenario-book/:edition/:index` accepts optional `?group=` query parameter
+  - [x] Coverage report prints at end of extraction run
+  - [x] Main coverage improved: 132 → 138 scenarios with goals (100% of 138 extracted)
 - [ ] Phase 5.y: Extend display ability card rendering with remaining edge cases
 - [ ] GHS save file import/export UI in controller
 - [ ] Campaign persistence across sessions

@@ -254,7 +254,7 @@ export class ReferenceDb {
   }
 
   insertScenarioBookData(
-    edition: string, scenarioIndex: string,
+    edition: string, scenarioIndex: string, groupName: string,
     introduction: string | null, goalText: string | null, lossText: string | null,
     specialRulesText: string | null, sectionLinksJson: string | null,
     designer: string | null, writer: string | null,
@@ -262,10 +262,10 @@ export class ReferenceDb {
   ): void {
     this.stmtCache('insertScenarioBookData',
       `INSERT OR REPLACE INTO scenario_book_data
-       (edition, scenario_index, introduction, goal_text, loss_text,
+       (edition, scenario_index, group_name, introduction, goal_text, loss_text,
         special_rules_text, section_links_json, designer, writer, location_code, raw_text)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(edition, scenarioIndex, introduction, goalText, lossText,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(edition, scenarioIndex, groupName, introduction, goalText, lossText,
       specialRulesText, sectionLinksJson, designer, writer, locationCode, rawText);
   }
 
@@ -379,7 +379,7 @@ export class ReferenceDb {
     } | null;
   }
 
-  getScenarioBookData(edition: string, scenarioIndex: string): {
+  getScenarioBookData(edition: string, scenarioIndex: string, groupName = ''): {
     introduction: string | null;
     goal_text: string | null;
     loss_text: string | null;
@@ -392,8 +392,9 @@ export class ReferenceDb {
     return this.stmtCache('getScenarioBookData',
       `SELECT introduction, goal_text, loss_text, special_rules_text,
               section_links_json, designer, writer, location_code
-       FROM scenario_book_data WHERE edition = ? AND scenario_index = ?`,
-    ).get(edition, scenarioIndex) as {
+       FROM scenario_book_data
+       WHERE edition = ? AND scenario_index = ? AND group_name = ?`,
+    ).get(edition, scenarioIndex, groupName) as {
       introduction: string | null;
       goal_text: string | null;
       loss_text: string | null;
@@ -629,6 +630,7 @@ CREATE TABLE IF NOT EXISTS sections (
 CREATE TABLE IF NOT EXISTS scenario_book_data (
   edition TEXT NOT NULL,
   scenario_index TEXT NOT NULL,
+  group_name TEXT NOT NULL DEFAULT '',
   introduction TEXT,
   goal_text TEXT,
   loss_text TEXT,
@@ -638,7 +640,7 @@ CREATE TABLE IF NOT EXISTS scenario_book_data (
   writer TEXT,
   location_code TEXT,
   raw_text TEXT,
-  PRIMARY KEY (edition, scenario_index)
+  PRIMARY KEY (edition, scenario_index, group_name)
 );
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -781,7 +783,7 @@ CREATE INDEX IF NOT EXISTS idx_scenario_rooms ON scenario_rooms(edition, scenari
 CREATE INDEX IF NOT EXISTS idx_spawns_room ON scenario_spawns(edition, scenario_index, room_number);
 CREATE INDEX IF NOT EXISTS idx_monster_stats ON monster_stats(edition, monster_name, level);
 CREATE INDEX IF NOT EXISTS idx_sections_parent ON sections(edition, parent_scenario);
-CREATE INDEX IF NOT EXISTS idx_scenario_book ON scenario_book_data(edition, scenario_index);
+CREATE INDEX IF NOT EXISTS idx_scenario_book ON scenario_book_data(edition, scenario_index, group_name);
 CREATE INDEX IF NOT EXISTS idx_items_edition ON items(edition);
 CREATE INDEX IF NOT EXISTS idx_assets_category ON asset_manifest(edition, category);
 CREATE INDEX IF NOT EXISTS idx_assets_source ON asset_manifest(source, category);

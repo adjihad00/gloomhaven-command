@@ -731,3 +731,28 @@ rules). Book data is from a completely different source (PDF extraction with heu
 Keeping them separate means: (1) the import pipeline doesn't need to coordinate with the book
 extraction pipeline, (2) book data can be regenerated independently, (3) quality issues in
 heuristic extraction don't affect GHS data integrity.
+
+### 75. scenario_book_data PK extended with group_name (2026-04-17)
+**Decision:** The `scenario_book_data` primary key is now `(edition, scenario_index, group_name)`
+(default `''` for main scenarios, `'solo'` for solo scenarios). The `/api/ref/scenario-book` endpoint
+accepts an optional `?group=` query parameter; default `''` preserves existing behavior.
+**Rationale:** Solo scenarios use the same page-number-based index scheme as main scenarios but live
+in a distinct namespace. Mirroring the `scenarios` table's `(edition, index, group)` PK keeps the
+two tables shape-compatible for future joins and avoids synthetic `"solo-1"` prefixes that would
+break symmetry and filter UIs. The migration drops+recreates `scenario_book_data` at extraction
+time — data is fully re-derived from PDFs on every run, so no hand-entered content is lost.
+
+### 76. Solo scenario book extraction (2026-04-17)
+**Decision:** `parseSoloScenarioPage()` handles the FH solo book's different page layout —
+scenario name at the bottom rather than in a "N • LOC Name" title. Uses the page number as
+`scenario_index`, stores with `group_name='solo'`. The credits page (detected via "Playtesting:" +
+"Graphic Design:" markers) is skipped; continuation pages ("CONT. • Name" immediately above the
+copyright footer) are merged into the prior base scenario using the same `mergeContinuation()` as
+the main scenario books. Name detection only inspects the last two concrete lines before copyright
+(skipping label noise like "Loot"/"Rewards") to avoid misreading narrative paragraphs as titles.
+**Rationale:** Solo scenarios have no numeric index in the book layout, so the main-book title
+regex does not fire. A dedicated parser keeps the main parser untouched while sharing the goal /
+loss / section-link helpers. The bottom-up "last two concrete lines" heuristic proved strictly
+better than a bounded-window search: pages 17-18 of the solo book have both a new base scenario
+("Recharge") and a continuation of the prior scenario ("CONT. • Under the Ice") on the same page —
+only the two-line inspection catches both.

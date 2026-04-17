@@ -231,6 +231,25 @@ worked correctly, but the auto-detect pattern is more ergonomic and less error-p
 
 ---
 
+## 2026-04-17 — Phase 5.x Cleanup: Extraction Coverage
+
+### B5.x.1: Scenarios 107, 115, 128 missing goal_text
+**Symptom:** After Phase 5.x extraction, these three scenarios had null goals despite the scenario books containing explicit win conditions.
+**Root cause:** `parseScenarioFromText()` used a literal `at the end of` in its goal regex. pdfjs text extraction inserts a line break inside the phrase (`at the end\nof the Nth round`), so the literal substring never matched. Additionally, scenario 107 uses "The scenario *may be* complete … *only* at …" — variants the regex did not accept.
+**Fix:** Replaced the literal phrase with `at\s+the\s+end\s+of` and added `may be` / `only` alternatives: `(The scenario (?:is|may be) complete\s+(?:when|at\s+the\s+end\s+of|once|after|only)\s+[\s\S]*?\.)`.
+
+### B5.x.2: Scenarios 73, 78, 121 missing goal_text
+**Symptom:** These scenarios showed a blank goal in the DB.
+**Root cause:** Their physical-book goals are intentionally hidden as the literal text "Unknown at this time." — the main goal regex correctly did not match, but no fallback preserved the hidden-goal string.
+**Fix:** Added a fallback after the primary regex: if `/Unknown at this time\./i` appears in the raw page text, store the goal verbatim as `"Unknown at this time."`.
+
+### B5.x.3: Copyright-only page handling was fragile
+**Symptom:** The extractor had a hard-coded `if (pageNumber <= 2 && filename === SCENARIO_BOOKS[0]) continue;` to sidestep copyright-only pages, which only worked for one book.
+**Root cause:** Heuristic tied to book identity, not page content.
+**Fix:** Added `isCopyrightOnlyPage(text)` helper (`text.trim().length < 200 && /CEPHALOFAIR/i.test(text)`) wired into both scenario- and section-book loops. Defensive; no scenarios were actually being missed by the prior check, but the new check is content-aware and generalizes to every book.
+
+---
+
 ### INF1: game.gh-command.com unreachable from LAN devices
 **Symptom:** After setting up Let's Encrypt certs + Cloudflare DNS, `https://game.gh-command.com:3000` fails to load from Chrome PC and phones. localhost works. LAN IP works from dev PC but cert mismatch on other devices.
 **Root cause:** Not a code regression. The ASUS GT-AX11000 Pro router has DNS rebinding protection enabled, which silently drops DNS responses that resolve public domains to private IPs (192.168.50.96). Cloudflare DNS correctly returns the LAN IP, but the router intercepts and blocks it. Additionally, the dev PC's Windows hosts file had no entry for the domain.

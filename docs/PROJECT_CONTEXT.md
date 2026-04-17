@@ -125,9 +125,14 @@ Phase 5 Bugfix COMPLETE: display sticky header, phone battle goal card images wi
 phone disconnect escape hatch on all screens, monster ability deck overrides from scenario rules
 (FH scenario 0 hounds), battle goal deck server-side infrastructure, Worldhaven staging fallback.
 Phase 5.x: Book data extraction pipeline COMPLETE. Extracts text from FH scenario/section book
-PDFs using pdfjs-dist. 138 scenarios with win/loss conditions (95% goal coverage), 652 section
-entries with narrative text. All three clients now show real win/loss conditions from the DB
-instead of "See Scenario Book" placeholders.
+PDFs using pdfjs-dist. 138 scenarios with win/loss conditions (100% goal coverage after 5.x.1
+cleanup), 652 section entries with narrative text. All three clients now show real win/loss
+conditions from the DB instead of "See Scenario Book" placeholders.
+Phase 5.x.1 cleanup: goal regex tolerates PDF line-split whitespace and accepts "may be
+complete"/"only" phrasings; "Unknown at this time." fallback preserves intentionally hidden goals;
+content-aware `isCopyrightOnlyPage` check replaces book-specific skip. Solo scenario book
+(`fh-solo-scenario-book.pdf`) extracted to 17 entries under `group_name='solo'`; `scenario_book_data`
+PK extended with `group_name` column, `/api/ref/scenario-book` accepts optional `?group=` param.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
@@ -239,5 +244,7 @@ GET /api/ref/items/:edition                    — item catalog
 GET /api/ref/assets/:edition/:category         — asset manifest by category
 GET /api/ref/asset/:edition/:category/:name    — specific asset lookup
 GET /api/ref/scenario-book/:edition/:index     — scenario book data (goals, conditions, intro)
+                                                 optional ?group= query param selects
+                                                 solo scenarios (group='solo'); default ''
 GET /api/ref/section-narrative/:edition/:id     — section narrative text + rewards
 ```
