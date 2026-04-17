@@ -36,7 +36,9 @@ app/
 │   ├── useConnection.ts  # wraps Connection class
 │   ├── useGameState.ts   # wraps StateStore
 │   ├── useCommands.ts    # wraps CommandSender
-│   └── useDataApi.ts     # fetch from /api/data/*
+│   ├── useDataApi.ts     # fetch from /api/data/*
+│   ├── useScenarioText.ts    # fetch special rules from /api/ref/scenario-text
+│   └── useScenarioBookData.ts # fetch win/loss from /api/ref/scenario-book
 ├── shared/               # Non-component shared code
 │   ├── styles/           # theme.css, typography.css, components.css
 │   └── assets.ts         # asset URL helpers
@@ -210,7 +212,7 @@ uses mock data with keyboard controls (Tab/1-6/a/l/v/d/r).
 
 **Layout:** Sticky header (round/level/elements) → initiative column → completed
 figure tray → fixed footer (special rules from reference DB with inline icons,
-victory/defeat conditions — "See Scenario Book" until PDF extraction).
+victory/defeat conditions from book extraction pipeline).
 
 **Character cards:** Initiative badge, portrait, name, level, HP bar, conditions,
 XP icon + loot bag icon. Per-character accent theming from phone theme colors.

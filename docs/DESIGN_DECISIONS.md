@@ -703,3 +703,31 @@ dealing remains as a fallback until per-player state tracking is implemented.
 **Rationale:** Battle goal card images (and other Worldhaven assets) are in `.staging/worldhaven/`
 but `assets/worldhaven/` may not be populated. Rather than requiring manual copy, the fallback
 route serves the staging images directly. The primary `assets/` route takes priority if populated.
+
+### 72. PDF text extraction via pdfjs-dist, not ZIP archives (2026-04-16)
+**Decision:** The book extraction pipeline uses `pdfjs-dist` (Mozilla PDF.js) to extract text from
+Frosthaven scenario and section book PDFs. The prompt initially assumed the files were ZIP archives
+containing pre-extracted text, but investigation revealed they are genuine PDF 1.4 documents with
+embedded fonts and extractable text.
+**Rationale:** `pdfjs-dist` provides per-page text extraction with position data, enabling line
+reconstruction from Y-coordinate changes. The legacy Node.js build works without canvas dependencies.
+Text quality is high — all game text (goals, conditions, rules, credits, narrative) is embedded in
+the PDFs with standard fonts (Microsoft Sans Serif, Germania One). No OCR needed.
+
+### 73. Heuristic scenario page parsing with multi-title handling (2026-04-16)
+**Decision:** `parseScenarioPages()` finds ALL scenario titles on a page (not just one), handling
+pages with both a CONT title and a new scenario title. CONT titles are processed first to enable
+correct merging. Goal/loss text shared between CONT and new scenarios on the same page is assigned
+to the new scenario (the CONT inherits its goal from the merge).
+**Rationale:** ~25 FH scenario pages share space between a continuation of one scenario and the
+start of another. Single-title parsing missed these new scenarios entirely (lost ~10% of scenarios).
+Multi-title detection recovered all 138 unique scenarios (0-137).
+
+### 74. Separate scenario_book_data table from GHS-sourced scenarios (2026-04-16)
+**Decision:** Book-extracted data (goals, conditions, introduction, credits) is stored in a new
+`scenario_book_data` table, not added as columns to the existing `scenarios` table.
+**Rationale:** The `scenarios` table contains GHS JSON-sourced structural data (monsters, rooms,
+rules). Book data is from a completely different source (PDF extraction with heuristic parsing).
+Keeping them separate means: (1) the import pipeline doesn't need to coordinate with the book
+extraction pipeline, (2) book data can be regenerated independently, (3) quality issues in
+heuristic extraction don't affect GHS data integrity.

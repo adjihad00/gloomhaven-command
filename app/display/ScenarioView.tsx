@@ -14,6 +14,7 @@ import type { TransitionType } from './components/DisplayTransitions';
 import { useDisplayMonsterData } from './hooks/useDisplayMonsterData';
 import { useStateTransition } from './hooks/useStateTransitions';
 import { useScenarioText } from '../hooks/useScenarioText';
+import { useScenarioBookData } from '../hooks/useScenarioBookData';
 
 // ── Prototype-only imports (keyboard demo controls) ─────────────────────────
 
@@ -279,12 +280,16 @@ export function ScenarioView({ prototypeMode, isReconnect, onOpenMenu }: Scenari
     prototypeMode ? '' : (state?.edition || ''),
     prototypeMode ? '' : scenarioIndex,
   );
+  const bookData = useScenarioBookData(
+    prototypeMode ? '' : (state?.edition || ''),
+    prototypeMode ? '' : scenarioIndex,
+  );
   const footerRules = prototypeMode
     ? { specialRules: [mockScenarioRules.specialRules], winConditions: mockScenarioRules.winConditions, lossConditions: mockScenarioRules.lossConditions }
     : {
         specialRules: refRules.length > 0 ? refRules : ['See Scenario Book'],
-        winConditions: 'See Scenario Book',
-        lossConditions: 'All characters exhausted.',
+        winConditions: bookData.goalText || 'See Scenario Book',
+        lossConditions: bookData.lossText || 'All characters exhausted.',
       };
 
   return (

@@ -6,6 +6,7 @@ import { deriveLevelValues } from '@gloomhaven-command/shared';
 import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../../shared/formatName';
 import { useScenarioText } from '../../hooks/useScenarioText';
+import { useScenarioBookData } from '../../hooks/useScenarioBookData';
 
 interface PhoneRulesOverlayProps {
   selectedCharacter: string;
@@ -25,6 +26,9 @@ export function PhoneRulesOverlay({ selectedCharacter }: PhoneRulesOverlayProps)
     : '';
   const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!setupData);
   const { specialRules: refRules } = useScenarioText(
+    setupData?.edition || '', setupData?.scenarioIndex || '',
+  );
+  const bookData = useScenarioBookData(
     setupData?.edition || '', setupData?.scenarioIndex || '',
   );
 
@@ -71,12 +75,12 @@ export function PhoneRulesOverlay({ selectedCharacter }: PhoneRulesOverlayProps)
 
         <div class="phone-rules__section">
           <h3 class="phone-rules__section-title">Win Condition</h3>
-          <p class="phone-rules__text">See Scenario Book.</p>
+          <p class="phone-rules__text">{bookData.goalText || 'See Scenario Book.'}</p>
         </div>
 
         <div class="phone-rules__section">
           <h3 class="phone-rules__section-title">Loss Condition</h3>
-          <p class="phone-rules__text">All characters exhausted.</p>
+          <p class="phone-rules__text">{bookData.lossText || 'All characters exhausted.'}</p>
         </div>
 
         <div class="phone-rules__derived">

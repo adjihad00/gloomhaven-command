@@ -253,6 +253,50 @@ export class ReferenceDb {
     ).run(edition, category, name, source, path, variant);
   }
 
+  insertScenarioBookData(
+    edition: string, scenarioIndex: string,
+    introduction: string | null, goalText: string | null, lossText: string | null,
+    specialRulesText: string | null, sectionLinksJson: string | null,
+    designer: string | null, writer: string | null,
+    locationCode: string | null, rawText: string | null,
+  ): void {
+    this.stmtCache('insertScenarioBookData',
+      `INSERT OR REPLACE INTO scenario_book_data
+       (edition, scenario_index, introduction, goal_text, loss_text,
+        special_rules_text, section_links_json, designer, writer, location_code, raw_text)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(edition, scenarioIndex, introduction, goalText, lossText,
+      specialRulesText, sectionLinksJson, designer, writer, locationCode, rawText);
+  }
+
+  updateSectionNarrative(
+    edition: string, sectionId: string,
+    narrativeText: string | null, rewardsText: string | null,
+  ): void {
+    this.stmtCache('updateSectionNarrative',
+      `UPDATE sections SET narrative_text = ?, rewards_text = ?
+       WHERE edition = ? AND section_id = ?`,
+    ).run(narrativeText, rewardsText, edition, sectionId);
+  }
+
+  insertSectionNarrative(
+    edition: string, sectionId: string, parentScenario: string | null,
+    name: string | null, narrativeText: string | null, rewardsText: string | null,
+  ): void {
+    // Try update first; if no row exists, insert a minimal section record
+    const result = this.stmtCache('updateSectionNarrative',
+      `UPDATE sections SET narrative_text = ?, rewards_text = ?
+       WHERE edition = ? AND section_id = ?`,
+    ).run(narrativeText, rewardsText, edition, sectionId);
+    if (result.changes === 0) {
+      this.stmtCache('insertSectionWithNarrative',
+        `INSERT OR REPLACE INTO sections
+         (edition, section_id, parent_scenario, name, conclusion, narrative_text, rewards_text)
+         VALUES (?, ?, ?, ?, 0, ?, ?)`,
+      ).run(edition, sectionId, parentScenario, name, narrativeText, rewardsText);
+    }
+  }
+
   // ── Query helpers (used by server API) ────────────────────────────────
 
   getLabel(edition: string, key: string, locale = 'en'): string | null {
@@ -333,6 +377,48 @@ export class ReferenceDb {
       rewards_json: string | null;
       rules_json: string | null;
     } | null;
+  }
+
+  getScenarioBookData(edition: string, scenarioIndex: string): {
+    introduction: string | null;
+    goal_text: string | null;
+    loss_text: string | null;
+    special_rules_text: string | null;
+    section_links_json: string | null;
+    designer: string | null;
+    writer: string | null;
+    location_code: string | null;
+  } | null {
+    return this.stmtCache('getScenarioBookData',
+      `SELECT introduction, goal_text, loss_text, special_rules_text,
+              section_links_json, designer, writer, location_code
+       FROM scenario_book_data WHERE edition = ? AND scenario_index = ?`,
+    ).get(edition, scenarioIndex) as {
+      introduction: string | null;
+      goal_text: string | null;
+      loss_text: string | null;
+      special_rules_text: string | null;
+      section_links_json: string | null;
+      designer: string | null;
+      writer: string | null;
+      location_code: string | null;
+    } | null;
+  }
+
+  getSectionNarrative(edition: string, sectionId: string): {
+    narrative_text: string | null;
+    rewards_text: string | null;
+    conclusion: number;
+  } | null {
+    const row = this.stmtCache('getSectionNarrative',
+      `SELECT narrative_text, rewards_text, conclusion
+       FROM sections WHERE edition = ? AND section_id = ?`,
+    ).get(edition, sectionId) as {
+      narrative_text: string | null;
+      rewards_text: string | null;
+      conclusion: number;
+    } | undefined;
+    return row ?? null;
   }
 
   getAssets(edition: string, category: string): Array<{
@@ -418,6 +504,7 @@ export class ReferenceDb {
 // ── Schema DDL ────────────────────────────────────────────────────────────────
 
 const DROP_SQL = `
+DROP TABLE IF EXISTS scenario_book_data;
 DROP TABLE IF EXISTS asset_manifest;
 DROP TABLE IF EXISTS campaign_data;
 DROP TABLE IF EXISTS treasures;
@@ -534,7 +621,24 @@ CREATE TABLE IF NOT EXISTS sections (
   rooms_json TEXT,
   rewards_json TEXT,
   rules_json TEXT,
+  narrative_text TEXT,
+  rewards_text TEXT,
   PRIMARY KEY (edition, section_id)
+);
+
+CREATE TABLE IF NOT EXISTS scenario_book_data (
+  edition TEXT NOT NULL,
+  scenario_index TEXT NOT NULL,
+  introduction TEXT,
+  goal_text TEXT,
+  loss_text TEXT,
+  special_rules_text TEXT,
+  section_links_json TEXT,
+  designer TEXT,
+  writer TEXT,
+  location_code TEXT,
+  raw_text TEXT,
+  PRIMARY KEY (edition, scenario_index)
 );
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -677,6 +781,7 @@ CREATE INDEX IF NOT EXISTS idx_scenario_rooms ON scenario_rooms(edition, scenari
 CREATE INDEX IF NOT EXISTS idx_spawns_room ON scenario_spawns(edition, scenario_index, room_number);
 CREATE INDEX IF NOT EXISTS idx_monster_stats ON monster_stats(edition, monster_name, level);
 CREATE INDEX IF NOT EXISTS idx_sections_parent ON sections(edition, parent_scenario);
+CREATE INDEX IF NOT EXISTS idx_scenario_book ON scenario_book_data(edition, scenario_index);
 CREATE INDEX IF NOT EXISTS idx_items_edition ON items(edition);
 CREATE INDEX IF NOT EXISTS idx_assets_category ON asset_manifest(edition, category);
 CREATE INDEX IF NOT EXISTS idx_assets_source ON asset_manifest(source, category);

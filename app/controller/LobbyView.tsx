@@ -9,6 +9,7 @@ import { calculateScenarioLevel, deriveLevelValues } from '@gloomhaven-command/s
 import { formatName } from '../shared/formatName';
 import { characterThumbnail, monsterThumbnail, editionLogo, characterIcon } from '../shared/assets';
 import { useScenarioText } from '../hooks/useScenarioText';
+import { useScenarioBookData } from '../hooks/useScenarioBookData';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,24 @@ function ScenarioRulesText({ edition, scenarioIndex, cssClass }: { edition: stri
         <p key={i} class={cssClass} dangerouslySetInnerHTML={{ __html: rule }} />
       ))}
     </div>
+  );
+}
+
+/** Renders win/loss conditions from book data, with fallback */
+function ScenarioConditionsText({ edition, scenarioIndex, cssClass }: { edition: string; scenarioIndex: string; cssClass: string }) {
+  const { goalText, lossText, loading } = useScenarioBookData(edition, scenarioIndex);
+  if (loading) return <><p class={cssClass}>Loading...</p><p class={cssClass}>Loading...</p></>;
+  return (
+    <>
+      <div class="lobby__section">
+        <label class="lobby__label">Win Condition</label>
+        <p class={cssClass}>{goalText || 'See Scenario Book.'}</p>
+      </div>
+      <div class="lobby__section">
+        <label class="lobby__label">Loss Condition</label>
+        <p class={cssClass}>{lossText || 'All characters exhausted.'}</p>
+      </div>
+    </>
   );
 }
 
@@ -584,15 +603,7 @@ export function LobbyView() {
           <ScenarioRulesText edition={setupData.edition} scenarioIndex={setupData.scenarioIndex} cssClass="lobby__rules-text" />
         </div>
 
-        <div class="lobby__section">
-          <label class="lobby__label">Win Condition</label>
-          <p class="lobby__rules-text">See Scenario Book.</p>
-        </div>
-
-        <div class="lobby__section">
-          <label class="lobby__label">Loss Condition</label>
-          <p class="lobby__rules-text">All characters exhausted.</p>
-        </div>
+        <ScenarioConditionsText edition={setupData.edition} scenarioIndex={setupData.scenarioIndex} cssClass="lobby__rules-text" />
 
         <div class="lobby__section">
           <label class="lobby__label">Scenario Level: {gameState.level}</label>

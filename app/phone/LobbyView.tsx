@@ -8,6 +8,7 @@ import type { ScenarioData } from '@gloomhaven-command/shared';
 import { formatName } from '../shared/formatName';
 import { monsterThumbnail, characterThumbnail, battleGoalCard } from '../shared/assets';
 import { useScenarioText } from '../hooks/useScenarioText';
+import { useScenarioBookData } from '../hooks/useScenarioBookData';
 import { PhoneDisconnectOverlay } from './components/PhoneDisconnectMenu';
 
 interface LobbyViewProps {
@@ -32,6 +33,9 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
     : '';
   const { data: scenarioData } = useDataApi<ScenarioData>(scenarioApiPath, !!setupData);
   const { specialRules: refRules } = useScenarioText(
+    setupData?.edition || '', setupData?.scenarioIndex || '',
+  );
+  const bookData = useScenarioBookData(
     setupData?.edition || '', setupData?.scenarioIndex || '',
   );
 
@@ -141,12 +145,12 @@ export function LobbyView({ selectedCharacter }: LobbyViewProps) {
 
         <div class="phone-lobby__section">
           <h3 class="phone-lobby__section-title">Win Condition</h3>
-          <p class="phone-lobby__text">See Scenario Book.</p>
+          <p class="phone-lobby__text">{bookData.goalText || 'See Scenario Book.'}</p>
         </div>
 
         <div class="phone-lobby__section">
           <h3 class="phone-lobby__section-title">Loss Condition</h3>
-          <p class="phone-lobby__text">All characters exhausted.</p>
+          <p class="phone-lobby__text">{bookData.lossText || 'All characters exhausted.'}</p>
         </div>
 
         <div class="phone-lobby__derived">

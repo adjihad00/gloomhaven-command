@@ -171,7 +171,17 @@
   - [x] Monster ability deck overrides from scenario rules (overrideDeck field, FH scenario 0 hounds)
   - [x] Battle goal deck server-side infrastructure (BattleGoalDeck type, deal/return commands)
   - [x] Worldhaven staging fallback static route for card images
-- [ ] Phase 5.x: Scenario book PDF text extraction — goals, win/loss conditions, story text
+- [x] Phase 5.x: Scenario book PDF text extraction — goals, win/loss conditions, story text
+  - [x] BookPdfReader using pdfjs-dist for PDF text extraction
+  - [x] ScenarioPageParser with heuristic extraction (win/loss/rules/intro/links)
+  - [x] SectionPageParser for section book narrative text
+  - [x] scenario_book_data table + extend sections with narrative_text/rewards_text
+  - [x] Extract 138 FH scenarios (132 with goal text, 42 with explicit loss conditions)
+  - [x] Extract 652 section book entries with narrative text
+  - [x] /api/ref/scenario-book and /api/ref/section-narrative endpoints
+  - [x] useScenarioBookData hook for all three clients
+  - [x] Wire display footer, controller lobby, phone lobby/rules to real win/loss conditions
+  - [x] Graceful fallback for non-FH editions and missing book data
 - [ ] Phase 5.y: Extend display ability card rendering with remaining edge cases
 - [ ] GHS save file import/export UI in controller
 - [ ] Campaign persistence across sessions

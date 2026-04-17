@@ -17,7 +17,8 @@
     "build:clients": "npm run build --workspace=clients/display --workspace=clients/controller --workspace=clients/phone",
     "build:app": "node app/build.mjs",
     "watch:app": "node app/build.mjs --watch",
-    "import-data": "tsx scripts/import-data.ts"
+    "import-data": "tsx scripts/import-data.ts",
+    "extract-books": "tsx scripts/extract-books.ts"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -25,6 +26,7 @@
   "devDependencies": {
     "concurrently": "^9.2.1",
     "esbuild": "^0.27.4",
+    "pdfjs-dist": "^5.6.205",
     "typescript": "^6.0.2"
   },
   "dependencies": {

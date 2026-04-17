@@ -63,6 +63,7 @@ app/phone/              — portrait phone app (player)
 app/display/            — portrait TV app (read-only)
 scripts/                — data import tooling
   import-data.ts        — populates data/reference.db from .staging/ sources
+  extract-books.ts      — extracts scenario/section text from FH book PDFs
 data/                   — gitignored runtime databases
   ghs.sqlite            — mutable game state (sessions, saves)
   reference.db          — immutable reference data (scenarios, monsters, items, labels, assets)
@@ -123,6 +124,10 @@ with shared types. Win/loss conditions remain placeholder (deferred to PDF extra
 Phase 5 Bugfix COMPLETE: display sticky header, phone battle goal card images with tap-to-select,
 phone disconnect escape hatch on all screens, monster ability deck overrides from scenario rules
 (FH scenario 0 hounds), battle goal deck server-side infrastructure, Worldhaven staging fallback.
+Phase 5.x: Book data extraction pipeline COMPLETE. Extracts text from FH scenario/section book
+PDFs using pdfjs-dist. 138 scenarios with win/loss conditions (95% goal coverage), 652 section
+entries with narrative text. All three clients now show real win/loss conditions from the DB
+instead of "See Scenario Book" placeholders.
 Controller is feature-complete for scenario play.
 Lobby mode added as first-class AppMode with campaign/one-off game modes.
 Phone ScenarioView is feature-complete: health bar, initiative numpad, turn banner,
@@ -215,6 +220,7 @@ are rejected with an error.
 - **Dev** (`npm run dev`): plain `main.js`, source HTML/SW files served directly
 - Static server prefers `dist/` files when present, falls back to source for dev
 - `npm run import-data` — populates `data/reference.db` from `.staging/` source files
+- `npm run extract-books` — extracts scenario/section text from FH book PDFs into `data/reference.db`
 
 ## Reference Data System (Phase 5.1)
 Immutable SQLite database (`data/reference.db`) populated by `scripts/import-data.ts`.
@@ -232,4 +238,6 @@ GET /api/ref/section/:edition/:sectionId       — section book data
 GET /api/ref/items/:edition                    — item catalog
 GET /api/ref/assets/:edition/:category         — asset manifest by category
 GET /api/ref/asset/:edition/:category/:name    — specific asset lookup
+GET /api/ref/scenario-book/:edition/:index     — scenario book data (goals, conditions, intro)
+GET /api/ref/section-narrative/:edition/:id     — section narrative text + rewards
 ```
