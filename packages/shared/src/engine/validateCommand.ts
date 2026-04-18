@@ -483,6 +483,15 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'backfillCharacterHistory': {
+      const { characterName, edition } = command.payload;
+      const char = findCharacter(state, characterName, edition);
+      if (!char) return fail(`Character "${characterName}" not found`);
+      // Handler self-gates on `progress.historyBackfilled`, so repeat calls
+      // are safe no-ops; always valid when the character exists.
+      return OK;
+    }
+
     default: {
       const _exhaustive: never = command;
       return fail(`Unknown command action: ${(_exhaustive as Command).action}`);

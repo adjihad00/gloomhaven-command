@@ -164,6 +164,27 @@ centralises blur/Enter/1000 ms typing-pause commits for editable text. Controlle
 reachability via new `ControllerNav` promoting `MenuOverlay` to App-level — Party
 Sheet reachable from Lobby / Scenario / Town. Display replaces idle-lobby and
 town-mode views; scenario mode unchanged. Rules doc §16 Reputation & Economy added.
+Phase T0d COMPLETE (2026-04-18): Player Sheet Notes + History tabs close the
+T0 arc. Notes tab: editable per-character journal backed by
+`CharacterProgress.notes` via existing `setCharacterProgress` command (no new
+engine surface — T0a whitelisted `notes` preemptively). 4000-char cap,
+hybrid-commit autosave via `useCommitOnPause` (1 s pause + blur; Enter inserts
+a newline), "Saved" flash chip, `readOnly`-aware for controller quick-view.
+History tab: reverse-chronological timeline of scenario events.
+`HistoryEntry` discriminated union on `CharacterProgress.history?` with
+variants `scenarioCompleted` + `scenarioFailed` (future batches extend: T2b
+levelUp/perkApplied, T2c characterRetired/characterCreated, T2d
+enhancementApplied). Engine-only `logHistoryEvent(char, entry)` mutator in
+`packages/shared/src/engine/historyLog.ts` (NOT barrel-exported — clients
+can't fabricate history entries). `handleCompleteScenario` hooks per-character
+log entries sourced from `state.finishData` snapshot with snapshot-less
+fallback; absent characters are skipped; defeat entries deliberately omit
+`battleGoalChecks` (rules §11 — no battle-goal rewards on defeat). New
+`backfillCharacterHistory` command (character-scoped, phone-allowed) seeds
+history lazily from `state.party.scenarios[]` on first History-tab render;
+engine-gated by `historyBackfilled` flag so repeat invocations are no-ops.
+Backfilled entries tagged `backfilled: true` and rendered with a dashed
+border + "Reconstructed" chip + no reward detail.
 Phase T0c COMPLETE (2026-04-18): Campaign Sheet as third sheet in T0 trio.
 Shared `app/shared/sheets/CampaignSheet*` family (Context / Header / Tabs /
 Intro + `WaxSealHeader` primitive) consumed by controller (editable via
@@ -242,7 +263,8 @@ proceedToBattleGoals, cancelScenarioSetup, startScenario,
 completeTownPhase, dealBattleGoals, returnBattleGoals,
 setBattleGoalComplete, claimTreasure, dismissRewards,
 setCharacterProgress, addPartyAchievement, removePartyAchievement,
-addGlobalAchievement, removeGlobalAchievement, abortScenario
+addGlobalAchievement, removeGlobalAchievement, abortScenario,
+backfillCharacterHistory
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
@@ -269,8 +291,19 @@ addGlobalAchievement, removeGlobalAchievement, abortScenario
 - **setCharacterProgress (T0a):** Character-scoped, phone-allowed. Writes a
   whitelisted field on `character.progress`. MVP fields: `sheetIntroSeen`
   (boolean) and `notes` (string). Unknown fields rejected by `validateCommand`.
-  Powers the Player Sheet's one-time intro-seen flag (and the forthcoming T0d
-  notes tab) without widening `updateCampaign` beyond its party-level scope.
+  Powers the Player Sheet's one-time intro-seen flag and the T0d Notes tab
+  without widening `updateCampaign` beyond its party-level scope.
+- **backfillCharacterHistory (T0d):** Character-scoped, phone-allowed.
+  One-shot migration that seeds `char.progress.history` from
+  `state.party.scenarios[]` and flips `historyBackfilled` to true. The
+  engine guards on that flag so repeat invocations are no-ops; the client
+  fires it from the History tab on first render. Backfilled entries carry
+  `backfilled: true` so the UI can distinguish them. Live history entries
+  are appended by engine hooks at trigger sites (T0d hooks
+  `handleCompleteScenario` for victories and defeats; future batches add
+  level-up / retirement / enhancement hooks). All history mutation flows
+  through the engine-only `logHistoryEvent` helper (not barrel-exported —
+  clients cannot fabricate history entries).
 - **addPartyAchievement / removePartyAchievement (T0b):** GM-only (NOT on the
   phone whitelist). Structured array mutations for
   `state.party.achievementsList` that `updateCampaign` can't cleanly handle
@@ -307,7 +340,7 @@ Phone clients are restricted server-side to character-scoped commands
 (setInitiative, changeHealth, toggleCondition, setExperience, setLoot,
 toggleExhausted, toggleAbsent, toggleLongRest, addSummon, removeSummon,
 toggleTurn, renameCharacter, confirmChore, setBattleGoalComplete, claimTreasure,
-dismissRewards, setCharacterProgress). Each command's target must match the phone's registered
+dismissRewards, setCharacterProgress, backfillCharacterHistory). Each command's target must match the phone's registered
 characterName. Commands targeting summons are allowed if the summon owner
 matches. Additionally, `moveElement`, `drawLootCard`, `dealBattleGoals`, and
 `returnBattleGoals` are in a `PHONE_GLOBAL_ACTIONS` set that bypasses

@@ -460,15 +460,24 @@ in Lobby / Scenario / Town views. Tabs are stable across batches:
 | Items | Equipped (by slot), owned, shop (filtered by prosperity), FH crafting/alchemist | T2a |
 | Progression | Perks (AMD mods + applied status), Level Up flow, Enhancements, FH crafting/brewing | T2b + T2d |
 | Personal Quest | Quest description, progress markers, retirement conditions | T2c |
-| Notes | Freeform per-character journal (persistent via `CharacterProgress.notes`) | T0d |
-| History | Auto-generated timeline of scenarios, level-ups, major events | T0d |
+| Notes | Freeform per-character journal (persistent via `CharacterProgress.notes`) | ✓ T0d |
+| History | Auto-generated timeline of scenarios; future batches extend via `HistoryEntry` variants | ✓ T0d |
 
-Non-Overview tabs ship as "Available in [batch]" placeholders so the shell is
-final and navigation patterns are settled from T0a onward. The controller
-renders the same sheet read-only via `PlayerSheetQuickView` (opened from
-`CharacterDetailOverlay.onOpenSheet`); the `readOnly` flag gates progression
-tabs but keeps the Active Scenario section interactive so the GM retains
-HP/condition controls.
+T2a-d tabs (Items / Progression / Personal Quest) remain "Available in [batch]"
+placeholders; T0d ships the Notes and History tabs as real content. The
+controller renders the same sheet read-only via `PlayerSheetQuickView` (opened
+from `CharacterDetailOverlay.onOpenSheet`); the `readOnly` flag gates
+progression tabs and makes Notes display-only, but keeps the Active Scenario
+section interactive so the GM retains HP/condition controls.
+
+The History tab auto-seeds from `state.party.scenarios[]` on first open via
+the `backfillCharacterHistory` command (engine-gated idempotent). Live entries
+are appended by engine hooks at trigger sites — T0d hooks
+`handleCompleteScenario` (victory → `scenarioCompleted`, defeat →
+`scenarioFailed`, absent characters skipped). Backfilled entries render
+dashed-border + "Reconstructed" chip with no reward detail; live entries
+render the XP / gold / battle-goal-check rewards from the `state.finishData`
+snapshot captured at `prepareScenarioEnd` time.
 
 ### Monitor (portrait)
 

@@ -27,6 +27,7 @@ import { toggleCondition, processConditionEndOfTurn } from '../utils/conditions.
 import { diffStates } from './diffStates.js';
 import { importGhsState as importGhs, buildStandardModifierDeck } from '../utils/ghsCompat.js';
 import { getPlayerCount, calculateScenarioLevel, getMinXPForLevel, deriveLevelValues } from '../data/levelCalculation.js';
+import { logHistoryEvent } from './historyLog.js';
 
 export interface ApplyResult {
   state: GameState;
@@ -257,6 +258,9 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
       break;
     case 'abortScenario':
       handleAbortScenario(after);
+      break;
+    case 'backfillCharacterHistory':
+      handleBackfillCharacterHistory(after, command.payload);
       break;
     default: {
       const _exhaustive: never = command;
@@ -1969,6 +1973,43 @@ function handleAbortScenario(state: GameState): void {
   state.mode = 'lobby';
 }
 
+// ── Phase T0d: History backfill from party.scenarios ───────────────────────
+
+function handleBackfillCharacterHistory(
+  state: GameState,
+  payload: { characterName: string; edition: string },
+): void {
+  const char = state.characters.find(
+    (c) => c.name === payload.characterName && c.edition === payload.edition,
+  );
+  if (!char || !char.progress) return;
+  // Idempotent: once the flag is set the engine ignores subsequent requests.
+  if (char.progress.historyBackfilled) return;
+
+  if (!char.progress.history) char.progress.history = [];
+  const scenarios = state.party?.scenarios ?? [];
+  for (const s of scenarios) {
+    // Defensive dedup: skip any backfilled entry that already matches.
+    const exists = char.progress.history.some(
+      (e) => e.backfilled
+        && (e.kind === 'scenarioCompleted' || e.kind === 'scenarioFailed')
+        && e.scenarioIndex === s.index
+        && e.edition === s.edition,
+    );
+    if (exists) continue;
+    logHistoryEvent(char, {
+      kind: 'scenarioCompleted', // party.scenarios only tracks victories
+      backfilled: true,
+      scenarioIndex: s.index,
+      edition: s.edition,
+      ...(s.group ? { group: s.group } : {}),
+      scenarioLevel: 0, // unknown at time of original completion
+    });
+  }
+
+  char.progress.historyBackfilled = true;
+}
+
 function buildLootDeck(config: Record<string, number>): LootDeck {
   const cards: LootCard[] = [];
   let cardId = 1;
@@ -2240,6 +2281,50 @@ function handleCompleteScenario(
         totalCoins = char.loot || 0;
       }
       char.progress.gold += totalCoins * goldConversion;
+    }
+
+    // T0d: log a history entry for this scenario outcome. Skip absent
+    // characters — the scenario didn't happen to them. Skip entirely when
+    // scenario identity is missing (edge case).
+    const scenarioIndex = state.scenario?.index;
+    const scenarioEdition = state.scenario?.edition;
+    if (scenarioIndex && scenarioEdition && !char.absent) {
+      const group = state.scenario?.group;
+      const row = snapshot
+        ? snapshot.characters.find(
+            (r) => r.name === char.name && r.edition === char.edition,
+          )
+        : undefined;
+      const xpGained = row?.totalXPGained;
+      const goldGained = row?.goldGained;
+      const resourcesGained = row?.resources;
+      if (isVictory) {
+        logHistoryEvent(char, {
+          kind: 'scenarioCompleted',
+          backfilled: false,
+          scenarioIndex,
+          edition: scenarioEdition,
+          ...(group ? { group } : {}),
+          scenarioLevel: level,
+          xpGained,
+          goldGained,
+          resourcesGained,
+          battleGoalChecks: row?.battleGoalChecks,
+        });
+      } else {
+        // Defeat: rules §11 — no battle-goal rewards on defeat.
+        logHistoryEvent(char, {
+          kind: 'scenarioFailed',
+          backfilled: false,
+          scenarioIndex,
+          edition: scenarioEdition,
+          ...(group ? { group } : {}),
+          scenarioLevel: level,
+          xpGained,
+          goldGained,
+          resourcesGained,
+        });
+      }
     }
 
     // Reset in-scenario counters

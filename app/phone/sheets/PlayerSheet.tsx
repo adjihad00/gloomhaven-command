@@ -20,8 +20,8 @@ import { OverviewTab } from './tabs/OverviewTab';
 import { ItemsTabPlaceholder } from './tabs/ItemsTabPlaceholder';
 import { ProgressionTabPlaceholder } from './tabs/ProgressionTabPlaceholder';
 import { PersonalQuestTabPlaceholder } from './tabs/PersonalQuestTabPlaceholder';
-import { NotesTabPlaceholder } from './tabs/NotesTabPlaceholder';
-import { HistoryTabPlaceholder } from './tabs/HistoryTabPlaceholder';
+import { NotesTab } from './tabs/NotesTab';
+import { HistoryTab } from './tabs/HistoryTab';
 
 interface PlayerSheetProps {
   character: Character;
@@ -210,8 +210,8 @@ export function PlayerSheet(props: PlayerSheetProps) {
           {activeTab === 'items' && <ItemsTabPlaceholder />}
           {activeTab === 'progression' && <ProgressionTabPlaceholder />}
           {activeTab === 'quest' && <PersonalQuestTabPlaceholder />}
-          {activeTab === 'notes' && <NotesTabPlaceholder />}
-          {activeTab === 'history' && <HistoryTabPlaceholder />}
+          {activeTab === 'notes' && <NotesTab character={character} />}
+          {activeTab === 'history' && <HistoryTab character={character} />}
         </div>
 
         {menuOpen && !readOnly && (

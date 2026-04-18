@@ -3973,3 +3973,380 @@
     transition: none !important;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────
+   T0d: Player Sheet Notes + History
+   Per-character journal (editable textarea with autosave) and a
+   reverse-chronological scenario-event timeline. Continues the
+   parchment language of the Overview tab; no new tokens needed.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ── Screen-reader-only utility ─────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Notes tab ──────────────────────────────────────────────────── */
+
+.notes-tab {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.notes-tab__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.notes-tab__heading {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--parchment-ink);
+  margin: 0;
+}
+
+.notes-tab__subheading {
+  font-family: 'Crimson Pro', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--parchment-ink-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notes-tab__field-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.notes-tab__textarea {
+  font-family: 'Crimson Pro', serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--parchment-ink);
+  background: var(--parchment-aged);
+  border: 1px solid var(--class-accent-dim);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+  min-height: 240px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.08);
+  touch-action: manipulation;
+}
+
+.notes-tab__textarea:focus-visible {
+  outline: none;
+  border-color: var(--class-accent);
+  background: var(--parchment-base);
+}
+
+.notes-tab__textarea[readonly] {
+  background: transparent;
+  border-color: var(--class-accent-dim);
+  opacity: 0.85;
+}
+
+.notes-tab__textarea::placeholder {
+  color: var(--parchment-ink-dim);
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.notes-tab__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 24px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--parchment-ink-dim);
+}
+
+.notes-tab__char-count {
+  transition: color var(--transition-fast);
+}
+
+.notes-tab__char-count--limit {
+  color: var(--accent-copper);
+}
+
+.notes-tab__saved {
+  color: var(--class-accent);
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.notes-tab__saved--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── History tab ─────────────────────────────────────────────────── */
+
+.history-tab {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.history-tab__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.history-tab__heading {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+  color: var(--parchment-ink);
+  margin: 0;
+}
+
+.history-tab__subheading {
+  font-family: 'Crimson Pro', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--parchment-ink-dim);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.history-tab__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Spine — thin gilt line down the left side of the timeline. */
+.history-tab__timeline::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 11px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--class-accent-dim) 8%,
+    var(--class-accent-dim) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.history-tab__entry {
+  position: relative;
+}
+
+.history-entry {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--parchment-aged);
+  border: 1px solid var(--class-accent-dim);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.history-entry:hover,
+.history-entry:focus-within {
+  border-color: var(--class-accent);
+}
+
+.history-tab__entry--backfilled .history-entry {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.history-entry__marker {
+  position: relative;
+  flex: 0 0 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.history-entry__marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: var(--class-accent);
+  box-shadow: 0 0 0 2px var(--parchment-aged), 0 0 0 3px var(--class-accent-dim);
+}
+
+.history-entry__marker-dot--victory {
+  background: var(--class-accent);
+}
+
+.history-entry__marker-dot--defeat {
+  background: var(--accent-copper);
+  box-shadow: 0 0 0 2px var(--parchment-aged), 0 0 0 3px var(--accent-copper);
+  opacity: 0.7;
+}
+
+.history-entry__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.history-entry__title {
+  font-family: 'Cinzel', serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--parchment-ink);
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.history-entry__scenario-num {
+  color: var(--class-accent);
+  font-weight: 600;
+}
+
+.history-entry__outcome {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+
+.history-entry__outcome--victory {
+  background: var(--class-accent-dim);
+  color: var(--class-accent);
+}
+
+.history-entry__outcome--defeat {
+  background: rgba(197, 48, 48, 0.18);
+  color: var(--negative-red);
+}
+
+.history-entry__backfilled-chip {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--parchment-ink-dim);
+  padding: 2px 6px;
+  border: 1px dashed var(--parchment-ink-dim);
+  border-radius: 2px;
+}
+
+.history-entry__rewards {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.history-entry__reward {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  color: var(--parchment-ink);
+  font-feature-settings: 'tnum' 1;
+}
+
+.history-entry__reward dd {
+  margin: 0;
+}
+
+.history-entry__reward-icon {
+  color: var(--class-accent);
+  font-size: 12px;
+}
+
+.history-entry__meta {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--parchment-ink-dim);
+}
+
+.history-entry__edition {
+  color: var(--class-accent);
+}
+
+.history-entry__unknown-text {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--parchment-ink-dim);
+  margin: 0;
+}
+
+.history-tab__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-items: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+}
+
+.history-tab__empty-text {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--parchment-ink-dim);
+  max-width: 32ch;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notes-tab__textarea,
+  .notes-tab__char-count,
+  .notes-tab__saved,
+  .history-entry {
+    transition: none !important;
+  }
+}

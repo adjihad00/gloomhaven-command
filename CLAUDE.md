@@ -46,7 +46,9 @@ See docs/PROJECT_CONTEXT.md for full tree.
 Phase R COMPLETE (13 fix batches). Phase 3 COMPLETE (Phone Client).
 Phase 4 Display Client — Design Exploration COMPLETE.
 Controller is feature-complete for scenario play.
-Next: Scenario database (special rules, victory/loss conditions from scenario books).
+Phase T0 arc COMPLETE (T0a + T0b + T0c + T0d): Player / Party / Campaign
+Sheets all shipped; T0d closes with Player Sheet Notes + History tabs.
+Next: T2a-d rewrites target Player Sheet tabs (Items / Progression / Personal Quest).
 
 ## Design Skills & Conventions
 

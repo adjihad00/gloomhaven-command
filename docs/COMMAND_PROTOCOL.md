@@ -107,6 +107,7 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | addGlobalAchievement    | { achievement: string } *(T0c, GM-only)*                         |
 | removeGlobalAchievement | { achievement: string } *(T0c, GM-only)*                         |
 | abortScenario           | { } *(T0b, GM-only; mode must be 'scenario')*                    |
+| backfillCharacterHistory| { characterName, edition } *(T0d, phone-allowed; idempotent)*    |
 
 ### Side Effects
 
@@ -137,6 +138,15 @@ If client is too far behind (>100 revisions), server sends full state instead.
   the phone whitelist). Parallel to the party-achievement pattern; targets
   `state.party.globalAchievementsList`. Same dedupe / trim / reject-if-absent
   semantics. Consumed by the Campaign Sheet's Achievements tab.
+- **backfillCharacterHistory** *(T0d)*: Character-scoped, phone-allowed.
+  One-shot migration that populates `char.progress.history` with
+  `scenarioCompleted` entries derived from `state.party.scenarios[]` and
+  sets `char.progress.historyBackfilled = true`. Idempotent server-side:
+  repeat invocations short-circuit on the flag. Fired by the Player Sheet
+  History tab on first render when the flag is unset. Backfilled entries
+  are tagged `backfilled: true` so the UI can render them with the
+  "Reconstructed" chip and omit reward detail (which the original
+  `party.scenarios` record doesn't carry).
 - **abortScenario** *(T0b)*: GM-only. Aborts the current scenario without
   applying rewards. Clears `state.monsters`, `state.objectiveContainers`,
   non-character `state.figures`, per-character combat state (HP restored
@@ -188,6 +198,7 @@ Phone clients (`role: "phone"`) are restricted to these commands:
 - `confirmChore`
 - `setBattleGoalComplete`, `claimTreasure`, `dismissRewards` *(Phase T1)*
 - `setCharacterProgress` *(Phase T0a)*
+- `backfillCharacterHistory` *(Phase T0d)*
 - Global (no character target): `moveElement`, `drawLootCard`, `dealBattleGoals`, `returnBattleGoals`
 
 Each character-scoped command's target must match the registered `characterName`.

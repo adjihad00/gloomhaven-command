@@ -78,7 +78,8 @@ export type CommandAction =
   | 'removePartyAchievement'
   | 'addGlobalAchievement'
   | 'removeGlobalAchievement'
-  | 'abortScenario';
+  | 'abortScenario'
+  | 'backfillCharacterHistory';
 
 // ── Individual command payloads ─────────────────────────────────────────────
 
@@ -462,6 +463,18 @@ export interface AbortScenarioCommand {
   payload: Record<string, never>;
 }
 
+/**
+ * Phase T0d: one-shot backfill of `CharacterProgress.history` from
+ * `state.party.scenarios[]`. Client signals intent on first History-tab
+ * render; engine self-gates on `progress.historyBackfilled` so repeat
+ * invocations are no-ops. Character-scoped; phone-allowed (character must
+ * match the phone's registered characterName).
+ */
+export interface BackfillCharacterHistoryCommand {
+  action: 'backfillCharacterHistory';
+  payload: { characterName: string; edition: string };
+}
+
 // ── Discriminated command union ─────────────────────────────────────────────
 
 export type Command =
@@ -523,7 +536,8 @@ export type Command =
   | RemovePartyAchievementCommand
   | AddGlobalAchievementCommand
   | RemoveGlobalAchievementCommand
-  | AbortScenarioCommand;
+  | AbortScenarioCommand
+  | BackfillCharacterHistoryCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────
 

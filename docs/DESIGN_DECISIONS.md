@@ -1246,3 +1246,76 @@ next surface naturally when the table indicates they're done (every phone
 taps Continue). Absent characters don't gate dismissal — their phones
 aren't connected, so requiring their `dismissed` flag would freeze the
 display forever for any party with a missing player.
+
+### 2026-04-18 — T0d: `HistoryEntry` as discriminated union on `CharacterProgress.history?`
+**Decision:** Model per-character history as a discriminated union (`HistoryEntry`)
+keyed on `kind`, with variants `scenarioCompleted` and `scenarioFailed` shipping
+in T0d. Future batches extend the union (T2b `levelUp` / `perkApplied`, T2c
+`characterRetired` / `characterCreated`, T2d `enhancementApplied`) rather than
+adding fields to a monolithic entry type.
+**Rationale:** Each event type has a meaningfully different payload — a level-up
+has a chosen card + HP bump; a scenario has XP / gold / battle-goal checks; a
+retirement is terminal. A single wide interface with optional fields would
+under-document each variant and push conditional rendering logic into every
+consumer. A discriminated union gives the type system the power to narrow on
+`kind` at the renderer, which in turn makes the exhaustiveness guard
+(`const _exhaustive: never = entry`) enforce that every new variant gets UI
+coverage. The `HistoryEntryBase` shared fields (`id`, `sequence`, `backfilled`)
+are the only truly invariant pieces across every conceivable future variant.
+
+### 2026-04-18 — T0d: Explicit per-event hooks, not generic command-wrapping
+**Decision:** Append history entries from explicit hooks inside the handlers
+that already model each meaningful event (e.g. the hook in
+`handleCompleteScenario`). Future batches add their own hook sites in the
+commands they implement. The mutator itself (`logHistoryEvent(char, entry)`)
+lives in `packages/shared/src/engine/historyLog.ts`, engine-only, NOT
+barrel-exported.
+**Rationale:** The alternative — a generic "log every command" wrapper — was
+rejected because (a) most commands aren't history-worthy (initiative changes,
+HP ticks, element shifts) and filtering them at log time recreates the same
+per-site decision but in reverse, and (b) each site knows contextual data the
+command payload doesn't carry (e.g. `handleCompleteScenario` can snapshot the
+`ScenarioFinishData` row with XP / gold / battle-goal checks; a generic
+wrapper would have to re-derive that). Making the mutator engine-only also
+closes off a security-adjacent concern: if `logHistoryEvent` were exposed to
+clients via the command layer, a compromised or buggy phone could fabricate
+history. Restricting all writes to known trigger sites makes history's
+provenance trivially auditable.
+
+### 2026-04-18 — T0d: History backfill is client-triggered, engine-gated
+**Decision:** Introduce a dedicated `backfillCharacterHistory` command
+(character-scoped, phone-allowed) that the History tab fires on first render
+when `char.progress.historyBackfilled !== true`. The engine applies the
+migration and flips the flag; repeat invocations are no-ops. Backfill uses
+the same `logHistoryEvent` helper and tags entries `backfilled: true`.
+**Rationale:** Alternatives considered: (a) run backfill inside `applyCommand`
+on any state touch, (b) run it at `GameStore` load time. Both bleed a
+one-time migration concern into hot paths that should stay pure of it.
+Backfill is fundamentally a UI-initiated event — if a player never opens the
+History tab, there's no reason to populate stale scenario data. Gating on a
+per-character flag keeps the migration idempotent without requiring the
+engine to track "has this run globally." Backfilled entries are styled
+distinctly (dashed border + "Reconstructed" chip + no reward detail) because
+`state.party.scenarios[]` doesn't carry XP / gold / level detail — anything
+the UI claims beyond "this scenario was completed" would be fabricated.
+
+### 2026-04-18 — T0d: Notes tab reuses `setCharacterProgress` (no new command)
+**Decision:** The Notes tab writes `character.progress.notes` via the existing
+`setCharacterProgress` command with `field: 'notes'`. T0a preemptively
+whitelisted the field exactly to unblock this.
+**Rationale:** Adding a dedicated `setNotes` command would duplicate the
+existing validation path for no new capability. The whitelist on
+`setCharacterProgress` already gates the field server-side. Reusing the
+command also means all character-progress-scalar writes follow the same
+permission / diff / undo machinery — Notes edits are undoable for free.
+
+### 2026-04-18 — T0d: Defeat entries deliberately omit `battleGoalChecks`
+**Decision:** The `HistoryEntryScenarioFailed` variant has no `battleGoalChecks`
+field at all (not an optional `undefined`). The hook in `handleCompleteScenario`
+passes only the reward fields that rules §11 actually grants on defeat.
+**Rationale:** Rules §11 is unambiguous: battle goals only pay out on victory.
+Modeling defeats as "victory minus checks" leaves the door open for a future
+code path to accidentally read a stale check value on a defeat entry. A
+distinct type that simply doesn't have the field makes the rule enforced at
+compile time — attempting to read `entry.battleGoalChecks` when the variant
+is `scenarioFailed` becomes a TypeScript error rather than runtime data hygiene.

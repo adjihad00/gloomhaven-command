@@ -54,6 +54,40 @@ Origin: Phase T0c (Campaign Sheet — Prosperity tab).
 
 ---
 
+## `packages/shared/src/engine/historyLog.ts`
+
+**Exports:** `logHistoryEvent(char, entryWithoutMeta)` (engine-only; NOT barrel-exported).
+
+**Assertions:**
+- First call on a character with no `progress.history` creates the array
+  and appends an entry with `id === 1` and `sequence === 0`.
+- Second call increments `id` to `2` and `sequence` to `1` (monotonic
+  within the character's history).
+- After an arbitrary sequence of pushes, `id` values remain strictly
+  increasing (based on `max(existing.id) + 1`, not `length + 1` — so a
+  removed-then-re-added entry doesn't collide).
+- `backfilled`, `kind`, and variant-specific payload fields are preserved
+  verbatim on the appended entry.
+- `sequence` equals `history.length` at time of push, so entries pushed
+  in the same operation have distinct monotonic sequence markers.
+- Does nothing (no throw) if `char.progress` is missing.
+
+**Engine integration assertions** (via `applyCommand`):
+- `completeScenario` victory appends exactly one `scenarioCompleted`
+  entry per non-absent character with snapshot fields populated
+  (`xpGained`, `goldGained`, `resourcesGained`, `battleGoalChecks`).
+- `completeScenario` defeat appends `scenarioFailed` entries; the
+  result object has **no** `battleGoalChecks` field (rules §11).
+- Absent characters (`char.absent === true`) receive no entry.
+- `backfillCharacterHistory` is idempotent: calling twice produces
+  the same `history` array (no duplicate backfilled entries).
+- Undo across a `completeScenario` removes the appended entries; redo
+  re-appends them (both via the normal state snapshot + replay).
+
+Origin: Phase T0d (Player Sheet — Notes + History tabs).
+
+---
+
 ## How to backfill once a framework lands
 
 1. Pick framework (vitest preferred; aligns with esbuild + Node-native ESM).

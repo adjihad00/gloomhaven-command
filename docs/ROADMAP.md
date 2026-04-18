@@ -285,7 +285,38 @@
   - [x] CSS section appended to `app/shared/styles/sheets.css` with
         BEM prefix `campaign-sheet__*` + tab-prefixed variants
   - [x] Tests deferred to `docs/TEST_BACKFILL.md` (created this batch)
-- [ ] Phase T0d: Notes + History tabs (engine additions to `CharacterProgress`)
+- [x] Phase T0d: Player Sheet Notes + History tabs — **T0 arc complete** (2026-04-18)
+  - [x] `HistoryEntry` discriminated union on `CharacterProgress.history?`
+        (+ `historyBackfilled?: boolean` gate). Variants shipped:
+        `scenarioCompleted`, `scenarioFailed`. Future batches extend
+        (T2b levelUp / perkApplied, T2c characterRetired / characterCreated,
+        T2d enhancementApplied).
+  - [x] `logHistoryEvent(char, entry)` engine-only helper in
+        `packages/shared/src/engine/historyLog.ts` — all history mutation
+        flows through this single site. NOT exported from the package barrel;
+        clients cannot fabricate history entries.
+  - [x] `handleCompleteScenario` hook: per-character entry sourced from
+        `state.finishData` snapshot (snapshot-less fallback preserved).
+        Skips absent characters. Victory → `scenarioCompleted`; defeat →
+        `scenarioFailed` with `battleGoalChecks` deliberately omitted
+        (rules §11 — no battle-goal rewards on defeat).
+  - [x] New `backfillCharacterHistory` command (character-scoped,
+        phone-allowed, engine-gated idempotent via `historyBackfilled`) —
+        seeds history lazily from `state.party.scenarios[]` on first
+        History-tab render. Backfilled entries tagged `backfilled: true`.
+  - [x] `app/phone/sheets/tabs/NotesTab.tsx` — 4000-char textarea, hybrid
+        commit via `useCommitOnPause` (Enter inserts newline; commitOnEnter
+        false), "Saved" flash chip, `readOnly`-aware.
+  - [x] `app/phone/sheets/tabs/HistoryTab.tsx` — reverse-chronological
+        timeline with class-accent spine, victory/defeat marker dots,
+        typed entry rows + `UnknownEntryRow` exhaustiveness fallback,
+        empty state.
+  - [x] Placeholder files deleted; PlayerSheet wires real components.
+  - [x] T0d CSS appended to `app/shared/styles/sheets.css` (~370 lines
+        with BEM: `.notes-tab__*`, `.history-tab__*`, `.history-entry__*`,
+        `.sr-only` utility, reduced-motion fallback).
+- [ ] **Next:** T2a rewrite targets the Player Sheet Items tab (previously
+      scoped against TownView — retarget noted here, original prompt untouched).
 - [x] Phase T1.1: Display rewards auto-hide when all phones dismiss (2026-04-17)
   - [x] `shouldShowRewards` decoupled from `finishData` lifetime —
         hides once `finish` is final AND every non-absent character

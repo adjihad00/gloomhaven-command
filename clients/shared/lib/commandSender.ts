@@ -272,6 +272,20 @@ export class CommandSender {
     });
   }
 
+  // ── Player Sheet History (Phase T0d) ──
+
+  /**
+   * One-shot backfill of per-character history from `state.party.scenarios`.
+   * Fired by the History tab on first open. Engine self-gates on
+   * `progress.historyBackfilled` so repeat calls are idempotent no-ops.
+   */
+  backfillCharacterHistory(characterName: string, edition: string): void {
+    this.send({
+      action: 'backfillCharacterHistory',
+      payload: { characterName, edition },
+    });
+  }
+
   // ── Party Sheet (Phase T0b) ──
 
   /**

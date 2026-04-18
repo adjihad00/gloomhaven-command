@@ -214,6 +214,71 @@ export interface SummonScenarioStats {
   maxDamage: number;
 }
 
+// ── Character history entries (Phase T0d) ──────────────────────────────────
+
+/** Shared fields on every HistoryEntry variant. */
+interface HistoryEntryBase {
+  /**
+   * Monotonically increasing id within a character's history.
+   * Stable identifier — used for React keys and cross-device dedup.
+   * Not a timestamp; History has no real times (the game state has no
+   * wall-clock concept of "when during real life" something happened).
+   */
+  id: number;
+  /** Logical sequence marker — position at insertion time. */
+  sequence: number;
+  /**
+   * If true, this entry was created by the backfill migration from
+   * `state.party.scenarios[]` on first History-tab open. Rendered with a
+   * subtle "reconstructed" styling and no per-character detail (since
+   * backfill can't know who was in the party when). Live entries have
+   * `backfilled: false`.
+   */
+  backfilled: boolean;
+}
+
+export interface HistoryEntryScenarioCompleted extends HistoryEntryBase {
+  kind: 'scenarioCompleted';
+  scenarioIndex: string;
+  edition: string;
+  group?: string;
+  /** Scenario level at time of completion (for context). 0 when unknown (backfilled). */
+  scenarioLevel: number;
+  /** XP gained in this scenario (scenario dial + bonus). */
+  xpGained?: number;
+  /** Gold gained from loot conversion. */
+  goldGained?: number;
+  /** FH resources gained. */
+  resourcesGained?: Partial<Record<LootType, number>>;
+  /** Battle-goal checks applied to the character's total. */
+  battleGoalChecks?: number;
+}
+
+export interface HistoryEntryScenarioFailed extends HistoryEntryBase {
+  kind: 'scenarioFailed';
+  scenarioIndex: string;
+  edition: string;
+  group?: string;
+  scenarioLevel: number;
+  /** XP gained from the dial (no bonus, per rules §11). */
+  xpGained?: number;
+  /** Gold gained if returning-to-town; zero if replay. */
+  goldGained?: number;
+  resourcesGained?: Partial<Record<LootType, number>>;
+  /** NOTE: battleGoalChecks deliberately omitted — rules §11: no battle-goal rewards on defeat. */
+}
+
+/**
+ * Discriminated union of history entry variants. Future batches extend:
+ *   T2b: 'levelUp', 'perkApplied', 'masteryUnlocked'
+ *   T2c: 'personalQuestFulfilled', 'characterRetired', 'characterCreated'
+ *   T2d: 'enhancementApplied'
+ * Each variant MUST extend `HistoryEntryBase` and carry a `kind` discriminator.
+ */
+export type HistoryEntry =
+  | HistoryEntryScenarioCompleted
+  | HistoryEntryScenarioFailed;
+
 // ── Character progress (campaign persistence) ───────────────────────────────
 
 export interface CharacterItemModel {
@@ -246,6 +311,14 @@ export interface CharacterProgress {
    *  so the intro only plays once per character per campaign. Optional because
    *  pre-T0a saves and GHS imports don't have it (undefined reads as falsy). */
   sheetIntroSeen?: boolean;
+  /** Per-character history log (Phase T0d). Backfilled lazily from
+   *  `state.party.scenarios` on first History-tab open; live entries appended
+   *  by explicit hooks at trigger sites (e.g. handleCompleteScenario). */
+  history?: HistoryEntry[];
+  /** Phase T0d: whether the one-time backfill migration has run for this
+   *  character. Set by the engine when the `backfillCharacterHistory` command
+   *  applies; guards idempotency. Optional so pre-T0d saves flow through. */
+  historyBackfilled?: boolean;
 }
 
 // ── Character ───────────────────────────────────────────────────────────────
