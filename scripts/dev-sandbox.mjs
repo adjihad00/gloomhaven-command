@@ -14,14 +14,14 @@ const env = {
   GC_BIND_HOST: '127.0.0.1',
 };
 
-// Use `npm.cmd` on Windows; `npm` elsewhere. The shell: true fallback would
-// also work but passing the explicit binary name is more robust to PATH quirks.
-const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-const child = spawn(npmCmd, ['run', 'dev'], {
+// Use `shell: true` so cmd.exe resolves the `npm` shim on Windows (Node 24
+// rejects direct spawn of .cmd files with EINVAL). Safe here: the entire
+// command is a fixed string literal with no interpolated user input, so
+// there is no shell injection surface.
+const child = spawn('npm', ['run', 'dev'], {
   env,
   stdio: 'inherit',
-  shell: false,
+  shell: true,
 });
 
 child.on('exit', (code, signal) => {
