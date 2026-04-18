@@ -306,7 +306,31 @@ function findCerts(): { cert: string; key: string } | null {
   return null;
 }
 
-const certs = findCerts();
+// ── Dev sandbox HTTP mode ────────────────────────────────────────────────────
+// GC_DEV_HTTP=1 forces plain HTTP on loopback, skipping cert discovery.
+// Purpose: unblock sandboxed preview browsers (headless Chromium in Claude
+// Code environments) that can't verify local-CA / Certbot certs. Guarded so
+// it only binds to 127.0.0.1 — refuses to start if paired with a public bind.
+// See docs/DEV_PREVIEW.md. Not for LAN, not for playtest, not for prod.
+const devHttpMode = process.env.GC_DEV_HTTP === '1';
+const bindHost = process.env.GC_BIND_HOST; // undefined = Node default (all interfaces)
+
+if (devHttpMode && bindHost && bindHost !== '127.0.0.1' && bindHost !== 'localhost') {
+  console.error(
+    '[fatal] GC_DEV_HTTP=1 requires GC_BIND_HOST=127.0.0.1 (or unset — defaults to loopback in dev mode).\n' +
+    '        Refusing to start plain HTTP on a non-loopback interface.\n' +
+    '        If you want HTTPS on LAN, unset GC_DEV_HTTP. If you want dev HTTP,\n' +
+    '        unset GC_BIND_HOST or set it to 127.0.0.1.',
+  );
+  process.exit(1);
+}
+
+// Belt-and-suspenders: in dev-http mode, force loopback regardless of env.
+// The fatal above blocks non-loopback values; this also catches the case
+// where GC_BIND_HOST is unset (which would otherwise bind all interfaces).
+const effectiveBindHost = devHttpMode ? '127.0.0.1' : bindHost;
+
+const certs = devHttpMode ? null : findCerts();
 const useHttps = !!certs;
 
 const httpServer = certs
@@ -331,14 +355,22 @@ wsHub.onCommand = (ws, gameCode, command) => {
 // Start listening (load editions first)
 loadEditions().then(() => {
   const proto = useHttps ? 'https' : 'http';
-  httpServer.listen(PORT, () => {
+  const hostLabel = devHttpMode ? '127.0.0.1' : 'localhost';
+  httpServer.listen(PORT, effectiveBindHost, () => {
+    if (devHttpMode) {
+      console.warn('');
+      console.warn('  ⚠  GC_DEV_HTTP — plain HTTP on 127.0.0.1 only.');
+      console.warn('     Do NOT use for LAN or playtest. Sandboxed preview browsers only.');
+      console.warn('');
+    }
     console.log(`Gloomhaven Command server running on port ${PORT} (${useHttps ? 'HTTPS' : 'HTTP'})`);
-    console.log(`  Controller: ${proto}://localhost:${PORT}/controller`);
-    console.log(`  Phone:      ${proto}://localhost:${PORT}/phone`);
-    console.log(`  Display:    ${proto}://localhost:${PORT}/display`);
+    console.log(`  Controller: ${proto}://${hostLabel}:${PORT}/controller`);
+    console.log(`  Phone:      ${proto}://${hostLabel}:${PORT}/phone`);
+    console.log(`  Display:    ${proto}://${hostLabel}:${PORT}/display`);
 
+    // LAN line: suppress in dev-http mode (we're bound loopback only).
     const lanIp = getLanIp();
-    if (lanIp) {
+    if (lanIp && !devHttpMode) {
       console.log(`  LAN:        ${proto}://${lanIp}:${PORT}`);
     }
     if (certs) {

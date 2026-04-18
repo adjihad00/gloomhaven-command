@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=server\" \"node app/build.mjs --watch\"",
+    "dev:sandbox": "node scripts/dev-sandbox.mjs",
     "build": "npm run build --workspaces && node app/build.mjs",
     "build:shared": "npm run build --workspace=packages/shared",
     "build:server": "npm run build --workspace=server",

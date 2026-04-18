@@ -353,3 +353,24 @@ Verified on startup: `GET /sw-version.json` → `{"version":"<build-version>"}`;
 **Symptom:** `ScenarioView.tsx` passed `onOpenSetup={() => setActiveOverlay({ type: 'scenarioSetup' })}` to `MenuOverlay`, but `'scenarioSetup'` was not in the `OverlayState` discriminated union. `tsc --noEmit` flagged the mismatch; runtime silently never rendered anything for that menu item. Left behind from the Batch 16b lobby-view refactor that moved scenario setup out of ScenarioView overlays.
 **Root cause:** Incomplete cleanup in the earlier refactor — the caller was never pruned when the overlay type was removed from the union.
 **Fix:** Side effect of the T0b scenario-controls restructure. `onOpenSetup` dropped entirely from the `MenuOverlay` mount in `ScenarioView` (scenario-specific flows now cluster in `ScenarioControlsOverlay`, triggered by clicking the scenario name). The orphan call was removed and `tsc --noEmit` is clean for this file again.
+
+### 2026-04-18 — Dev sandbox HTTP mode (Claude Code preview verification)
+**Symptom:** Every recent batch's (T0b / T0c / T0d) browser smoke verification
+was skipped because sandboxed preview Chromium — the browser Claude Code
+drives in its preview tools — can't verify the local-CA certs the dev HTTPS
+server presents. Previews hung at `chrome-error://chromewebdata/` and no UI
+ever loaded, blocking the `<verification_workflow>` step.
+**Root cause:** `server/src/index.ts` defaults to HTTPS whenever `findCerts()`
+returns a match. On Kyle's dev machine that's always — Certbot manages certs
+in `C:\Certbot\live`. The sandboxed browser has no host CA store and rejects
+the cert. No opt-out existed.
+**Fix:** Opt-in `GC_DEV_HTTP=1` env var skips `findCerts()` and creates a
+plain HTTP server. Hard-bound to `127.0.0.1` with a startup fatal if paired
+with any non-loopback `GC_BIND_HOST` — unencrypted HTTP can never accidentally
+land on a LAN interface via this path. New `scripts/dev-sandbox.mjs` wrapper
+and `npm run dev:sandbox` script set the env vars cross-platform without a
+`cross-env` dependency. Default `npm run dev` and all playtest / production
+flows are unchanged.
+**Follow-up:** Future batches that include UI changes run browser smoke under
+`npm run dev:sandbox`. See `docs/DEV_PREVIEW.md` and the "Browser Preview
+Verification" section of `CLAUDE.md`.

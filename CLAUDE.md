@@ -99,3 +99,22 @@ When the user provides an MD file prompt (or references one by name/location), f
 5. **Develop Plan** — Create a clear, step-by-step implementation plan based on the adjusted prompt. Present it for user review.
 6. **Execute** — Implement the plan.
 7. **Review & Verify** — After execution, review the changes for correctness, run any relevant builds/tests, and confirm the work matches the prompt's intent.
+
+## Browser Preview Verification
+
+When running browser-based smoke verification in a sandboxed preview
+Chromium (typical for Claude Code environments), **use `npm run
+dev:sandbox` instead of `npm run dev`**. The sandboxed browser can't
+verify the local Certbot cert the dev server presents over HTTPS and
+gets stuck on the `chrome-error://chromewebdata/` interstitial.
+`dev:sandbox` forces plain HTTP bound to `127.0.0.1` so the preview
+can reach the server without cert warnings.
+
+| When | Command |
+|------|---------|
+| Preview-browser verification (sandbox) | `npm run dev:sandbox` |
+| LAN playtest / production dev | `npm run dev` |
+
+Never run `dev:sandbox` on a shared network or production host — it
+binds HTTP to loopback only and refuses to start on any other
+interface by design. See `docs/DEV_PREVIEW.md` for details.

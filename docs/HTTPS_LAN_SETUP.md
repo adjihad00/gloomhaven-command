@@ -120,3 +120,10 @@ domain name instead.
 | `https://game.gh-command.com:3000` (dev PC) | Works (hosts file) |
 | `https://game.gh-command.com:3000` (phone on WiFi) | Works (after DNS fix) |
 | `https://192.168.50.96:3000` | Cert mismatch warning — use domain instead |
+
+## Dev Sandbox HTTP Mode
+
+For Claude Code preview-browser verification, see `docs/DEV_PREVIEW.md`.
+That mode is HTTP-only, loopback-only, and entirely independent of this
+LAN HTTPS setup. The LAN playtest path described above is unaffected
+and remains the only supported route for real devices.
