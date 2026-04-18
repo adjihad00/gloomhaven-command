@@ -50,12 +50,15 @@ app/
 │   └── swRegistration.ts # self-healing SW register + client watchdog (Phase 6)
 ├── controller/           # GM — iPad landscape, full control
 │   ├── main.tsx, index.html
-│   ├── App.tsx           # mode router + ControllerNav (Phase T0b) + PartySheetOverlay mount
+│   ├── App.tsx           # mode router + ControllerNav (T0b) + PartySheetOverlay (T0b)
+│   │                       + CampaignSheetOverlay (T0c) mounts
 │   ├── ControllerNav.tsx # persistent ⋯ button (T0b) reachable in every mode
 │   ├── LobbyView.tsx     # 8-step sequential setup flow
-│   ├── ScenarioView.tsx  # single-screen + overlays
+│   ├── ScenarioView.tsx  # single-screen + overlays; threads onOpenPartySheet
+│   │                       + onOpenCampaignSheet to inline MenuOverlay (T0c)
 │   ├── TownView.tsx      # outpost phase stepper
-│   └── overlays/         # incl. PartySheetOverlay (T0b) — controller-side readOnly=false mount
+│   └── overlays/         # PartySheetOverlay (T0b), CampaignSheetOverlay (T0c) —
+│                           controller-side readOnly=false mounts of shared sheets
 ├── phone/                # Player — portrait, character-scoped
 │   ├── main.tsx, index.html
 │   ├── App.tsx           # connection → picker → mode routing
@@ -84,11 +87,13 @@ app/
     ├── main.tsx, index.html, manifest.json
     ├── App.tsx               # connection + mode routing, display registration,
     │                           mounts DisplayRewardsOverlay when state.finishData present.
-    │                           Phase T0b: idle lobby (no setupPhase) and town mode render
-    │                           DisplayPartySheetView in place of LobbyWaitingView/TownView.
+    │                           Phase T0c: idle lobby (no setupPhase) and town mode render
+    │                           DisplayIdleSheetsView in place of LobbyWaitingView/TownView.
     ├── views/
-    │   └── DisplayPartySheetView.tsx  # decorative Party Sheet wrapper (T0b) —
-    │                                     readOnly + autoCycle + skipIntro + portrait
+    │   ├── DisplayIdleSheetsView.tsx  # alternates Party + Campaign Sheets (T0c) —
+    │   │                                 fade-swap on each sheet's onCycleComplete
+    │   └── DisplayPartySheetView.tsx  # decorative Party Sheet wrapper (T0b);
+    │                                     @deprecated by T0c (retained for rollback)
     ├── ConnectionScreen.tsx   # game code input
     ├── LobbyWaitingView.tsx   # setup-phase-aware waiting screen
     ├── ScenarioView.tsx       # live state + state-driven animations
@@ -158,26 +163,84 @@ editing.
 Editable text inputs use `useCommitOnPause` (blur / Enter / 1000 ms
 typing-pause commit).
 
-### Display decorative Party Sheet (Phase T0b)
+### Campaign Sheet (Phase T0c)
 
-The display renders `DisplayPartySheetView` in place of `LobbyWaitingView`
+The **Campaign Sheet** is the campaign's world-record surface — the third
+and final sheet in the T0 trio. Reachable from every controller mode via
+the same `MenuOverlay` that exposes Party Sheet, immediately below the
+Party Sheet entry. Mounted as a shared `app/shared/sheets/CampaignSheet*`
+family parallel to PartySheet.
+
+**Tabs (in order):** Prosperity · Scenarios · Unlocks · Donations ·
+Achievements · Outpost (FH only) · Settings
+
+- **Prosperity** — current level (1–9) with progress bar to next
+  threshold; level list with completed / current / next / locked states;
+  GM "+1 checkmark" button. Threshold tables in `getProsperityLevel`
+  (rules §17).
+- **Scenarios** — reverse-chronological list of completed scenarios with
+  filter chips (All / Main / Casual / Conclusions). Empty state with
+  scroll-and-quill sigil. No add/edit — scenarios append automatically
+  via `completeScenario`.
+- **Unlocks** — three collapsible sections (Items / Characters /
+  Treasures) with shared search filter. Read-only.
+- **Donations** — running total + milestone pips (every 10 g) with
+  flash-on-cross cue; GM "+10g Donate" button.
+- **Achievements** — global achievements list with add/remove via
+  structured `addGlobalAchievement` / `removeGlobalAchievement`
+  commands (parallel to T0b's party achievement pattern; GM-only).
+- **Outpost (FH only)** — dashboard form: calendar strip (season +
+  week), resource pills (Morale / Defense / Soldiers / Inspiration /
+  Trials), building cards with state chips (Active / Damaged /
+  Wrecked / Building), campaign stickers. Hidden on non-FH editions.
+  Coordinate-based map deferred to T4 / T0c-polish.
+- **Settings** — read-mostly: edition · campaign mode · game code ·
+  Export Campaign action (opens `/api/export/{gameCode}`) · Import
+  placeholder (disabled).
+
+The Campaign Sheet's **signature visual is wax-sealed tab headers** — every
+tab content area opens with a circular gilt wax-seal motif containing a
+tab-specific glyph (gears / scroll / chest / coin / shield / building /
+gear), followed by the tab title in Cinzel and a thin gilt rule. Shared
+primitive: `app/shared/sheets/WaxSealHeader.tsx`.
+
+One-time intro animation: "a map unfurling" (rolled scroll with wax seal,
+unfurls horizontally, title fades in). Persists via
+`updateCampaign('campaignSheetIntroSeen', true)`. Skip on tap; reduced-motion
+skips the animation while still setting the flag.
+
+### Display decorative idle rotation (Phase T0c)
+
+The display renders `DisplayIdleSheetsView` in place of `LobbyWaitingView`
 when `mode === 'lobby'` AND no `setupPhase` is active, AND in place of
 `TownView` whenever `mode === 'town'`. Scenario mode is untouched —
 `ScenarioView` fully owns the display during play. During active setup
 phases (chores / rules / goals), `LobbyWaitingView` still renders so
 table-level prompts drive the ceremony.
 
-`DisplayPartySheetView` mounts the shared `PartySheet` with
-`readOnly + autoCycle + skipIntro` and `layout="portrait"`. Tabs
-auto-advance every 30 seconds with a 600 ms page-turn transition; gilt
-elements (active tab, resource values, title) get a subtle candlelight
-flicker (2.4 s / 3.1 s / 3.7 s offset durations so the effect isn't
-synchronised). The display ignores Escape and has no interactions.
+`DisplayIdleSheetsView` alternates **Party Sheet ↔ Campaign Sheet**.
+Each sheet mounts with `readOnly + autoCycle + skipIntro + layout="portrait"`,
+running its own internal 30-second per-tab cycle. When the inner sheet
+wraps past its last visible tab, its optional `onCycleComplete` callback
+fires and the wrapper fades for 300 ms while swapping to the sibling
+sheet. This gives each sheet a continuous breath
+(roughly 2.5–3.5 minutes per pass depending on edition) instead of
+choppy per-tab interleaving.
+
+The display ignores Escape and has no interactions besides a 96×96
+top-left tap-zone (`display-idle-sheets__hot-zone`) that opens the
+existing `DisplayConfigMenu`. `DisplayPartySheetView` is retained
+importable + JSDoc-`@deprecated` for rollback.
 
 The Party Sheet's signature visual is the **gilt-bound tab binding** — a
 continuous gilt-gold metallic rule along the tab strip's inner edge,
 broken only at the active tab via a content-panel-coloured pseudo-element.
 Reads as a brass-reinforced page binding biting into the active tab.
+
+The Campaign Sheet's signature visual is the **wax-sealed tab headers**
+(see Campaign Sheet section above) — distinguishes the two sheets
+visually so the alternation reads as two separate ledgers, not one
+view rearranging.
 
 ---
 

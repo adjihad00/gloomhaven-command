@@ -52,14 +52,37 @@ All other T0b surfaces render from existing asset helpers
 (`characterThumbnail`, `characterIcon`, `resourceIcon`) or
 CSS/inline-SVG.
 
-## Phase T0c — pending
+## Phase T0c (2026-04-18) — landed; map deferred
 
-The **Outpost tab** (FH) will likely need:
-- **Outpost top-down map background** — check Worldhaven for a suitable
-  base illustration before commissioning.
-- **Per-building top-down sprites** — check
-  `asset_manifest category='building-illustration'`.
-- **Wax-seal tab header icons** — one reusable SVG seal shape + swap-in
-  tab-specific glyphs from `Icons.tsx`. CSS + existing icons, no new assets.
+Campaign Sheet shipped with all signature elements
+(wax-sealed tab headers, prosperity progress bar, donation milestone
+pips, building cards with state chips, calendar strip) CSS/SVG-rendered,
+no external assets required to ship.
 
-Flag gaps here when T0c scoping begins.
+**Resolved this batch:**
+- **Wax-seal tab header icons** — `WaxSealHeader.tsx` accepts a generic
+  `icon` VNode; each tab supplies its own inline SVG glyph (gears,
+  scroll, chest, coin, shield, building, gear). No external assets.
+- **Prosperity track row + checkmark visualisation** — pure CSS
+  (gilt-gold pip + leather row).
+- **Donation milestone pips** — pure CSS (radial-gradient gilt fill).
+- **Campaign Sheet intro ("map unfurling")** — inline SVG parchment +
+  rolled-end caps + wax seal animated via CSS keyframes.
+
+**Pending requests (Outpost map — deferred to T4 / T0c-polish):**
+- **Outpost top-down map background** — when the full top-down outpost
+  map view is built (likely T4 or a T0c-polish follow-up), a base
+  illustration of the Frosthaven outpost will be needed. Check
+  Worldhaven `art/fh/town/` and `asset_manifest category='outpost'` first
+  before commissioning.
+- **Per-building top-down sprites** — keyed by building name. Check
+  `asset_manifest category='building'` /
+  `category='building-illustration'`. T0c's Outpost tab uses an inline
+  SVG silhouette per building (per `app/CONVENTIONS.md`: explicit
+  "no art yet" silhouette is acceptable; faked image is not).
+- **Building damaged / wrecked overlays** — fracture / dust / soot
+  decals layered onto the building sprites for damaged + wrecked states.
+  T0c's CSS uses border + opacity changes only.
+- **Edition logo art** for the Settings tab "Campaign Identity"
+  section — currently rendered as text chip ("Gloomhaven", "Frosthaven").
+  Optional polish.

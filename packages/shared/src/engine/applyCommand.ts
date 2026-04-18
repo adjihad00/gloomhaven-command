@@ -249,6 +249,12 @@ export function applyCommand(state: GameState, command: Command, dataContext?: D
     case 'removePartyAchievement':
       handleRemovePartyAchievement(after, command.payload);
       break;
+    case 'addGlobalAchievement':
+      handleAddGlobalAchievement(after, command.payload);
+      break;
+    case 'removeGlobalAchievement':
+      handleRemoveGlobalAchievement(after, command.payload);
+      break;
     case 'abortScenario':
       handleAbortScenario(after);
       break;
@@ -1888,6 +1894,30 @@ function handleRemovePartyAchievement(
 ): void {
   if (!state.party.achievementsList) return;
   state.party.achievementsList = state.party.achievementsList.filter(
+    (a) => a !== payload.achievement,
+  );
+}
+
+// ── Phase T0c: Campaign Sheet global achievement array mutations ───────────
+
+function handleAddGlobalAchievement(
+  state: GameState,
+  payload: { achievement: string },
+): void {
+  const ach = payload.achievement.trim();
+  if (!ach) return;
+  if (!state.party.globalAchievementsList) state.party.globalAchievementsList = [];
+  if (!state.party.globalAchievementsList.includes(ach)) {
+    state.party.globalAchievementsList.push(ach);
+  }
+}
+
+function handleRemoveGlobalAchievement(
+  state: GameState,
+  payload: { achievement: string },
+): void {
+  if (!state.party.globalAchievementsList) return;
+  state.party.globalAchievementsList = state.party.globalAchievementsList.filter(
     (a) => a !== payload.achievement,
   );
 }

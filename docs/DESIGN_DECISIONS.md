@@ -1132,6 +1132,106 @@ phase is correct: town phase is a reward-resolution surface, and an
 aborted scenario has nothing to resolve. Not on the phone whitelist
 because the GM owns scenario lifecycle.
 
+### 2026-04-18 — Phase T0c: Campaign Sheet shipped as third sheet in T0 trio
+**Decision:** Campaign Sheet lands as the third (and final) sheet in the
+T0 trio, mounted as a shared `app/shared/sheets/CampaignSheet*` family
+parallel to `PartySheet*`. Controller mounts it via `CampaignSheetOverlay`
+(readOnly=false, landscape); display mounts it inside `DisplayIdleSheetsView`
+(readOnly + autoCycle + skipIntro + portrait), alternating with Party Sheet.
+Seven tabs: Prosperity, Scenarios, Unlocks, Donations, Achievements,
+Outpost (FH only), Settings.
+**Rationale:** The shared-sheet pattern from T0b proved its weight (one
+component family consumed by two clients, two layouts, two readOnly modes)
+so T0c reuses it directly. The Outpost tab gets the most design weight
+because §16 of the design brief frames it as the project's richest single
+surface; T0c ships it as a *dashboard* (calendar / pills / building cards
+/ stickers) rather than a top-down map — see next entry. Settings tab
+intentionally minimal: the controller already had `MenuOverlay` for
+Disconnect / Export, and import/export is a feature batch unto itself.
+
+### 2026-04-18 — Phase T0c: Outpost tab ships as dashboard, not map
+**Decision:** Outpost tab is a vertically-scrolling dashboard
+(calendar strip → resource pills → building cards → campaign stickers).
+The full top-down outpost map with positioned building illustrations is
+deferred to T4 or a T0c-polish follow-up.
+**Rationale:** A coordinate-based map needs (a) per-building position
+data that doesn't exist anywhere in state or the asset manifest yet,
+(b) a base illustration of the Frosthaven outpost, and (c) per-building
+top-down sprites. None of those are sourced yet, and inventing
+positions risks them not matching the canonical outpost when the real
+data arrives. The dashboard form satisfies the "communicate the world
+at a glance" need from the design brief without painting ourselves
+into a corner — building-state colors (active / damaged / wrecked /
+building) are visible at a glance, calendar surface communicates
+where in the year the party is, resource pills show outpost vitals.
+When real coordinate + sprite data lands, the dashboard becomes a
+"Details" subview alongside the map without throwing work away.
+
+### 2026-04-18 — Phase T0c: Sheet keyframe `party-sheet-page-turn` → `sheet-page-turn`
+**Decision:** Renamed the cross-sheet page-turn keyframe in
+`app/shared/styles/sheets.css` from `party-sheet-page-turn` to
+`sheet-page-turn` so both Party and Campaign Sheets reference the same
+animation by a sheet-agnostic name. Party Sheet's only call site was
+updated; no other consumers existed.
+**Rationale:** Naming the animation after one of its consumers locks in
+incidental coupling. Now both T0b and T0c reuse the same keyframe by a
+name that reflects its purpose. The `party-sheet-gilt-flicker` keyframe
+intentionally kept its name — it's the same animation shared across
+both sheets, and renaming it would shift the same coupling without
+changing behavior. The cost of a one-pass rename outweighs the cost of
+a per-sheet keyframe duplication.
+
+### 2026-04-18 — Phase T0c: Stay with duplicated tab-strip components (Party vs Campaign)
+**Decision:** `CampaignSheetTabs` is a hand-duplicated parallel of
+`PartySheetTabs` rather than an extracted shared `SheetTabs` primitive.
+Player Sheet's tabs are already a third independent implementation
+(phone-optimized horizontal strip with different keyboard model).
+**Rationale:** Three sheet implementations is the threshold where the
+right abstraction starts to crystallize, but the three are not yet
+shape-aligned: Player Sheet uses a fixed horizontal layout for phones
+with no edition-conditional hiding, Party Sheet has gilt-bound
+landscape/portrait variants with a single hidden tab (Resources on
+non-FH), and Campaign Sheet has wax-sealed landscape/portrait variants
+with a single hidden tab (Outpost on non-FH). The shared seam would
+need to express layout switching, hide-tab filtering, two distinct
+keyboard models, two distinct visual decorations (gilt binding vs wax
+seals), and the wax-seal-per-tab icon contract — a fairly heavy
+primitive whose cost outweighs the savings of one duplicated 120-line
+component. Revisit if a fourth sheet appears or if the visual
+decorations consolidate.
+
+### 2026-04-18 — Phase T0c: Display alternates Party + Campaign on full-cycle wrap
+**Decision:** `DisplayIdleSheetsView` swaps which sheet is mounted at
+the boundary of a full tab rotation (when the inner sheet's autoCycle
+wraps past the last visible tab back to the first). Each sheet runs
+its own internal 30 s × visible-tabs cycle; the wrapper fades for
+300 ms during the swap. Per-tab interleaving was rejected.
+**Rationale:** Per-tab interleaving (Party tab 1 → Campaign tab 1 →
+Party tab 2 → …) would feel choppy: the two sheets share the same
+typographic system but diverge sharply on background (`--sheet-party-bg`
+linear vs `--sheet-campaign-bg` radial) and signature decoration
+(gilt binding vs wax seals). Rapid alternation reads as flicker.
+Full-cycle alternation gives each sheet a continuous breath
+(2.5–3.5 minutes per pass depending on edition), which reads as the
+table's view rotating between two distinct ledgers. The
+`onCycleComplete` callback contract on both sheets is optional and
+backward-compatible — `DisplayPartySheetView` is retained importable +
+JSDoc-`@deprecated` for rollback.
+
+### 2026-04-18 — Phase T0c: `getProsperityLevel` / `getProsperityProgress` shipped as data helpers
+**Decision:** Two pure helpers in
+`packages/shared/src/data/prosperityLevel.ts`, parallel to T0b's
+`reputationPrice`. Both consume `state.party.prosperity` (running
+checkmark count) + `state.edition` and return the current level
+(1–9) plus optional progress-toward-next-threshold metadata.
+**Rationale:** Prosperity thresholds are static rules-derived data
+with no runtime variance, identical to the reputation price modifier
+brackets — both belong in `data/`, not `engine/`. Centralising the
+math here means future starting-gold formulas (§1), level-up caps
+(§5), and item-shop filtering (T2a) read the same source. Threshold
+tables documented in §17 of `GAME_RULES_REFERENCE.md` (added by this
+batch — the rules doc had only inline mentions before T0c).
+
 ### 2026-04-17 — Phase T1.1: Display rewards hide condition decoupled from finishData lifetime
 **Decision:** The display's `DisplayRewardsOverlay` mount is now gated by a
 dismissal check (`isFinal && every-non-absent-char.dismissed`) in

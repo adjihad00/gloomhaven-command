@@ -76,6 +76,8 @@ export type CommandAction =
   | 'setCharacterProgress'
   | 'addPartyAchievement'
   | 'removePartyAchievement'
+  | 'addGlobalAchievement'
+  | 'removeGlobalAchievement'
   | 'abortScenario';
 
 // ── Individual command payloads ─────────────────────────────────────────────
@@ -427,6 +429,23 @@ export interface RemovePartyAchievementCommand {
   payload: { achievement: string };
 }
 
+// ── Campaign Sheet (Phase T0c) ────────────────────────────────────────────
+
+/**
+ * Array-field mutations for `state.party.globalAchievementsList`. Parallel
+ * to the party-achievement pattern: `updateCampaign` is a scalar setter and
+ * can't cleanly mutate arrays. GM-only — NOT on the phone whitelist.
+ */
+export interface AddGlobalAchievementCommand {
+  action: 'addGlobalAchievement';
+  payload: { achievement: string };
+}
+
+export interface RemoveGlobalAchievementCommand {
+  action: 'removeGlobalAchievement';
+  payload: { achievement: string };
+}
+
 /**
  * Phase T0b: abort the current scenario mid-play and return to lobby.
  *
@@ -502,6 +521,8 @@ export type Command =
   | SetCharacterProgressCommand
   | AddPartyAchievementCommand
   | RemovePartyAchievementCommand
+  | AddGlobalAchievementCommand
+  | RemoveGlobalAchievementCommand
   | AbortScenarioCommand;
 
 // ── Helper type to extract payload by action ────────────────────────────────

@@ -251,7 +251,40 @@
   - [x] Reduced-motion handling for intro / page-turn / gold flash / flicker
   - [x] Tests deferred: no test framework in repo today; helper is pure
         integer logic with small surface. See DESIGN_DECISIONS for rationale.
-- [ ] Phase T0c: Campaign Sheet on controller (+ display decorative)
+- [x] Phase T0c: Campaign Sheet on controller (+ display decorative) (2026-04-18)
+  - [x] Shared `CampaignSheet` family in `app/shared/sheets/`
+        (CampaignSheet, CampaignSheetContext, CampaignSheetHeader,
+        CampaignSheetTabs, CampaignSheetIntro, WaxSealHeader + 7 tabs)
+  - [x] 7 tabs: Prosperity / Scenarios / Unlocks / Donations /
+        Achievements / Outpost (FH only) / Settings
+  - [x] Outpost tab ships dashboard form (calendar strip, resource pills,
+        building cards with state chips active/damaged/wrecked/building,
+        campaign stickers). Coordinate-based map deferred to T4 / T0c-polish.
+  - [x] Wax-sealed tab headers as the sheet's signature visual
+        (per-tab icon — gears / scroll / chest / coin / shield /
+        building / gear)
+  - [x] `getProsperityLevel` / `getProsperityProgress` helpers in
+        `packages/shared/src/data/prosperityLevel.ts`. Threshold tables
+        from GAME_RULES_REFERENCE §17 (added by T0c).
+  - [x] Structured commands `addGlobalAchievement` / `removeGlobalAchievement`
+        (parallel to T0b's party achievement pattern; GM-only — NOT on
+        phone whitelist)
+  - [x] `Party.campaignSheetIntroSeen?: boolean` flag; map-unfurling
+        intro animation persists via `updateCampaign('campaignSheetIntroSeen', true)`
+  - [x] `CampaignSheetOverlay` (controller, readOnly=false) and
+        `DisplayIdleSheetsView` (display) — display alternates Party
+        Sheet ↔ Campaign Sheet during idle lobby/town. Each sheet
+        cycles its own tabs at 30 s; on cycle wrap, fade-swap (300 ms)
+        to the sibling sheet.
+  - [x] `PartySheet` and `CampaignSheet` accept optional
+        `onCycleComplete?: () => void` (backward-compatible)
+  - [x] Sheets keyframe `party-sheet-page-turn` renamed to `sheet-page-turn`
+        for cross-sheet reuse
+  - [x] Reachable from controller via new "Campaign Sheet" entry in
+        `MenuOverlay`, drilled via `ControllerNav` and `ScenarioView`
+  - [x] CSS section appended to `app/shared/styles/sheets.css` with
+        BEM prefix `campaign-sheet__*` + tab-prefixed variants
+  - [x] Tests deferred to `docs/TEST_BACKFILL.md` (created this batch)
 - [ ] Phase T0d: Notes + History tabs (engine additions to `CharacterProgress`)
 - [x] Phase T1.1: Display rewards auto-hide when all phones dismiss (2026-04-17)
   - [x] `shouldShowRewards` decoupled from `finishData` lifetime —

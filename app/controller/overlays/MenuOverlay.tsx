@@ -11,6 +11,8 @@ interface MenuOverlayProps {
   onScenarioEnd?: (outcome: 'victory' | 'defeat') => void;
   /** Phase T0b: open the shared Party Sheet (always visible in menu). */
   onOpenPartySheet?: () => void;
+  /** Phase T0c: open the shared Campaign Sheet (always visible in menu). */
+  onOpenCampaignSheet?: () => void;
 }
 
 export function MenuOverlay({
@@ -21,6 +23,7 @@ export function MenuOverlay({
   onOpenSetup,
   onScenarioEnd,
   onOpenPartySheet,
+  onOpenCampaignSheet,
 }: MenuOverlayProps) {
   const commands = useCommands();
 
@@ -36,6 +39,12 @@ export function MenuOverlay({
         {onOpenPartySheet && (
           <button class="menu-overlay__item" onClick={() => { onClose(); onOpenPartySheet(); }}>
             Party Sheet
+          </button>
+        )}
+
+        {onOpenCampaignSheet && (
+          <button class="menu-overlay__item" onClick={() => { onClose(); onOpenCampaignSheet(); }}>
+            Campaign Sheet
           </button>
         )}
 

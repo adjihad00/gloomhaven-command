@@ -6,7 +6,7 @@ import { ConnectionScreen } from './ConnectionScreen';
 import { ScenarioView } from './ScenarioView';
 import { TownView } from './TownView';
 import { LobbyWaitingView } from './LobbyWaitingView';
-import { DisplayPartySheetView } from './views/DisplayPartySheetView';
+import { DisplayIdleSheetsView } from './views/DisplayIdleSheetsView';
 import { DisplayRewardsOverlay } from './overlays/DisplayRewardsOverlay';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 import { mockState } from './mockData';
@@ -142,19 +142,20 @@ export function App() {
       }}>
         <div class="app-shell">
           {/*
-            Phase T0b: in idle lobby (no setupPhase) and town mode, the
-            display hands its canvas to the Party Sheet's decorative
-            auto-cycling view. Scenario mode is untouched — scenario
-            fully owns the display. During an active setupPhase the
-            lobby waiting view still renders so chore/rules prompts
-            drive the table.
+            Phase T0c: in idle lobby (no setupPhase) and town mode, the
+            display alternates between Party Sheet and Campaign Sheet
+            via DisplayIdleSheetsView. Each sheet runs its own 30s tab
+            cycle; the wrapper swaps sheets on cycle completion (300 ms
+            fade). Scenario mode is untouched — scenario fully owns the
+            display. During an active setupPhase the lobby waiting view
+            still renders so chore/rules prompts drive the table.
           */}
           {mode === 'lobby' && !state.setupPhase
-            ? <DisplayPartySheetView onOpenMenu={handleOpenMenu} />
+            ? <DisplayIdleSheetsView onOpenMenu={handleOpenMenu} />
             : mode === 'lobby'
             ? <LobbyWaitingView onOpenMenu={handleOpenMenu} />
             : mode === 'town'
-            ? <DisplayPartySheetView onOpenMenu={handleOpenMenu} />
+            ? <DisplayIdleSheetsView onOpenMenu={handleOpenMenu} />
             : <ScenarioView isReconnect={isReconnectRef} onOpenMenu={handleOpenMenu} />
           }
 

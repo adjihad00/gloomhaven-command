@@ -18,6 +18,10 @@ interface DisplayPartySheetViewProps {
  * Ambient particle preset matches the display's lobby/town styling so
  * the sheet integrates with the table's ambient atmosphere rather than
  * feeling like a hard modal.
+ *
+ * @deprecated Phase T0c — replaced by `DisplayIdleSheetsView` which
+ * alternates Party Sheet and Campaign Sheet during idle modes. Retained
+ * importable for potential debug paths and quick rollback.
  */
 export function DisplayPartySheetView({ onOpenMenu }: DisplayPartySheetViewProps) {
   const { state } = useContext(AppContext);

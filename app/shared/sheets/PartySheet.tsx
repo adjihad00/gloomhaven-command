@@ -24,6 +24,12 @@ interface PartySheetProps {
   skipIntro?: boolean;
   /** Landscape (controller iPad) vs portrait (display tower). Default landscape. */
   layout?: 'landscape' | 'portrait';
+  /**
+   * Phase T0c: fires when `autoCycle` advances past the last visible tab
+   * (full rotation complete). Parent can use this to swap to a sibling
+   * sheet. Optional — omitting leaves cycling internal (T0b behavior).
+   */
+  onCycleComplete?: () => void;
 }
 
 const CYCLE_MS = 30_000;
@@ -56,6 +62,7 @@ export function PartySheet(props: PartySheetProps) {
     autoCycle = false,
     skipIntro = false,
     layout = 'landscape',
+    onCycleComplete,
   } = props;
 
   const commands = useCommands();
@@ -138,13 +145,16 @@ export function PartySheet(props: PartySheetProps) {
     const interval = window.setInterval(() => {
       setActiveTab((curr) => {
         const idx = visibleTabs.indexOf(curr);
-        return visibleTabs[(idx + 1) % visibleTabs.length];
+        const nextIdx = (idx + 1) % visibleTabs.length;
+        // Phase T0c: fire onCycleComplete when wrapping past the last tab.
+        if (nextIdx === 0) onCycleComplete?.();
+        return visibleTabs[nextIdx];
       });
       setCycling(true);
       window.setTimeout(() => setCycling(false), 600);
     }, CYCLE_MS);
     return () => window.clearInterval(interval);
-  }, [autoCycle, visibleTabs]);
+  }, [autoCycle, visibleTabs, onCycleComplete]);
 
   // If the current tab gets hidden (e.g. edition flips), fall back to roster.
   useEffect(() => {

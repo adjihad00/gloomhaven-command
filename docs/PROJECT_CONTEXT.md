@@ -61,17 +61,23 @@ app/shared/hooks/       — shared hooks (useCommitOnPause). Phase T0b.
 app/shared/sheets/      — canonical home for multi-client sheet components.
                           Phase T0b: PartySheet + PartySheetContext/Header/Tabs/Intro
                           + tabs/ (Roster, Standing, Location, Resources, Events).
-                          T0c CampaignSheet family will land here.
+                          Phase T0c: CampaignSheet + CampaignSheetContext/Header/
+                          Tabs/Intro + WaxSealHeader (shared primitive) + tabs/
+                          (Prosperity, Scenarios, Unlocks, Donations, Achievements,
+                          Outpost, Settings).
 app/shared/styles/      — CSS theme, typography, component styles, sheets.css (T0a + T0b)
 app/controller/         — landscape tablet app (GM)
 app/controller/ControllerNav.tsx — persistent ⋯ nav (Phase T0b) mounted from App.tsx;
-                          opens MenuOverlay with Party Sheet access from every mode.
+                          opens MenuOverlay with Party Sheet + Campaign Sheet
+                          access from every mode (Campaign Sheet entry added T0c).
 app/phone/              — portrait phone app (player)
 app/phone/sheets/       — Player Sheet family (PlayerSheet, header, tabs, intro, menu,
                           IlluminatedCapital) + tabs/ (Overview + placeholders). Phase T0a.
 app/display/            — portrait TV app (read-only)
-app/display/views/      — display view wrappers (Phase T0b: DisplayPartySheetView —
-                          decorative Party Sheet in idle lobby / town modes)
+app/display/views/      — display view wrappers. Phase T0c: DisplayIdleSheetsView
+                          alternates Party Sheet ↔ Campaign Sheet during idle
+                          lobby (no setupPhase) and town. DisplayPartySheetView
+                          is retained importable + JSDoc-@deprecated for rollback.
 scripts/                — data import tooling
   import-data.ts        — populates data/reference.db from .staging/ sources
   extract-books.ts      — extracts scenario/section text from FH book PDFs
@@ -158,6 +164,25 @@ centralises blur/Enter/1000 ms typing-pause commits for editable text. Controlle
 reachability via new `ControllerNav` promoting `MenuOverlay` to App-level — Party
 Sheet reachable from Lobby / Scenario / Town. Display replaces idle-lobby and
 town-mode views; scenario mode unchanged. Rules doc §16 Reputation & Economy added.
+Phase T0c COMPLETE (2026-04-18): Campaign Sheet as third sheet in T0 trio.
+Shared `app/shared/sheets/CampaignSheet*` family (Context / Header / Tabs /
+Intro + `WaxSealHeader` primitive) consumed by controller (editable via
+`CampaignSheetOverlay`) and display (decorative via `DisplayIdleSheetsView`,
+which alternates Party Sheet ↔ Campaign Sheet on full tab-cycle wrap with
+300 ms fade). 7 tabs: Prosperity / Scenarios / Unlocks / Donations /
+Achievements / Outpost (FH only) / Settings. Outpost tab ships dashboard
+form (calendar strip / resource pills / building cards with state chips
+active/damaged/wrecked/building / campaign stickers); coordinate-based map
+deferred to T4 / T0c-polish. Signature visual: wax-sealed tab headers
+(per-tab gilt-seal motif). `getProsperityLevel` / `getProsperityProgress`
+helpers in `packages/shared/src/data/prosperityLevel.ts` (GH + FH threshold
+tables per new GAME_RULES_REFERENCE §17). Structured `addGlobalAchievement` /
+`removeGlobalAchievement` commands (GM-only). `Party.campaignSheetIntroSeen?`
++ map-unfurling intro animation. `PartySheet` and `CampaignSheet` accept
+optional `onCycleComplete?: () => void` (backward-compatible). Sheets
+keyframe `party-sheet-page-turn` renamed `sheet-page-turn` for cross-sheet
+reuse. Tests for new prosperity helpers deferred to `docs/TEST_BACKFILL.md`
+(created this batch; reputationPrice listed alongside).
 Phase T1 COMPLETE: Scenario end rewards experience unified across all three clients.
 `state.finishData` snapshot built on `prepareScenarioEnd`, mutated during the pending
 window via three new commands (`setBattleGoalComplete`, `claimTreasure`,
@@ -217,7 +242,7 @@ proceedToBattleGoals, cancelScenarioSetup, startScenario,
 completeTownPhase, dealBattleGoals, returnBattleGoals,
 setBattleGoalComplete, claimTreasure, dismissRewards,
 setCharacterProgress, addPartyAchievement, removePartyAchievement,
-abortScenario
+addGlobalAchievement, removeGlobalAchievement, abortScenario
 
 ### Notable Command Behaviors
 - **drawModifierCard:** Bless/curse cards are spliced from the deck on draw
@@ -252,6 +277,10 @@ abortScenario
   (array replacement vs element splice). Add dedupes + trims whitespace;
   remove is rejected if the entry isn't currently in the list. Consumed by
   the Party Sheet's Standing tab.
+- **addGlobalAchievement / removeGlobalAchievement (T0c):** GM-only (NOT on
+  the phone whitelist). Parallel to the party-achievement pattern; targets
+  `state.party.globalAchievementsList`. Same dedupe / trim / reject-if-absent
+  semantics. Consumed by the Campaign Sheet's Achievements tab.
 - **abortScenario (T0b):** GM-only. Aborts the current scenario mid-play
   without applying rewards. Clears monsters, non-character figures, character
   combat state, finish/finishData, round/phase/elements; transitions

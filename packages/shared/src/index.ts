@@ -14,6 +14,7 @@ export * from './engine/diffStates.js';
 // Data layer
 export * from './data/index.js';
 export * from './data/reputationPrice.js';
+export * from './data/prosperityLevel.js';
 
 // Utilities
 export * from './utils/conditions.js';

@@ -493,3 +493,65 @@ T2a shopping.
 Road events, city/outpost events, and specific scenario outcomes may
 award ±reputation. The engine does not automate event-driven reputation
 changes — they're GM-driven via `updateCampaign('reputation', value)`.
+
+---
+
+## 17. Prosperity (Phase T0c)
+
+Prosperity is a campaign-wide track recording the party's growing influence.
+Players accrue **prosperity checkmarks** during scenarios and outpost events.
+Crossing certain thresholds advances the **prosperity level** (1–9), which
+unlocks new items in the shop and is referenced by other rules
+(starting gold, level-up rules, scenario unlocks).
+
+### Threshold Tables
+
+Cumulative checkmarks required to reach each prosperity level. Level 1 is
+the starting state (0 checkmarks).
+
+**Gloomhaven (GH):**
+
+| Level | Checkmarks |
+|-------|------------|
+| 1 | 0 |
+| 2 | 3 |
+| 3 | 8 |
+| 4 | 14 |
+| 5 | 21 |
+| 6 | 29 |
+| 7 | 38 |
+| 8 | 48 |
+| 9 | 59 |
+
+**Frosthaven (FH):**
+
+| Level | Checkmarks |
+|-------|------------|
+| 1 | 0 |
+| 2 | 5 |
+| 3 | 12 |
+| 4 | 21 |
+| 5 | 32 |
+| 6 | 45 |
+| 7 | 60 |
+| 8 | 77 |
+| 9 | 96 |
+
+### Implementation
+
+`packages/shared/src/data/prosperityLevel.ts` exports:
+- `PROSPERITY_THRESHOLDS_GH` / `PROSPERITY_THRESHOLDS_FH` — the threshold arrays
+- `getProsperityLevel(prosperity, edition) → 1..9`
+- `getProsperityProgress(prosperity, edition) → { level, currentFloor, nextThreshold }`
+
+State: `state.party.prosperity: number` is the running checkmark count.
+Mutation: `updateCampaign('prosperity', n)` (scalar setter — GM-driven).
+
+Consumed by the Campaign Sheet's Prosperity tab (level + progress + level
+list); future starting-gold and item-shop logic reuse the same helpers.
+
+### Cross-References
+
+- Starting gold for new characters (§1) uses `prosperity` directly.
+- Level-up rules (§5) cap level at `ceil(prosperity / 2)`.
+- Item shop (T2a) filters availability by current prosperity level.

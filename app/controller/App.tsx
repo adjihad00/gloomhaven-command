@@ -10,6 +10,7 @@ import { TownView } from './TownView';
 import { LobbyView } from './LobbyView';
 import { ControllerNav } from './ControllerNav';
 import { PartySheetOverlay } from './overlays/PartySheetOverlay';
+import { CampaignSheetOverlay } from './overlays/CampaignSheetOverlay';
 import type { GameState, AppMode } from '@gloomhaven-command/shared';
 
 export function App() {
@@ -64,7 +65,9 @@ function AppShell({
 }) {
   const mode: AppMode = state.mode ?? 'lobby';
   const [partySheetOpen, setPartySheetOpen] = useState(false);
+  const [campaignSheetOpen, setCampaignSheetOpen] = useState(false);
   const openPartySheet = () => setPartySheetOpen(true);
+  const openCampaignSheet = () => setCampaignSheetOpen(true);
 
   return (
     <div class="app-shell">
@@ -72,7 +75,10 @@ function AppShell({
         ? <LobbyView />
         : mode === 'town'
         ? <TownView />
-        : <ScenarioView onOpenPartySheet={openPartySheet} />
+        : <ScenarioView
+            onOpenPartySheet={openPartySheet}
+            onOpenCampaignSheet={openCampaignSheet}
+          />
       }
       {/*
         Phase T0b: floating ⋯ nav is only rendered in modes that lack their
@@ -88,10 +94,14 @@ function AppShell({
           hasScenario={!!state.scenario}
           onDisconnect={onDisconnect}
           onOpenPartySheet={openPartySheet}
+          onOpenCampaignSheet={openCampaignSheet}
         />
       )}
       {partySheetOpen && (
         <PartySheetOverlay onClose={() => setPartySheetOpen(false)} />
+      )}
+      {campaignSheetOpen && (
+        <CampaignSheetOverlay onClose={() => setCampaignSheetOpen(false)} />
       )}
     </div>
   );

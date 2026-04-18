@@ -470,6 +470,9 @@ export interface Party {
   // Phase T0b: one-time Party Sheet intro animation ("leather book opening"),
   // persisted via updateCampaign. Optional so pre-T0b saves default to unseen.
   sheetIntroSeen?: boolean;
+  // Phase T0c: one-time Campaign Sheet intro animation ("map unfurling"),
+  // persisted via updateCampaign. Optional so pre-T0c saves default to unseen.
+  campaignSheetIntroSeen?: boolean;
 }
 
 export interface EventCardIdentifier {

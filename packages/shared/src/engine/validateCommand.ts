@@ -460,6 +460,22 @@ export function validateCommand(state: GameState, command: Command): ValidationR
       return OK;
     }
 
+    case 'addGlobalAchievement': {
+      const ach = command.payload.achievement?.trim?.() ?? '';
+      if (!ach) return fail('addGlobalAchievement: achievement is empty');
+      return OK;
+    }
+
+    case 'removeGlobalAchievement': {
+      const target = command.payload.achievement;
+      if (!target) return fail('removeGlobalAchievement: achievement is empty');
+      const list = state.party.globalAchievementsList ?? [];
+      if (!list.includes(target)) {
+        return fail(`removeGlobalAchievement: "${target}" not in global achievements`);
+      }
+      return OK;
+    }
+
     case 'abortScenario': {
       if (state.mode !== 'scenario') {
         return fail('abortScenario: no scenario in progress');

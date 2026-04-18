@@ -104,6 +104,8 @@ If client is too far behind (>100 revisions), server sends full state instead.
 | setCharacterProgress    | { characterName, edition, field, value } *(T0a, phone-allowed)*  |
 | addPartyAchievement     | { achievement: string } *(T0b, GM-only)*                         |
 | removePartyAchievement  | { achievement: string } *(T0b, GM-only)*                         |
+| addGlobalAchievement    | { achievement: string } *(T0c, GM-only)*                         |
+| removeGlobalAchievement | { achievement: string } *(T0c, GM-only)*                         |
 | abortScenario           | { } *(T0b, GM-only; mode must be 'scenario')*                    |
 
 ### Side Effects
@@ -131,6 +133,10 @@ If client is too far behind (>100 revisions), server sends full state instead.
   ordering/dedup on undo). `addPartyAchievement` deduplicates and trims
   whitespace; `removePartyAchievement` is rejected server-side if the
   achievement isn't currently in the list.
+- **addGlobalAchievement / removeGlobalAchievement** *(T0c)*: GM-only (NOT on
+  the phone whitelist). Parallel to the party-achievement pattern; targets
+  `state.party.globalAchievementsList`. Same dedupe / trim / reject-if-absent
+  semantics. Consumed by the Campaign Sheet's Achievements tab.
 - **abortScenario** *(T0b)*: GM-only. Aborts the current scenario without
   applying rewards. Clears `state.monsters`, `state.objectiveContainers`,
   non-character `state.figures`, per-character combat state (HP restored

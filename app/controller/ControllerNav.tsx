@@ -7,6 +7,8 @@ interface ControllerNavProps {
   hasScenario: boolean;
   onDisconnect: () => void;
   onOpenPartySheet: () => void;
+  /** Phase T0c: drilled opener for the shared Campaign Sheet. */
+  onOpenCampaignSheet: () => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function ControllerNav({
   hasScenario,
   onDisconnect,
   onOpenPartySheet,
+  onOpenCampaignSheet,
 }: ControllerNavProps) {
   const [open, setOpen] = useState(false);
   return (
@@ -45,6 +48,7 @@ export function ControllerNav({
           onClose={() => setOpen(false)}
           onDisconnect={onDisconnect}
           onOpenPartySheet={onOpenPartySheet}
+          onOpenCampaignSheet={onOpenCampaignSheet}
         />
       )}
     </div>

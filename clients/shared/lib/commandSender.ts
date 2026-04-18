@@ -290,6 +290,23 @@ export class CommandSender {
     this.send({ action: 'removePartyAchievement', payload: { achievement } });
   }
 
+  // ── Campaign Sheet (Phase T0c) ──
+
+  /**
+   * Append a global achievement (GM-only). Empty/duplicate entries are no-ops.
+   * Parallel to `addPartyAchievement`; targets `state.party.globalAchievementsList`.
+   */
+  addGlobalAchievement(achievement: string): void {
+    this.send({ action: 'addGlobalAchievement', payload: { achievement } });
+  }
+
+  /**
+   * Remove a global achievement by exact match (GM-only).
+   */
+  removeGlobalAchievement(achievement: string): void {
+    this.send({ action: 'removeGlobalAchievement', payload: { achievement } });
+  }
+
   /**
    * Abort the current scenario mid-play and return to lobby (GM-only).
    * Clears scenario combat state; no rewards applied; does NOT record

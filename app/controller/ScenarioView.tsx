@@ -33,9 +33,11 @@ type OverlayState =
 interface ScenarioViewProps {
   /** Phase T0b: open the shared Party Sheet overlay (owned by App.tsx). */
   onOpenPartySheet?: () => void;
+  /** Phase T0c: open the shared Campaign Sheet overlay (owned by App.tsx). */
+  onOpenCampaignSheet?: () => void;
 }
 
-export function ScenarioView({ onOpenPartySheet }: ScenarioViewProps = {}) {
+export function ScenarioView({ onOpenPartySheet, onOpenCampaignSheet }: ScenarioViewProps = {}) {
   const { gameCode, disconnect } = useContext(AppContext);
   const gameState = useGameState();
   const commands = useCommands();
@@ -200,6 +202,7 @@ export function ScenarioView({ onOpenPartySheet }: ScenarioViewProps = {}) {
           onClose={() => setActiveOverlay({ type: 'none' })}
           onDisconnect={disconnect}
           onOpenPartySheet={onOpenPartySheet}
+          onOpenCampaignSheet={onOpenCampaignSheet}
         />
       )}
 
